@@ -1,90 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🐝 VocaBee - Smart Spaced Repetition Vocabulary App
 
-## Getting Started
+VocaBee là một ứng dụng học từ vựng thông minh dựa trên phương pháp **Spaced Repetition (Lặp lại ngắt quãng)**. Ứng dụng giúp người dùng ghi nhớ từ vựng lâu dài thông qua việc lên lịch ôn tập khoa học và đặt mục tiêu hàng ngày, với giao diện hiện đại và trải nghiệm người dùng cao cấp.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Điểm nổi bật (Highlights)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Giao diện Premium:** Sử dụng phong cách **Glassmorphism** (kính mờ) hiện đại, chiều sâu và sang trọng.
+- **Typography tinh tế:** Sử dụng font chữ **Plus Jakarta Sans** – mang lại vẻ ngoài thanh thoát và chuyên nghiệp.
+- **Dark Mode & Light Mode:** Hỗ trợ giao diện sáng/tối mượt mà, bảo vệ mắt người dùng.
+- **Hiệu ứng sống động:** Các vi tương tác (micro-animations) giúp trải nghiệm học tập trở nên thú vị hơn.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-
-# 📚 VocabMaster - Spaced Repetition Web App
-
-VocabMaster là một ứng dụng học từ vựng thông minh dựa trên phương pháp **Spaced Repetition (Lặp lại ngắt quãng)**. Ứng dụng giúp người dùng ghi nhớ từ vựng lâu dài thông qua việc lên lịch ôn tập khoa học và đặt mục tiêu hàng ngày.
+---
 
 ## 🛠 Công nghệ sử dụng (Tech Stack)
-- **Frontend:** Next.js 16 (App Router), TypeScript, Tailwind CSS.
-- **Backend/Database:** SQLite (Local Database) + Prisma ORM.
-- **Algorithm:** SM-2 (SuperMemo-2) cho việc tính toán lịch trình ôn tập.
+
+- **Frontend:** Next.js 15 (App Router), TypeScript, Tailwind CSS.
+- **Backend/Database:** Prisma ORM + PostgreSQL/SQLite.
+- **Authentication:** Auth.js (NextAuth) v5.
+- **Styling:** Headless UI, Heroicons, Glassmorphism utilities.
+- **Font:** Plus Jakarta Sans (Google Fonts).
 
 ---
 
 ## 🗺 Lộ trình phát triển (Roadmap)
 
-### Giai đoạn 1: Nền tảng & Thiết lập (Foundation)
-- [ ] Thiết lập dự án Next.js và cấu hình Tailwind CSS.
-- [ ] Kết nối dự án với **Supabase**.
-- [ ] Thiết kế Database Schema (Bảng `flashcards` và `user_stats`).
-- [ ] Xây dựng hệ thống Đăng nhập/Đăng ký đơn giản.
+### ✅ Giai đoạn 1: Nền tảng & Đột phá giao diện (Foundation & UI Overhaul)
+- [x] Thiết lập dự án Next.js 15 và cấu hình Tailwind CSS.
+- [x] Thiết kế Database Schema hoàn chỉnh với Prisma.
+- [x] Xây dựng hệ thống Đăng nhập/Đăng ký bảo mật với NextAuth.
+- [x] **Nâng cấp giao diện Premium UI/UX:** Triển khai Glassmorphism và tối ưu hóa Typography.
+- [x] Hoàn thiện các thành phần cốt lõi: Header, User Menu, Add Word Form, Word List.
 
-### Giai đoạn 2: Tính năng cốt lõi (Core Features)
-- [ ] **Thêm từ vựng:** Form cho phép user nhập Từ mới và Định nghĩa(check từ vựng đã được thêm trước đó hay chưa, nếu có rồi thông báo ko add vào table).
-- [ ] **Danh sách từ vựng:** Hiển thị tất cả từ đã thêm.
-- [ ] **Hệ thống Filter:** Tự động lọc ra các từ "Đã đến hạn ôn tập" (`next_review <= Today`).
+### 🏃 Giai đoạn 2: Tính năng cốt lõi & Thuật toán (Core Features & SRS)
+- [ ] Triển khai thuật toán **SM-2** (Spaced Repetition) để tính toán lịch trình ôn tập.
+- [ ] Xây dựng giao diện **Flashcard Mode** (Lật mặt thẻ) với hiệu ứng mượt mà.
+- [ ] Hệ thống đánh giá từ vựng (Dễ, Trung bình, Khó).
+- [ ] Tự động lọc danh sách từ vựng "Đã đến hạn ôn tập".
 
-### Giai đoạn 3: Bộ não SRS (The SRS Brain)
-- [ ] Triển khai thuật toán **SM-2** bằng TypeScript.
-- [ ] Xây dựng giao diện **Flashcard Mode** (Lật mặt thẻ).
-- [ ] Xử lý logic đánh giá:
-    - `Dễ`: Tăng khoảng cách ôn tập lớn.
-    - `Trung bình`: Tăng khoảng cách vừa phải.
-    - `Khó/Quên`: Đặt lịch ôn lại vào ngày mai.
-
-### Giai đoạn 4: Mục tiêu & Tiến độ (Daily Goals)
+### 📅 Giai đoạn 3: Mục tiêu & Theo dõi (Goals & Analytics)
 - [ ] Thiết lập hệ thống **Daily Goal** (Mục tiêu 15 từ/ngày).
-- [ ] Xử lý logic **Cộng dồn (Rollover)**: Các từ chưa học ngày hôm trước sẽ được dồn vào danh sách hôm nay.
-- [ ] Biểu đồ theo dõi tiến độ học tập đơn giản.
+- [ ] Xử lý logic **Cộng dồn (Rollover)** cho các từ chưa học.
+- [ ] Biểu đồ trực quan theo dõi tiến độ ghi nhớ.
 
-### Giai đoạn 5: Hoàn thiện & UI/UX (Polishing)
-- [ ] Thêm hiệu ứng chuyển động (Framer Motion) khi lật thẻ.
-- [ ] Hỗ trợ chế độ Dark Mode.
-- [ ] Tối ưu giao diện trên thiết bị di động.
+### 🎨 Giai đoạn 4: Hoàn thiện & Mở rộng (Polishing & Extension)
+- [ ] Tích hợp Text-to-Speech (Phát âm từ vựng).
+- [ ] Hỗ trợ bộ từ vựng mẫu theo chủ đề.
+- [ ] Xuất/Nhập dữ liệu (Excel/CSV).
 
 ---
 
 ## 🧠 Thuật toán Spaced Repetition (SM-2)
 
-Chúng ta sẽ sử dụng công thức sau để tính toán khoảng cách ($I$):
+Chúng ta sử dụng thuật toán **SM-2** để tối ưu hóa việc ghi nhớ:
 - Lần đầu tiên ($n=1$): $I(1) = 1$ ngày.
 - Lần thứ hai ($n=2$): $I(2) = 6$ ngày.
-- Các lần sau ($n>n$): $I(n) = I(n-1) \times EF$.
+- Các lần sau ($n>2$): $I(n) = I(n-1) \times EF$.
 
-Trong đó **EF** (Ease Factor) là độ dễ của từ, được điều chỉnh dựa trên đánh giá của người dùng.
+**EF (Ease Factor)**: Độ dễ của từ sẽ được điều chỉnh linh hoạt dựa trên phản hồi thực tế của bạn trong quá trình học.
+
+---
+
+## 🚀 Hướng dẫn bắt đầu
+
+1. **Clone project:**
+   ```bash
+   git clone https://github.com/chuvanan258vn-hash/VocaBee.git
+   ```
+2. **Cài đặt dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Cấu hình môi trường:** Tạo file `.env` và thiết lập `DATABASE_URL` cùng các secret keys cần thiết.
+4. **Migration database:**
+   ```bash
+   npx prisma migrate dev
+   ```
+5. **Chạy server phát triển:**
+   ```bash
+   npm run dev
+   ```
+
+---
+*Phát triển bởi team VocaBee 🐝 – Học tập không giới hạn.*
