@@ -41,8 +41,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 VocabMaster là một ứng dụng học từ vựng thông minh dựa trên phương pháp **Spaced Repetition (Lặp lại ngắt quãng)**. Ứng dụng giúp người dùng ghi nhớ từ vựng lâu dài thông qua việc lên lịch ôn tập khoa học và đặt mục tiêu hàng ngày.
 
 ## 🛠 Công nghệ sử dụng (Tech Stack)
-- **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS.
-- **Backend/Database:** Supabase (PostgreSQL + Auth).
+- **Frontend:** Next.js 16 (App Router), TypeScript, Tailwind CSS.
+- **Backend/Database:** SQLite (Local Database) + Prisma ORM.
 - **Algorithm:** SM-2 (SuperMemo-2) cho việc tính toán lịch trình ôn tập.
 
 ---

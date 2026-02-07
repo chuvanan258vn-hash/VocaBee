@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id        String       @id @default(uuid())
+  email     String       @unique
+  password  String
+  name      String?
+  words     Vocabulary[]
+  createdAt DateTime     @default(now())
+}
+
+model Vocabulary {
+  id            String   @id @default(uuid())
+  word          String
+  wordType      String?  // Noun, Verb, Adj, etc.
+  meaning       String
+  pronunciation String?
+  example       String?
+  synonyms      String?
+
+  // SRS fields
+  nextReview    DateTime @default(now())
+  interval      Int      @default(0)
+  repetition    Int      @default(0)
+  efactor       Float    @default(2.5)
+
+  // Relation to User
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([word, userId]) // Ensure a user can't have duplicate words, but different users can have same word
+}
