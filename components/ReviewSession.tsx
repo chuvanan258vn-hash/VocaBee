@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Flashcard from './Flashcard';
+import GrammarFlashcard from './GrammarFlashcard';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
@@ -37,7 +38,9 @@ export default function ReviewSession({ dueWords }: ReviewSessionProps) {
         }
     };
 
-    if (isDone) {
+    const currentWord = dueWords[currentIndex];
+
+    if (isDone || !currentWord) {
         return (
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -46,7 +49,7 @@ export default function ReviewSession({ dueWords }: ReviewSessionProps) {
             >
                 <div className="text-6xl">🍯🏆</div>
                 <h2 className="text-3xl font-black text-slate-800 dark:text-white">Xong rồi nhé!</h2>
-                <p className="text-slate-500 dark:text-slate-400 max-w-sm">Bạn vừa hoàn thành việc ôn tập {dueWords.length} từ vựng. Càng học, tổ ong càng tràn đầy mật ngọt thức thức! 🐝✨</p>
+                <p className="text-slate-500 dark:text-slate-400 max-w-sm">Bạn vừa hoàn thành phiên học hiện tại. Càng học, tổ ong càng tràn đầy mật ngọt thức thức! 🐝✨</p>
                 <Link
                     href="/"
                     className="px-8 py-3 bg-yellow-400 text-slate-900 font-black rounded-2xl shadow-xl shadow-yellow-500/20 hover:scale-105 transition-all"
@@ -58,7 +61,7 @@ export default function ReviewSession({ dueWords }: ReviewSessionProps) {
     }
 
     return (
-        <div className="w-full max-w-2xl mx-auto space-y-8 pt-10">
+        <div className="w-full max-w-2xl mx-auto space-y-4 sm:space-y-8 pt-4 sm:pt-10">
             <div className="flex justify-between items-center px-4">
                 <Link href="/" className="text-slate-400 hover:text-yellow-500 transition-colors flex items-center gap-2 font-bold text-sm">
                     <span>←</span> THOÁT
@@ -79,13 +82,17 @@ export default function ReviewSession({ dueWords }: ReviewSessionProps) {
 
             <AnimatePresence mode="wait">
                 <motion.div
-                    key={dueWords[currentIndex].id}
+                    key={currentWord.id}
                     initial={{ opacity: 0, x: 50 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -50 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <Flashcard word={dueWords[currentIndex]} onNext={handleNext} />
+                    {currentWord.prompt ? (
+                        <GrammarFlashcard card={currentWord} onNext={handleNext} />
+                    ) : (
+                        <Flashcard word={currentWord} onNext={handleNext} />
+                    )}
                 </motion.div>
             </AnimatePresence>
         </div>

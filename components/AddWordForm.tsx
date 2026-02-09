@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { addWordAction } from '@/app/actions';
 import { useToast } from './ToastProvider';
+import { getWordTypeColor } from '@/lib/utils';
 
 export default function AddWordForm() {
   const { showToast } = useToast();
@@ -85,6 +86,19 @@ export default function AddWordForm() {
             value={wordType}
             onChange={(e) => setWordType(e.target.value)}
           />
+          <div className="flex flex-wrap gap-2 mt-2">
+            {['n', 'v', 'adj', 'adv', 'phrase', 'idiom'].map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setWordType(type)}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all hover:scale-110 active:scale-95 ${wordType === type ? 'ring-2 ring-yellow-400 ring-offset-2 dark:ring-offset-slate-900 shadow-md' : 'opacity-70 hover:opacity-100'
+                  } ${getWordTypeColor(type)}`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

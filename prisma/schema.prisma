@@ -9,12 +9,17 @@ datasource db {
 
 
 model User {
-  id        String       @id @default(uuid())
-  email     String       @unique
-  password  String
-  name      String?
-  words     Vocabulary[]
-  createdAt DateTime     @default(now())
+  id                String       @id @default(uuid())
+  email             String       @unique
+  password          String
+  name              String?
+  words             Vocabulary[]
+  grammarCards      GrammarCard[]
+  dailyNewWordGoal     Int          @default(20)
+  dailyNewGrammarGoal  Int          @default(10)
+  streakCount          Int          @default(0)
+  lastGoalMetDate      DateTime?
+  createdAt         DateTime     @default(now())
 }
 
 model Vocabulary {
@@ -25,6 +30,11 @@ model Vocabulary {
   pronunciation String?
   example       String?
   synonyms      String?
+  
+  // Rule-based fields
+  importanceScore Int      @default(0) // 0-4 points
+  source          String   @default("COLLECTION") // COLLECTION or TEST
+  isDeferred      Boolean  @default(false)
 
   // SRS fields
   nextReview    DateTime @default(now())
@@ -39,5 +49,34 @@ model Vocabulary {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  @@unique([word, userId]) // Ensure a user can't have duplicate words, but different users can have same word
+  @@unique([word, userId])
+}
+
+model GrammarCard {
+  id            String   @id @default(uuid())
+  type          String   // CLOZE, PRODUCTION, ERROR_CORRECTION, MCQ, TRANSFORMATION, EXPLANATION
+  prompt        String   
+  answer        String   
+  options       String?  
+  hint          String?  
+  explanation   String?  
+  tags          String?  
+
+  // Rule-based fields
+  importanceScore Int      @default(0)
+  source          String   @default("COLLECTION")
+  isDeferred      Boolean  @default(false)
+
+  // SRS fields
+  nextReview    DateTime @default(now())
+  interval      Int      @default(0)
+  repetition    Int      @default(0)
+  efactor       Float    @default(2.0)
+
+  // Relation to User
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { updateWordAction, deleteWordAction } from "@/app/actions";
 import { Edit2, Trash2, Check, X, Volume2, Star } from "lucide-react";
 import { useToast } from "./ToastProvider";
+import { getWordTypeColor, speak } from "@/lib/utils";
 
 export default function WordItem({ item }: { item: any }) {
     const { showToast } = useToast();
@@ -147,7 +148,7 @@ export default function WordItem({ item }: { item: any }) {
                             {item.word}
                         </h3>
                         {item.wordType && (
-                            <span className="px-2 py-0.5 bg-yellow-400 text-[10px] font-black text-white rounded-lg shadow-sm uppercase tracking-wider h-fit">
+                            <span className={`px-2.5 py-0.5 ${getWordTypeColor(item.wordType)} text-[10px] font-black rounded-lg shadow-sm uppercase tracking-wider h-fit`}>
                                 {item.wordType}
                             </span>
                         )}
@@ -193,7 +194,11 @@ export default function WordItem({ item }: { item: any }) {
                     >
                         <Star size={20} fill={isStarred ? "currentColor" : "none"} />
                     </button>
-                    <button className="p-2 rounded-xl text-slate-400 hover:bg-blue-400/10 hover:text-blue-500 transition-all duration-300">
+                    <button
+                        onClick={() => speak(item.word)}
+                        className="p-2 rounded-xl text-slate-400 hover:bg-blue-400/10 hover:text-blue-500 transition-all duration-300"
+                        title="Phát âm"
+                    >
                         <Volume2 size={22} />
                     </button>
                     <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-700/50 mx-1" />

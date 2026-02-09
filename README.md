@@ -32,21 +32,21 @@ VocaBee là một ứng dụng học từ vựng thông minh dựa trên phươn
 - [x] **Nâng cấp giao diện Premium UI/UX:** Triển khai Glassmorphism và tối ưu hóa Typography.
 - [x] Hoàn thiện các thành phần cốt lõi: Header, User Menu, Add Word Form, Word List.
 
-### 🏃 Giai đoạn 2: Tính năng cốt lõi & Thuật toán (Core Features & SRS)
-- [ ] Triển khai thuật toán **SM-2** (Spaced Repetition) để tính toán lịch trình ôn tập.
-- [ ] Xây dựng giao diện **Flashcard Mode** (Lật mặt thẻ) với hiệu ứng mượt mà.
-- [ ] Hệ thống đánh giá từ vựng (Dễ, Trung bình, Khó).
-- [ ] Tự động lọc danh sách từ vựng "Đã đến hạn ôn tập".
+### ✅ Giai đoạn 2: Tính năng cốt lõi & Thuật toán (Core Features & SRS)
+- [x] Triển khai thuật toán **SM-2** (Spaced Repetition) để tính toán lịch trình ôn tập.
+- [x] Xây dựng giao diện **Flashcard Mode** (Lật mặt thẻ) với hiệu ứng mượt mà.
+- [x] Hệ thống đánh giá từ vựng (Dễ, Trung bình, Khó).
+- [x] Tự động lọc danh sách từ vựng "Đã đến hạn ôn tập".
 
-### 📅 Giai đoạn 3: Mục tiêu & Theo dõi (Goals & Analytics)
-- [ ] Thiết lập hệ thống **Daily Goal** (Mục tiêu 15 từ/ngày).
-- [ ] Xử lý logic **Cộng dồn (Rollover)** cho các từ chưa học.
-- [ ] Biểu đồ trực quan theo dõi tiến độ ghi nhớ.
+### 🏃 Giai đoạn 3: Trải nghiệm người dùng & Tiện ích (UX & Utilities)
+- [x] **Hỗ trợ Phát âm (Text-to-Speech):** Tích hợp giọng đọc tự động cho từ vựng.
+- [x] **Tìm kiếm & Lọc:** Tìm kiếm từ vựng và lọc theo loại từ (màu sắc).
+- [x] **Nhập/Xuất Dữ liệu:** Hỗ trợ file Excel/CSV (Import/Export).
 
-### 🎨 Giai đoạn 4: Hoàn thiện & Mở rộng (Polishing & Extension)
-- [ ] Tích hợp Text-to-Speech (Phát âm từ vựng).
-- [ ] Hỗ trợ bộ từ vựng mẫu theo chủ đề.
-- [ ] Xuất/Nhập dữ liệu (Excel/CSV).
+### 📅 Giai đoạn 4: Mục tiêu & Phân tích (Goals & Analytics)
+- [x] **Thống kê (Dashboard):** Biểu đồ trực quan theo dõi tiến độ ghi nhớ và số lượng từ đã thuộc.
+- [x] **Mục tiêu Hàng ngày:** Thiết lập và theo dõi mục tiêu học tập hàng ngày.
+- [ ] **Thông báo nhắc nhở:** Nhắc người dùng ôn tập khi đến hạn.
 
 ---
 

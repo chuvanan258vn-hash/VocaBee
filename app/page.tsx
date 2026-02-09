@@ -2,11 +2,15 @@
 import { auth } from '@/auth';
 import AddWordForm from '@/components/AddWordForm';
 import WordList from '@/components/WordList';
+import Dashboard from '@/components/Dashboard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import UserMenu from '@/components/UserMenu';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import AccentSelector from '@/components/AccentSelector';
+import { getDashboardStats } from './actions';
+import SmartCaptureTrigger from '@/components/SmartCaptureTrigger';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,66 +22,90 @@ export default async function Home() {
     redirect('/login');
   }
 
+  const user = await prisma.user.findUnique({ where: { email: session.user?.email || "" } });
+  const stats = await getDashboardStats();
+
   // Lấy các từ đến hạn ôn tập (Trước 4:00 sáng mai)
   const now = new Date();
-  // Nếu bây giờ là sau nửa đêm nhưng trước 4 sáng, vẫn tính là "ngày hôm trước"
-  // (Giúp cú đêm ôn nốt bài)
   now.setHours(23, 59, 59, 999);
 
-  const user = await prisma.user.findUnique({ where: { email: session.user?.email || "" } });
-
-  let dueCount = 0;
+  let dueReviewsCount = 0;
+  let hasNewWords = false;
+  let allWords: any[] = [];
   if (user) {
-    dueCount = await prisma.vocabulary.count({
-      where: { userId: user.id, nextReview: { lte: now } }
+    // 1. Lấy các từ ĐANG ÔN TẬP thực sự (đã học qua ít nhất 1 lần)
+    dueReviewsCount = await prisma.vocabulary.count({
+      where: {
+        userId: user.id,
+        repetition: { gte: 1 },
+        nextReview: { lte: now }
+      }
+    });
+
+    // 2. Kiểm tra xem còn từ MỚI nào trong kho không
+    hasNewWords = await prisma.vocabulary.count({
+      where: {
+        userId: user.id,
+        repetition: 0
+      }
+    }) > 0;
+
+    allWords = await prisma.vocabulary.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' }
     });
   }
+
+  // 3. Logic hiển thị nút: 
+  // - Có từ vựng hoặc ngữ pháp cần ôn tập (ưu tiên cao)
+  // - HOẶC (Chưa đạt mục tiêu ngày VÀ vẫn còn nội dung mới để nạp)
+  const canLearnNewVocab = stats && stats.learnedToday < stats.dailyGoal && hasNewWords;
+  const showButton = dueReviewsCount > 0 || canLearnNewVocab;
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-background dark:bg-background transition-colors font-sans px-4 pb-20">
       {/* Sticky Header */}
-      <header className="sticky top-4 z-50 w-full max-w-5xl glass rounded-2xl flex justify-between items-center p-3 px-6 shadow-xl mb-12 mt-4 mx-auto">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🐝</span>
-            <span className="text-xl font-extrabold tracking-tighter bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent">VocaBee</span>
+      <header className="sticky top-4 z-50 w-full max-w-5xl glass rounded-2xl flex justify-between items-center p-2 sm:p-3 px-3 sm:px-6 shadow-xl mb-8 sm:mb-12 mt-4 mx-auto border border-white/20 dark:border-white/5">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <span className="text-xl sm:text-2xl">🐝</span>
+            <span className="text-lg sm:text-xl font-extrabold tracking-tighter bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent">VocaBee</span>
           </div>
-          <button
-            title="Tính năng phát âm (Sắp ra mắt)"
-            className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-400 hover:text-yellow-500 transition-all cursor-help"
-          >
-            <span className="text-lg">🔊</span>
-          </button>
+          <div className="hidden xs:block">
+            <AccentSelector />
+          </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <SmartCaptureTrigger />
           <ThemeToggle />
-          <UserMenu user={session.user as any} />
+          <UserMenu user={session.user as any} dailyGoal={stats?.dailyGoal || 20} />
         </div>
       </header>
 
-      <div className="text-center mb-12">
-        <h1 className="text-5xl font-extrabold text-yellow-500 dark:text-yellow-400 flex items-center justify-center gap-3 tracking-tight animate-bounce-slow">
-          VocaBee <span className="text-4xl">🐝</span>
-        </h1>
-        <p className="text-gray-500 dark:text-slate-400 mt-4 text-xl font-medium max-w-md mx-auto leading-relaxed">
-          "Mỗi ngày 15 từ, ghi nhớ vạn hành trình."
-        </p>
+      {stats && <Dashboard stats={stats} />}
 
-        {/* Nút Ôn tập (Hiện khi có từ đến hạn) */}
-        {dueCount > 0 && (
-          <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="text-center mb-12">
+        <h1 className="sr-only">VocaBee 🐝</h1>
+
+        {/* Nút Nhiệm vụ (Hiện khi có từ cần ôn hoặc còn từ mới để học) */}
+        {showButton && (
+          <div className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <Link
               href="/review"
-              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-black rounded-2xl shadow-2xl shadow-orange-500/20 hover:scale-105 active:scale-95 transition-all group"
+              className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-orange-500 to-yellow-500 text-white font-black rounded-3xl shadow-2xl shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all group"
             >
-              <div className="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform">
-                <span className="text-2xl">📖</span>
+              <div className="h-14 w-14 bg-white/20 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
+                <span className="text-3xl">📖</span>
               </div>
               <div className="text-left">
-                <p className="text-xs text-white/80 uppercase tracking-widest font-bold">Nhiệm vụ ôn tập</p>
-                <p className="text-lg">Bạn có {dueCount} từ cần học lại</p>
+                <p className="text-xs text-white/80 uppercase tracking-widest font-bold">Nhiệm vụ hàng ngày</p>
+                <p className="text-xl">
+                  {dueReviewsCount > 0
+                    ? `Hệ thống đã trộn ${dueReviewsCount} lượt ôn tập & từ mới`
+                    : `Khám phá nội dung mới ngay thôi!`}
+                </p>
               </div>
-              <span className="ml-4 text-xl">→</span>
+              <span className="ml-6 text-2xl font-black">BẮT ĐẦU →</span>
             </Link>
           </div>
         )}
@@ -85,7 +113,7 @@ export default async function Home() {
 
       <AddWordForm />
 
-      <WordList />
+      <WordList initialWords={allWords} />
     </main>
   );
 }
