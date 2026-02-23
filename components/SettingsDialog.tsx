@@ -75,8 +75,8 @@ export default function SettingsDialog({ isOpen, onClose, currentGoal }: Setting
                                             key={val}
                                             onClick={() => setGoal(val)}
                                             className={`py-4 rounded-2xl font-black transition-all border-2 ${goal === val
-                                                    ? "bg-yellow-400 border-yellow-400 text-slate-900 shadow-lg shadow-yellow-500/20"
-                                                    : "bg-slate-50 dark:bg-white/5 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-white/10"
+                                                ? "bg-yellow-400 border-yellow-400 text-slate-900 shadow-lg shadow-yellow-500/20"
+                                                : "bg-slate-50 dark:bg-white/5 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-white/10"
                                                 }`}
                                         >
                                             {val}
@@ -87,6 +87,41 @@ export default function SettingsDialog({ isOpen, onClose, currentGoal }: Setting
                                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-4 italic">
                                     Mẹo: Nếu bạn bận rộn, hãy chọn 5 hoặc 10 từ để duy trì thói quen học tập.
                                 </p>
+                            </div>
+
+                            <div className="pt-6 border-t border-slate-100 dark:border-white/5">
+                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 block">
+                                    Giao diện & Tiện ích
+                                </label>
+
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all">
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-black text-slate-700 dark:text-slate-200">Tự động phát âm</span>
+                                            <span className="text-[10px] font-bold text-slate-400 leading-tight">Phát âm ngay khi lật thẻ</span>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const autoPlaySetting = localStorage.getItem("vocabee-autoplay");
+                                                const current = autoPlaySetting === null || autoPlaySetting === "true";
+                                                localStorage.setItem("vocabee-autoplay", (!current).toString());
+                                                showToast(!current ? "Đã bật tự động phát âm! 🔊" : "Đã tắt tự động phát âm.", "success");
+                                                setGoal(g => g); // Force re-render
+                                            }}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${(typeof window !== 'undefined' && (localStorage.getItem("vocabee-autoplay") === null || localStorage.getItem("vocabee-autoplay") === "true"))
+                                                    ? 'bg-yellow-400'
+                                                    : 'bg-slate-300 dark:bg-slate-700'
+                                                }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${(typeof window !== 'undefined' && (localStorage.getItem("vocabee-autoplay") === null || localStorage.getItem("vocabee-autoplay") === "true"))
+                                                        ? 'translate-x-6'
+                                                        : 'translate-x-1'
+                                                    }`}
+                                            />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="pt-4 border-t border-slate-100 dark:border-white/5">

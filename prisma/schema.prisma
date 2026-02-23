@@ -19,7 +19,11 @@ model User {
   dailyNewGrammarGoal  Int          @default(10)
   streakCount          Int          @default(0)
   lastGoalMetDate      DateTime?
+  points               Int          @default(0)
+  streakFreeze         Int          @default(0)
   createdAt         DateTime     @default(now())
+  securityQuestion  String?
+  securityAnswer    String?
 }
 
 model Vocabulary {
@@ -50,6 +54,9 @@ model Vocabulary {
   updatedAt     DateTime @updatedAt
 
   @@unique([word, userId])
+  @@index([userId, nextReview])
+  @@index([userId, repetition])
+  @@index([userId, updatedAt])
 }
 
 model GrammarCard {
@@ -79,4 +86,16 @@ model GrammarCard {
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  
+  @@index([userId, nextReview])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, token])
 }

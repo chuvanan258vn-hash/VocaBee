@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { getAuthenticatedUser } from '@/lib/user';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import ReviewSession from '@/components/ReviewSession';
@@ -9,9 +10,7 @@ export default async function ReviewPage() {
     const session = await auth();
     if (!session?.user?.email) redirect('/login');
 
-    const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
-    });
+    const user = await getAuthenticatedUser();
 
     if (!user) redirect('/login');
 
@@ -36,24 +35,29 @@ export default async function ReviewPage() {
         console.error("Error fetching test vocab count:", e);
     }
 
-    // Count words learned today
+    // Count words studied today (any review action)
     const learnedTodayCount = await prisma.vocabulary.count({
         where: {
             userId: user.id,
-            repetition: { gte: 1 },
-            updatedAt: { gte: todayStart }
-        }
+            updatedAt: { gte: todayStart },
+            // A word is considered "learned/studied" if it's not new or was updated today
+            OR: [
+                { repetition: { gte: 1 } },
+                { nextReview: { gt: now } } // Recently forgotten or scheduled for future
+            ]
+        } as any
     });
 
     const baseVocabGoal = (user as any).dailyNewWordGoal || 20;
     const canLearnMoreCount = Math.max(0, baseVocabGoal - learnedTodayCount);
 
     // 1. Lấy các từ ĐANG ÔN TẬP nhưng đến hạn (Priority 1)
+    // Bao gồm cả các từ bị quên (interval > 0, repetition = 0)
     // EXCLUDE deferred items from regular review flow
     const dueWords = await prisma.vocabulary.findMany({
         where: {
             userId: user.id,
-            repetition: { gte: 1 },
+            interval: { gt: 0 },
             nextReview: { lte: now },
             isDeferred: false
         } as any,
@@ -70,10 +74,11 @@ export default async function ReviewPage() {
                 userId: user.id,
                 repetition: 0,
                 source: "TEST",
-                importanceScore: { gte: 3 }
+                importanceScore: { gte: 3 },
+                nextReview: { lte: now } // Respect the 1-day delay if forgotten
             } as any,
             take: canLearnMoreCount,
-            orderBy: { createdAt: 'asc' }
+            orderBy: { createdAt: 'desc' }
         });
 
         const remainingNewCount = canLearnMoreCount - testNewWords.length;
@@ -85,10 +90,11 @@ export default async function ReviewPage() {
                     userId: user.id,
                     repetition: 0,
                     source: "COLLECTION",
-                    isDeferred: false
+                    isDeferred: false,
+                    nextReview: { lte: now } // Respect the 1-day delay if forgotten
                 } as any,
                 take: remainingNewCount,
-                orderBy: { createdAt: 'asc' }
+                orderBy: { createdAt: 'desc' }
             });
         }
 

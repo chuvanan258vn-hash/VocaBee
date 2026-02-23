@@ -77,6 +77,35 @@ export default function RegisterForm() {
                             />
                         </div>
                     </div>
+
+                    <div className="pt-4 space-y-4 border-t border-slate-100 dark:border-slate-700/50">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Bảo mật tài khoản</p>
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-slate-600 dark:text-slate-300 ml-1" htmlFor="securityQuestion">
+                                Câu hỏi bảo mật (Để khôi phục mật khẩu)
+                            </label>
+                            <input
+                                className="w-full p-4 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-green-400/20 focus:border-green-500 outline-none transition-all placeholder:text-slate-400"
+                                id="securityQuestion"
+                                name="securityQuestion"
+                                placeholder="v.d: Tên con vật đầu tiên của bạn?"
+                                required
+                                minLength={3}
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-bold text-slate-600 dark:text-slate-300 ml-1" htmlFor="securityAnswer">
+                                Câu trả lời
+                            </label>
+                            <input
+                                className="w-full p-4 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-green-400/20 focus:border-green-500 outline-none transition-all placeholder:text-slate-400"
+                                id="securityAnswer"
+                                name="securityAnswer"
+                                placeholder="Nhập câu trả lời..."
+                                required
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 <div className="pt-2 flex flex-col gap-4">

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { addWordAction } from '@/app/actions';
+import { useState, useEffect } from 'react';
+import { addWordAction, checkDuplicateWordAction } from '@/app/actions';
 import { useToast } from './ToastProvider';
-import { getWordTypeColor } from '@/lib/utils';
+import { getWordTypeColor, getWordTypeStyles, normalizeWordType } from '@/lib/utils';
+import { AlertCircle, Loader2, Trash2 } from 'lucide-react';
 
 export default function AddWordForm() {
   const { showToast } = useToast();
@@ -15,14 +16,40 @@ export default function AddWordForm() {
   const [synonyms, setSynonyms] = useState('');
   const [example, setExample] = useState('');
 
-  // 2. ĐÂY LÀ CHỖ BẠN THIẾU: Khai báo trạng thái loading
+  // States for duplicate check
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+
+  // 2. Trạng thái loading
   const [loading, setLoading] = useState(false);
+
+  // Real-time duplicate check with debounce
+  useEffect(() => {
+    if (!term.trim()) {
+      setIsDuplicate(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsChecking(true);
+      const res = await checkDuplicateWordAction(term);
+      if (res && 'exists' in res) {
+        setIsDuplicate(!!res.exists);
+      }
+      setIsChecking(false);
+    }, 600); // 600ms debounce
+
+    return () => clearTimeout(timer);
+  }, [term]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true); // Bắt đầu xử lý
+    if (isDuplicate) {
+      showToast("Từ này đã có rồi, vui lòng kiểm tra lại! 🐝", "error");
+      return;
+    }
+    setLoading(true);
 
-    // Gom dữ liệu gửi đi
     const formData = {
       word: term,
       meaning: definition,
@@ -35,20 +62,19 @@ export default function AddWordForm() {
     const result = await addWordAction(formData);
 
     if (result?.error) {
-      // Thông báo nếu từ đã tồn tại hoặc lỗi khác
       showToast(result.error, "error");
     } else {
       showToast("Đã cất từ vào tổ ong thành công! 🐝", "success");
-      // Reset form sau khi lưu thành công
       setTerm('');
       setDefinition('');
       setWordType('');
       setPhonetic('');
       setSynonyms('');
       setExample('');
+      setIsDuplicate(false);
     }
 
-    setLoading(false); // Kết thúc xử lý
+    setLoading(false);
   };
 
   return (
@@ -67,37 +93,114 @@ export default function AddWordForm() {
       {/* Hàng 1: Từ vựng & Loại từ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Từ vựng</label>
-          <input
-            type="text"
-            placeholder="v.d: Persistence"
-            className="w-full p-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all placeholder:text-slate-400 text-sm font-semibold"
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            required
-          />
+          <div className="flex items-center justify-between ml-1">
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Từ vựng</label>
+            {isChecking && (
+              <div className="flex items-center gap-1 text-[10px] text-yellow-500 font-bold animate-pulse">
+                <Loader2 size={10} className="animate-spin" /> Đang kiểm tra...
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="v.d: Persistence"
+              className={`w-full p-3 bg-white dark:bg-slate-800/50 border ${isDuplicate ? 'border-rose-500 ring-4 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} text-slate-900 dark:text-white rounded-2xl focus:ring-4 ${isDuplicate ? 'focus:ring-rose-500/20 focus:border-rose-500' : 'focus:ring-yellow-400/20 focus:border-yellow-400'} outline-none transition-all placeholder:text-slate-400 text-sm font-semibold`}
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              required
+            />
+            {isDuplicate && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-rose-500 animate-pulse">
+                <AlertCircle size={20} />
+              </div>
+            )}
+          </div>
+          {isDuplicate && (
+            <div className="mt-2 p-2 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800/50 rounded-xl flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+              <AlertCircle size={14} className="text-rose-500 mt-0.5 shrink-0" />
+              <p className="text-[11px] font-bold text-rose-600 dark:text-rose-400">
+                Từ <span className="underline">"{term}"</span> đã có trong tổ ong rồi! 🐝 Bạn hãy kiểm tra lại nhé.
+              </p>
+            </div>
+          )}
         </div>
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Loại từ</label>
-          <input
-            type="text"
-            placeholder="n, v, adj..."
-            className="w-full p-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all placeholder:text-slate-400 text-sm"
-            value={wordType}
-            onChange={(e) => setWordType(e.target.value)}
-          />
-          <div className="flex flex-wrap gap-2 mt-2">
-            {['n', 'v', 'adj', 'adv', 'phrase', 'idiom'].map((type) => (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between ml-1">
+            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">Phân loại từ vựng</label>
+            {wordType && (
               <button
-                key={type}
                 type="button"
-                onClick={() => setWordType(type)}
-                className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all hover:scale-110 active:scale-95 ${wordType === type ? 'ring-2 ring-yellow-400 ring-offset-2 dark:ring-offset-slate-900 shadow-md' : 'opacity-70 hover:opacity-100'
-                  } ${getWordTypeColor(type)}`}
+                onClick={() => setWordType('')}
+                className="text-[10px] font-bold text-rose-500 hover:text-rose-600 transition-all flex items-center gap-1.5 group"
               >
-                {type}
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity">Xóa chọn</span>
+                <Trash2 size={12} className="group-hover:rotate-12 transition-transform" />
               </button>
-            ))}
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {[
+              { short: 'N', full: 'Noun' },
+              { short: 'V', full: 'Verb' },
+              { short: 'ADJ', full: 'Adjective' },
+              { short: 'ADV', full: 'Adverb' },
+              { short: 'PHR', full: 'Phrase' },
+              { short: 'IDM', full: 'Idiom' }
+            ].map((type) => {
+              const styles = getWordTypeStyles(type.short);
+              return (
+                <button
+                  key={type.short}
+                  type="button"
+                  onClick={() => setWordType(type.full)}
+                  className={`relative py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300 hover:scale-110 active:scale-95 overflow-hidden group/btn ${wordType === type.full
+                    ? `${styles.bg} shadow-lg shadow-current/30 ring-2 ${styles.ring}/30`
+                    : 'bg-slate-100 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-white/5 border border-transparent hover:border-slate-200 dark:hover:border-slate-600'
+                    }`}
+                >
+                  <div className={`absolute inset-0 opacity-0 group-hover/btn:opacity-10 transition-opacity bg-current`} />
+                  <span className="relative z-10">{type.short}</span>
+                  {wordType === type.full && (
+                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Type Display Badge */}
+          <div className={`relative h-16 rounded-2xl transition-all duration-500 flex items-center justify-center overflow-hidden border-2 shadow-sm ${wordType
+            ? `${getWordTypeStyles(wordType).border} shadow-lg`
+            : 'border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40'
+            }`}>
+            {wordType && (
+              <>
+                <div className={`absolute inset-0 opacity-20 dark:opacity-40 ${getWordTypeColor(wordType)}`} />
+                <div className={`absolute inset-0 border-2 rounded-2xl opacity-10 dark:opacity-20 ${getWordTypeStyles(wordType).border}`} style={{ backgroundColor: 'transparent' }} />
+              </>
+            )}
+
+            <div className="relative z-10 flex items-center gap-5">
+              {wordType ? (
+                <>
+                  <div className={`h-2 w-2 rounded-full animate-pulse ${getWordTypeColor(wordType)} shadow-[0_0_10px_currentColor]`} />
+                  <span className={`text-sm font-black uppercase tracking-[0.25em] drop-shadow-sm ${wordType ? 'text-slate-900 dark:text-white' : 'text-slate-400'
+                    }`}>
+                    {normalizeWordType(wordType)}
+                  </span>
+                  <div className={`h-2 w-2 rounded-full animate-pulse ${getWordTypeColor(wordType)} shadow-[0_0_10px_currentColor]`} />
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px] font-bold text-slate-400 dark:text-slate-600 italic tracking-[0.1em]">
+                    Vui lòng chọn phân loại từ
+                  </span>
+                  <span className="animate-bounce-slow">🐝</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -152,8 +255,8 @@ export default function AddWordForm() {
       {/* Nút lưu */}
       <button
         type="submit"
-        disabled={loading}
-        className={`w-full py-4 rounded-2xl font-black text-lg transition-all shadow-xl flex items-center justify-center gap-2 ${loading ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed text-slate-500' : 'bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white shadow-yellow-500/20 scale-100 hover:scale-[1.02] active:scale-[0.98]'
+        disabled={loading || isDuplicate}
+        className={`w-full py-4 rounded-2xl font-black text-lg transition-all shadow-xl flex items-center justify-center gap-2 ${loading || isDuplicate ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed text-slate-500' : 'bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white shadow-yellow-500/20 scale-100 hover:scale-[1.02] active:scale-[0.98]'
           }`}
       >
         {loading ? (
@@ -161,7 +264,7 @@ export default function AddWordForm() {
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ĐANG CẤT VÀO TỔ...
           </>
-        ) : 'LƯU VÀO TỔ ONG 🐝'}
+        ) : isDuplicate ? 'TỪ ĐÃ TỒN TẠI' : 'LƯU VÀO TỔ ONG 🐝'}
       </button>
     </form>
   );

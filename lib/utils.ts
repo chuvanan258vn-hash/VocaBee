@@ -1,49 +1,54 @@
 /**
- * Returns Tailwind CSS classes for labels based on the word type.
- * Supports common abbreviations in both English and Vietnamese.
+ * Normalizes messy word types from the database into a standard set of categories.
  */
-export function getWordTypeColor(wordType: string | null | undefined): string {
-    if (!wordType) return "bg-slate-500 text-white";
-
+export function normalizeWordType(wordType: string | null | undefined): string {
+    if (!wordType) return "Khác";
     const type = wordType.toLowerCase().trim();
 
-    // Noun / Danh từ
-    if (["n", "noun", "danh từ", "dt", "n."].includes(type)) {
-        return "bg-blue-500 text-white";
-    }
+    // Stricter checks for single letter labels to avoid substrings in "phrase", "verb", etc.
+    const isNoun = ["noun", "danh từ", "dt", "n.", "danh từ/cụm từ", "danh từ/tính từ"].some(t => type.includes(t)) || type === "n";
+    const isVerb = ["verb", "động từ", "đt", "v.", "cụm động từ"].some(t => type.includes(t)) || type === "v";
+    const isAdj = ["adj", "tính từ", "tt", "adj.", "adjective"].some(t => type.includes(t)) || type === "a";
+    const isAdv = ["adv", "trạng từ", "tr", "adv.", "adverb", "phó từ"].some(t => type.includes(t));
+    const isPhrase = ["phr", "phrase", "cụm từ", "phr.", "cụm"].some(t => type.includes(t));
+    const isIdiom = ["idiom", "thành ngữ", "idm"].some(t => type.includes(t));
+    const isPrep = ["prep", "giới từ", "pre"].some(t => type.includes(t));
 
-    // Verb / Động từ
-    if (["v", "verb", "động từ", "đt", "v."].includes(type)) {
-        return "bg-emerald-500 text-white";
-    }
+    // Order matters: More specific types first
+    if (isPhrase) return "Cụm từ";
+    if (isIdiom) return "Thành ngữ";
+    if (isNoun) return "Danh từ";
+    if (isVerb) return "Động từ";
+    if (isAdj) return "Tính từ";
+    if (isAdv) return "Trạng từ";
+    if (isPrep) return "Giới từ";
 
-    // Adjective / Tính từ
-    if (["adj", "a", "tính từ", "tt", "adj."].includes(type)) {
-        return "bg-rose-500 text-white";
-    }
+    return "Khác";
+}
 
-    // Adverb / Trạng từ
-    if (["adv", "trạng từ", "tr", "adv."].includes(type)) {
-        return "bg-amber-500 text-white";
-    }
+/**
+ * Returns Tailwind CSS classes for labels based on the word type.
+ */
+export function getWordTypeColor(wordType: string | null | undefined): string {
+    return getWordTypeStyles(wordType).bg;
+}
 
-    // Phrase / Cụm từ
-    if (type.includes("cụm") || type.includes("phrase") || ["phr", "phr."].includes(type)) {
-        return "bg-indigo-500 text-white";
-    }
+/**
+ * Returns an object with specific Tailwind color classes for the word type.
+ */
+export function getWordTypeStyles(wordType: string | null | undefined) {
+    const normalized = normalizeWordType(wordType);
 
-    // Idiom / Thành ngữ
-    if (["idiom", "thành ngữ", "idm", "idm."].includes(type)) {
-        return "bg-purple-500 text-white";
+    switch (normalized) {
+        case "Danh từ": return { bg: "bg-blue-600", border: "border-blue-600", text: "text-blue-600", ring: "ring-blue-600" };
+        case "Động từ": return { bg: "bg-emerald-600", border: "border-emerald-600", text: "text-emerald-600", ring: "ring-emerald-600" };
+        case "Tính từ": return { bg: "bg-rose-600", border: "border-rose-600", text: "text-rose-600", ring: "ring-rose-600" };
+        case "Trạng từ": return { bg: "bg-amber-600", border: "border-amber-600", text: "text-amber-600", ring: "ring-amber-600" };
+        case "Cụm từ": return { bg: "bg-indigo-600", border: "border-indigo-600", text: "text-indigo-600", ring: "ring-indigo-600" };
+        case "Thành ngữ": return { bg: "bg-purple-600", border: "border-purple-600", text: "text-purple-600", ring: "ring-purple-600" };
+        case "Giới từ": return { bg: "bg-cyan-600", border: "border-cyan-600", text: "text-cyan-600", ring: "ring-cyan-600" };
+        default: return { bg: "bg-slate-600", border: "border-slate-600", text: "text-slate-600", ring: "ring-slate-600" };
     }
-
-    // Preposition / Giới từ
-    if (["prep", "giới từ", "pre", "prep."].includes(type)) {
-        return "bg-cyan-500 text-white";
-    }
-
-    // Default
-    return "bg-slate-500 text-white";
 }
 
 /**

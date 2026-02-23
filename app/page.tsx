@@ -11,6 +11,8 @@ import Link from 'next/link';
 import AccentSelector from '@/components/AccentSelector';
 import { getDashboardStats } from './actions';
 import SmartCaptureTrigger from '@/components/SmartCaptureTrigger';
+import SeedButton from '@/components/SeedButton';
+import { getAuthenticatedUser } from '@/lib/user';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,37 +24,41 @@ export default async function Home() {
     redirect('/login');
   }
 
-  const user = await prisma.user.findUnique({ where: { email: session.user?.email || "" } });
+  // const user = await prisma.user.findUnique({ where: { email: session.user?.email || "" } });
+  const user = await getAuthenticatedUser();
+
   const stats = await getDashboardStats();
 
-  // Lấy các từ đến hạn ôn tập (Trước 4:00 sáng mai)
+  // Lấy các từ đến hạn ôn tập (Thời điểm hiện tại)
   const now = new Date();
-  now.setHours(23, 59, 59, 999);
 
   let dueReviewsCount = 0;
   let hasNewWords = false;
   let allWords: any[] = [];
   if (user) {
-    // 1. Lấy các từ ĐANG ÔN TẬP thực sự (đã học qua ít nhất 1 lần)
+    // 1. Lấy các từ ĐANG ÔN TẬP thực sự (đã học qua ít nhất 1 lần, kể cả đang bị quên)
     dueReviewsCount = await prisma.vocabulary.count({
       where: {
         userId: user.id,
-        repetition: { gte: 1 },
-        nextReview: { lte: now }
-      }
+        interval: { gt: 0 },
+        nextReview: { lte: now },
+        isDeferred: false
+      } as any
     });
 
-    // 2. Kiểm tra xem còn từ MỚI nào trong kho không
+    // 2. Kiểm tra xem còn từ MỚI thực sự nào trong kho không (chưa từng học bao giờ)
     hasNewWords = await prisma.vocabulary.count({
       where: {
         userId: user.id,
-        repetition: 0
-      }
+        interval: 0,
+        nextReview: { lte: now }
+      } as any
     }) > 0;
 
     allWords = await prisma.vocabulary.findMany({
       where: { userId: user.id },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      take: 20
     });
   }
 
@@ -111,9 +117,15 @@ export default async function Home() {
         )}
       </div>
 
+      {allWords.length === 0 && <SeedButton />}
+
       <AddWordForm />
 
-      <WordList initialWords={allWords} />
+      <WordList
+        initialWords={allWords}
+        totalWords={stats?.totalWords || 0}
+        availableWordTypes={stats?.allWordTypes || []}
+      />
     </main>
   );
 }

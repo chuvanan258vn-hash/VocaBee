@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { reviewWordAction } from '@/app/actions';
 import { useToast } from './ToastProvider';
-import { getWordTypeColor, speak } from '@/lib/utils';
+import { getWordTypeColor, speak, normalizeWordType } from '@/lib/utils';
 
 interface FlashcardProps {
     word: {
@@ -31,6 +31,20 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
             setIsAnimating(true);
         }
     };
+
+    // Auto-pronunciation on Appear (Front)
+    useEffect(() => {
+        // Only trigger if word exists
+        if (!word.word) return;
+
+        const autoPlaySetting = localStorage.getItem("vocabee-autoplay");
+        // Default to true if not set, otherwise check if explicitly "true"
+        const autoPlay = autoPlaySetting === null || autoPlaySetting === "true";
+
+        if (autoPlay) {
+            speak(word.word);
+        }
+    }, [word.id]); // Only trigger when the word ID changes (initial appearance)
 
     const handleReview = async (quality: number) => {
         const result = await reviewWordAction(word.id, quality);
@@ -157,8 +171,8 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
                             <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2">
                                 <h3 className="text-2xl sm:text-3xl font-black text-yellow-400">{word.word}</h3>
                                 {word.wordType && (
-                                    <span className={`px-2 py-0.5 ${getWordTypeColor(word.wordType)} text-[8px] sm:text-[10px] font-black rounded-lg uppercase`}>
-                                        {word.wordType}
+                                    <span className={`px-2 py-0.5 ${getWordTypeColor(word.wordType)} text-white text-[8px] sm:text-[10px] font-black rounded-lg uppercase tracking-wider shadow-sm`}>
+                                        {normalizeWordType(word.wordType)}
                                     </span>
                                 )}
                             </div>

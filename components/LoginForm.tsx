@@ -79,6 +79,11 @@ export default function LoginForm() {
                         <p className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-1 rounded-full border border-red-200 dark:border-red-500/20">{errorMessage}</p>
                     )}
                 </div>
+                <div className="flex justify-end">
+                    <a href="/forgot-password" className="text-xs font-bold text-yellow-600 dark:text-yellow-500 hover:text-yellow-700 dark:hover:text-yellow-400 transition-colors">
+                        Quên mật khẩu?
+                    </a>
+                </div>
             </div>
         </form>
     );
