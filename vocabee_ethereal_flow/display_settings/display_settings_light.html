@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VocaBee - Display Settings</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f9cb15",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#231f0f",
+                    },
+                    fontFamily: {
+                        "display": ["Lexend", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light text-slate-900 font-display">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Header -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-4 text-slate-900">
+<div class="size-8 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined !text-[32px] fill-1">hive</span>
+</div>
+<h2 class="text-slate-900 text-lg font-bold leading-tight tracking-[-0.015em]">VocaBee</h2>
+</div>
+<div class="flex flex-1 justify-end gap-8 items-center">
+<nav class="hidden md:flex items-center gap-9">
+<a class="text-slate-600 hover:text-primary transition-colors text-sm font-medium leading-normal" href="#">Lessons</a>
+<a class="text-slate-600 hover:text-primary transition-colors text-sm font-medium leading-normal" href="#">Practice</a>
+<a class="text-slate-600 hover:text-primary transition-colors text-sm font-medium leading-normal" href="#">Community</a>
+<a class="text-slate-900 text-sm font-bold leading-normal relative after:content-[''] after:absolute after:-bottom-6 after:left-0 after:w-full after:h-0.5 after:bg-primary" href="#">Profile</a>
+<a class="text-slate-600 hover:text-primary transition-colors text-sm font-medium leading-normal" href="#">Settings</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-6 bg-primary hover:bg-yellow-400 transition-colors text-slate-900 text-sm font-bold leading-normal tracking-[0.015em] shadow-sm shadow-yellow-200">
+<span class="truncate">Go Premium</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 ring-2 ring-slate-100" data-alt="User profile avatar showing a smiling woman" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAze4snBJerr4RR8qshnay36InJs4BQbBhzKOqrWBYKloHFFHESI0PcR_x4Wmg5psei44KXn37l_x8CduZxk_kgGC0o7AfzQHRerG_bfU63fK86u4cukyHnGpYGI1h-BS0rrkMOjY5Ln1hq9iUnLZ5v0AirlbRki9SwAr4kTkPo3PZ531WnHVwSVsKzz-rpgX2Ir1VuyWvkt5ffbJZ60ZrynGMeM58U11oR0W3Ft7n1cMN4i54ncJA0McDKTC5gWhDGQZO_66TI2PI");'></div>
+</div>
+</div>
+</header>
+<main class="layout-container flex h-full grow flex-col bg-background-light">
+<div class="px-6 md:px-40 flex flex-1 justify-center py-10">
+<div class="layout-content-container flex flex-col max-w-[960px] flex-1">
+<!-- Title Section -->
+<div class="flex flex-wrap justify-between gap-3 p-4 mb-4">
+<div class="flex min-w-72 flex-col gap-2">
+<h1 class="text-slate-900 text-4xl font-black leading-tight tracking-[-0.033em]">Display Settings</h1>
+<p class="text-slate-500 text-base font-normal leading-normal">Customize your viewing experience for better learning.</p>
+</div>
+</div>
+<!-- Interface Theme Section -->
+<section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-8">
+<h3 class="text-slate-900 tracking-light text-xl font-bold leading-tight pb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">palette</span>
+                            Interface Theme
+                        </h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Light Option -->
+<div class="group cursor-pointer relative">
+<div class="bg-slate-50 border-2 border-primary rounded-xl overflow-hidden aspect-video shadow-md relative">
+<div class="absolute inset-x-0 top-0 h-4 bg-slate-200"></div>
+<div class="p-4 space-y-2">
+<div class="h-2 w-3/4 bg-slate-200 rounded"></div>
+<div class="h-2 w-1/2 bg-slate-200 rounded"></div>
+<div class="h-16 w-full bg-white rounded border border-slate-100 mt-4"></div>
+</div>
+<div class="absolute bottom-3 right-3 text-primary">
+<span class="material-symbols-outlined filled">check_circle</span>
+</div>
+</div>
+<p class="text-slate-900 text-center font-bold mt-3">Light</p>
+</div>
+<!-- Dark Option -->
+<div class="group cursor-pointer relative">
+<div class="bg-slate-800 border-2 border-transparent hover:border-slate-300 transition-colors rounded-xl overflow-hidden aspect-video relative">
+<div class="absolute inset-x-0 top-0 h-4 bg-slate-900"></div>
+<div class="p-4 space-y-2">
+<div class="h-2 w-3/4 bg-slate-700 rounded"></div>
+<div class="h-2 w-1/2 bg-slate-700 rounded"></div>
+<div class="h-16 w-full bg-slate-700/50 rounded border border-slate-700 mt-4"></div>
+</div>
+</div>
+<p class="text-slate-600 text-center font-medium mt-3 group-hover:text-slate-900">Dark</p>
+</div>
+<!-- Auto Option -->
+<div class="group cursor-pointer relative">
+<div class="bg-gradient-to-br from-slate-50 via-slate-200 to-slate-800 border-2 border-transparent hover:border-slate-300 transition-colors rounded-xl overflow-hidden aspect-video relative flex items-center justify-center">
+<span class="material-symbols-outlined text-4xl text-slate-400">brightness_auto</span>
+</div>
+<p class="text-slate-600 text-center font-medium mt-3 group-hover:text-slate-900">Auto</p>
+</div>
+</div>
+</section>
+<!-- Text Customization Section -->
+<section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 mb-8">
+<h3 class="text-slate-900 tracking-light text-xl font-bold leading-tight pb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">text_fields</span>
+                            Text Customization
+                        </h3>
+<div class="flex flex-col gap-8">
+<!-- Font Size Slider -->
+<div class="flex flex-col gap-4">
+<div class="flex justify-between items-center">
+<label class="text-slate-700 font-semibold text-base">Font Size</label>
+<span class="text-slate-500 text-sm bg-slate-100 px-2 py-1 rounded">Medium (100%)</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-sm font-medium text-slate-400">Aa</span>
+<div class="relative w-full h-2 bg-slate-100 rounded-full">
+<div class="absolute top-0 left-0 h-full w-1/2 bg-primary rounded-full"></div>
+<div class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-white border-2 border-primary rounded-full shadow cursor-pointer hover:scale-110 transition-transform"></div>
+</div>
+<span class="text-xl font-bold text-slate-900">Aa</span>
+</div>
+</div>
+<hr class="border-slate-100"/>
+<!-- Glow Effects Toggle -->
+<div class="flex items-center justify-between">
+<div class="flex gap-4">
+<div class="p-2 bg-yellow-50 rounded-lg text-primary h-fit">
+<span class="material-symbols-outlined">lightbulb</span>
+</div>
+<div class="flex flex-col">
+<span class="text-slate-900 font-semibold text-base">Glow Effects</span>
+<span class="text-slate-500 text-sm">Enhance visual feedback during lessons</span>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-100 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Accessibility Section -->
+<section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+<h3 class="text-slate-900 tracking-light text-xl font-bold leading-tight pb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">accessibility_new</span>
+                            Accessibility
+                        </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<button class="flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-primary hover:bg-yellow-50/30 transition-all group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary">contrast</span>
+<span class="text-slate-700 font-medium group-hover:text-slate-900">High Contrast Mode</span>
+</div>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-primary">toggle_off</span>
+</button>
+<button class="flex items-center justify-between p-4 rounded-xl border border-slate-200 hover:border-primary hover:bg-yellow-50/30 transition-all group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary">motion_photos_off</span>
+<span class="text-slate-700 font-medium group-hover:text-slate-900">Reduce Motion</span>
+</div>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-primary">toggle_off</span>
+</button>
+</div>
+</section>
+<!-- Save Actions -->
+<div class="flex justify-end gap-4 mt-8">
+<button class="px-6 py-3 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition-colors">
+                            Reset to Default
+                        </button>
+<button class="px-8 py-3 rounded-xl bg-primary text-slate-900 font-bold shadow-md shadow-yellow-200 hover:bg-yellow-400 hover:shadow-lg hover:shadow-yellow-200 transition-all transform active:scale-95">
+                            Save Changes
+                        </button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

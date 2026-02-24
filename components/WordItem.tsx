@@ -47,19 +47,19 @@ export default function WordItem({ item }: { item: any }) {
 
     if (isEditing) {
         return (
-            <div className="p-8 bg-white/80 dark:bg-slate-900/50 backdrop-blur-2xl shadow-2xl rounded-3xl border border-yellow-400/30 transition-all space-y-6 animate-in fade-in zoom-in duration-300">
+            <div className="p-8 glass-panel shadow-[var(--shadow-glass)] rounded-3xl transition-all space-y-6 animate-in fade-in zoom-in duration-300">
                 <div className="flex items-center gap-3 mb-2">
-                    <div className="h-8 w-8 bg-yellow-400 rounded-lg flex items-center justify-center shadow-lg shadow-yellow-500/20">
-                        <Edit2 size={16} className="text-white" />
+                    <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+                        <Edit2 size={16} className="text-slate-900" />
                     </div>
-                    <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Chỉnh sửa từ vựng</h2>
+                    <h2 className="text-xl font-black text-foreground tracking-tight">Chỉnh sửa từ vựng</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Từ vựng</label>
                         <input
-                            className="w-full p-3 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all font-bold"
+                            className="input-premium w-full p-3 text-foreground font-bold"
                             placeholder="Từ vựng"
                             value={editData.word}
                             onChange={(e) => setEditData({ ...editData, word: e.target.value })}
@@ -120,7 +120,7 @@ export default function WordItem({ item }: { item: any }) {
                             {editData.wordType && (
                                 <>
                                     <div className={`absolute inset-0 opacity-20 dark:opacity-40 ${getWordTypeColor(editData.wordType)}`} />
-                                    <div className={`absolute inset-0 border-2 rounded-2xl opacity-10 dark:opacity-20 ${getWordTypeStyles(editData.wordType).border}`} style={{ backgroundColor: "transparent" }} />
+                                    <div className={`absolute inset-0 border-2 rounded-2xl opacity-10 dark:opacity-20 ${getWordTypeStyles(editData.wordType).border}`} />
                                 </>
                             )}
 
@@ -148,7 +148,7 @@ export default function WordItem({ item }: { item: any }) {
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Phiên âm</label>
                         <input
-                            className="w-full p-3 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all"
+                            className="input-premium w-full p-3 text-foreground"
                             placeholder="Phiên âm (/.../)"
                             value={editData.pronunciation}
                             onChange={(e) => setEditData({ ...editData, pronunciation: e.target.value })}
@@ -157,7 +157,7 @@ export default function WordItem({ item }: { item: any }) {
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Từ đồng nghĩa</label>
                         <input
-                            className="w-full p-3 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all"
+                            className="input-premium w-full p-3 text-foreground"
                             placeholder="Từ đồng nghĩa"
                             value={editData.synonyms}
                             onChange={(e) => setEditData({ ...editData, synonyms: e.target.value })}
@@ -168,7 +168,7 @@ export default function WordItem({ item }: { item: any }) {
                 <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Nghĩa tiếng Việt</label>
                     <input
-                        className="w-full p-3 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all font-medium"
+                        className="input-premium w-full p-3 text-foreground font-medium"
                         placeholder="Nghĩa tiếng Việt"
                         value={editData.meaning}
                         onChange={(e) => setEditData({ ...editData, meaning: e.target.value })}
@@ -178,7 +178,7 @@ export default function WordItem({ item }: { item: any }) {
                 <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Ví dụ minh họa</label>
                     <textarea
-                        className="w-full p-4 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all h-24 resize-none italic"
+                        className="input-premium w-full p-4 text-foreground h-24 resize-none italic"
                         placeholder="Ví dụ minh họa"
                         value={editData.example}
                         onChange={(e) => setEditData({ ...editData, example: e.target.value })}
@@ -195,7 +195,7 @@ export default function WordItem({ item }: { item: any }) {
                     </button>
                     <button
                         onClick={handleUpdate}
-                        className="px-8 py-3 rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-white hover:from-yellow-500 hover:to-yellow-600 transition-all flex items-center gap-2 font-black shadow-lg shadow-yellow-500/20 scale-100 hover:scale-[1.03] active:scale-[0.97]"
+                        className="px-8 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 hover:from-amber-500 hover:to-amber-600 transition-all flex items-center gap-2 font-black shadow-[var(--shadow-glow-primary)] scale-100 hover:scale-[1.03] active:scale-[0.97]"
                         disabled={loading}
                     >
                         {loading ? <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check size={20} />}
@@ -207,110 +207,89 @@ export default function WordItem({ item }: { item: any }) {
     }
 
     return (
-        <div className="group relative p-4 sm:p-5 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 rounded-[1.5rem] transition-all duration-300 hover:shadow-xl hover:shadow-yellow-500/5 hover:border-yellow-400/40">
-            {/* Background Decoration - Smaller */}
-            <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-                <span className="text-5xl font-black select-none italic text-slate-400 dark:text-slate-500">
+        <div className="glass-panel rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 relative group hover:border-primary/40 hover:shadow-[0_0_20px_rgba(245,158,11,0.1)] transition-all duration-300">
+            {/* Background Decoration from screen2.html */}
+            <div className="absolute top-0 right-0 p-5 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+                <span className="text-7xl font-black select-none italic text-slate-400 dark:text-slate-500">
                     {normalizeWordType(item.wordType).charAt(0)}
                 </span>
             </div>
 
-            <div className="relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-                {/* Word & Main Info Section */}
-                <div className="flex-1 min-w-0 space-y-3">
-                    {/* Header: Word & Meaning */}
-                    <div className="space-y-0.5">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight group-hover:text-yellow-500 transition-colors drop-shadow-sm truncate max-w-[200px] sm:max-w-none">
-                                {item.word}
-                            </h3>
-                            {item.wordType && (
-                                <span className={`px-2 py-0.5 ${getWordTypeColor(item.wordType)} text-[9px] font-black rounded-full shadow-md shadow-current/5 uppercase tracking-wider h-fit`}>
-                                    {normalizeWordType(item.wordType)}
-                                </span>
-                            )}
-                        </div>
-                        {item.pronunciation && (
-                            <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 font-medium font-mono text-[13px]">
-                                <span className="opacity-40">/</span>
-                                {item.pronunciation.replace(/^\/|\/$/g, '')}
-                                <span className="opacity-40">/</span>
-                            </div>
-                        )}
-                    </div>
+            <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                    <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-primary transition-colors">
+                        {item.word}
+                    </h3>
+                    {item.wordType && (
+                        <span className={`bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide`}>
+                            {normalizeWordType(item.wordType)}
+                        </span>
+                    )}
+                </div>
 
-                    {/* Meaning: More compact */}
-                    <p className="text-base sm:text-lg font-bold text-slate-700 dark:text-slate-200 leading-snug">
+                {item.pronunciation && (
+                    <div className="flex items-center text-slate-500 font-mono text-sm gap-2">
+                        <span>/</span>
+                        <span className="text-slate-400">{item.pronunciation.replace(/^\/|\/$/g, '')}</span>
+                        <span>/</span>
+                    </div>
+                )}
+
+                <div className="space-y-2">
+                    <h4 className="text-xl font-bold text-slate-700 dark:text-slate-200">
                         {item.meaning}
-                    </p>
-
-                    {/* Extra Details: Synonyms & Example - Integrated */}
-                    <div className="flex flex-col gap-2.5">
-                        {item.synonyms && (
-                            <div className="flex flex-wrap items-center gap-1.5">
-                                {item.synonyms.split(',').slice(0, 3).map((s: string, idx: number) => (
-                                    <span key={idx} className="px-2 py-1 bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 text-[11px] font-bold rounded-lg border border-slate-100 dark:border-slate-800/50">
-                                        {s.trim()}
-                                    </span>
-                                ))}
-                                {item.synonyms.split(',').length > 3 && <span className="text-[10px] text-slate-400">...</span>}
-                            </div>
-                        )}
-
-                        {item.example && (
-                            <div className="relative pl-3 border-l-2 border-yellow-400/20 py-0.5 transition-all group-hover:border-yellow-400/40">
-                                <p className="text-[13px] italic text-slate-500 dark:text-slate-400 font-medium leading-relaxed line-clamp-2">
-                                    "{item.example}"
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                    </h4>
+                    {item.example && (
+                        <div className="flex items-start gap-2 text-slate-400 italic">
+                            <span className="w-1 h-full min-h-[1.2rem] bg-orange-500/50 rounded-full block mt-1"></span>
+                            <p>"{item.example}"</p>
+                        </div>
+                    )}
                 </div>
 
-                {/* Actions Section: Vertically integrated and smaller */}
-                <div className="flex flex-row sm:flex-col items-center gap-1.5 sm:pl-5 sm:border-l border-slate-100 dark:border-slate-800/40">
-                    <div className="flex sm:flex-col gap-1.5">
-                        <button
-                            onClick={() => speak(item.word)}
-                            className="p-2 sm:p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-400 hover:bg-blue-500 hover:text-white transition-all duration-200 active:scale-90"
-                            title="Phát âm"
-                        >
-                            <Volume2 size={20} />
-                        </button>
-                        <button
-                            onClick={() => setIsStarred(!isStarred)}
-                            className={`p-2 sm:p-2.5 rounded-xl transition-all duration-200 active:scale-90 ${isStarred
-                                ? 'bg-yellow-400 text-white shadow-lg shadow-yellow-500/20'
-                                : 'bg-slate-50 dark:bg-slate-800/50 text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'}`}
-                        >
-                            <Star size={20} fill={isStarred ? "currentColor" : "none"} />
-                        </button>
+                {item.synonyms && (
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                        {item.synonyms.split(',').map((s: string, idx: number) => (
+                            <span key={idx} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 text-[10px] font-bold rounded-lg border border-slate-200 dark:border-slate-700">
+                                {s.trim()}
+                            </span>
+                        ))}
                     </div>
-
-                    <div className="w-[1px] h-5 sm:w-6 sm:h-[1px] bg-slate-100 dark:bg-slate-800/80 mx-1 sm:my-1" />
-
-                    <div className="flex sm:flex-col gap-1.5 opacity-40 group-hover:opacity-100 transition-opacity">
-                        <button
-                            onClick={() => setIsEditing(true)}
-                            className="p-2 rounded-lg text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-500 transition-all"
-                            title="Sửa"
-                        >
-                            <Edit2 size={16} />
-                        </button>
-                        <button
-                            onClick={handleDelete}
-                            className="p-2 rounded-lg text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 transition-all"
-                            title="Xóa"
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
-                </div>
+                )}
             </div>
 
-            {/* Subtle highlight on hover */}
-            <div className="absolute bottom-3 right-5 pointer-events-none">
-                <span className="text-[10px] font-black text-yellow-500/0 group-hover:text-yellow-500/40 transition-all duration-500 uppercase tracking-widest">Bee 🐝</span>
+            {/* Actions Section from screen2.html layout */}
+            <div className="flex md:flex-col items-center justify-end gap-2 md:border-l border-slate-200 dark:border-slate-700 md:pl-6">
+                <button
+                    onClick={() => speak(item.word)}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                    title="Nghe"
+                >
+                    <Volume2 size={20} />
+                </button>
+                <button
+                    onClick={() => setIsStarred(!isStarred)}
+                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${isStarred
+                        ? 'bg-primary/20 text-primary'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-primary'}`}
+                    title={isStarred ? "Bỏ yêu thích" : "Yêu thích"}
+                >
+                    <Star size={20} fill={isStarred ? "currentColor" : "none"} />
+                </button>
+                <button
+                    onClick={() => setIsEditing(true)}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-primary/10 text-slate-400 hover:text-primary transition-colors"
+                    title="Sửa"
+                >
+                    <Edit2 size={20} />
+                </button>
+                <button
+                    onClick={handleDelete}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-colors"
+                    title="Xóa"
+                >
+                    <Trash2 size={20} />
+                </button>
             </div>
         </div>
     );

@@ -1174,3 +1174,100 @@ export async function checkDuplicateWordAction(word: string) {
     return { error: "Lỗi kiểm tra từ trùng." };
   }
 }
+
+export async function getDetailedStatsAction() {
+  const userBase = await getAuthenticatedUser();
+  if (!userBase) return null;
+
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  try {
+    // 1. Mastery Stats
+    const vocabMastery = await prisma.vocabulary.groupBy({
+      by: ['interval'],
+      where: { userId: userBase.id },
+      _count: true
+    });
+
+    const grammarMastery = await prisma.grammarCard.groupBy({
+      by: ['interval'],
+      where: { userId: userBase.id },
+      _count: true
+    });
+
+    let mastered = 0;
+    let learning = 0;
+    let newItems = 0;
+
+    [...vocabMastery, ...grammarMastery].forEach(item => {
+      if (item.interval >= 21) mastered += item._count;
+      else if (item.interval > 0) learning += item._count;
+      else newItems += item._count;
+    });
+
+    // 2. Activity Heatmap (Last 365 days)
+    const oneYearAgo = new Date(now);
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    oneYearAgo.setHours(0, 0, 0, 0);
+
+    // SQLite raw query to group by day
+    const heatmapData: any[] = await prisma.$queryRawUnsafe(`
+      SELECT date, COUNT(*) as count FROM (
+        SELECT strftime('%Y-%m-%d', updatedAt) as date FROM Vocabulary WHERE userId = ? AND updatedAt >= ?
+        UNION ALL
+        SELECT strftime('%Y-%m-%d', updatedAt) as date FROM GrammarCard WHERE userId = ? AND updatedAt >= ?
+      ) GROUP BY date ORDER BY date ASC
+    `, userBase.id, oneYearAgo.toISOString(), userBase.id, oneYearAgo.toISOString());
+
+    // 3. Retention Rate (Mocked or % of EF > 2.0)
+    const stableItems = mastered + learning;
+    const totalItems = mastered + learning + newItems;
+    const retentionRate = totalItems > 0 ? Math.round(((mastered + (learning * 0.7)) / totalItems) * 100) : 0;
+
+    // 4. Time Spent (Estimated: 1 min per 5 items studied today)
+    const todayStart = new Date(now);
+    if (now.getHours() < 4) todayStart.setDate(todayStart.getDate() - 1);
+    todayStart.setHours(4, 0, 0, 0);
+
+    const studiedToday = await prisma.vocabulary.count({
+      where: { userId: userBase.id, updatedAt: { gte: todayStart } }
+    }) + await prisma.grammarCard.count({
+      where: { userId: userBase.id, updatedAt: { gte: todayStart } }
+    });
+
+    const estimatedMinutes = Math.round(studiedToday * 0.5); // 30 seconds per card
+
+    return {
+      mastery: { mastered, learning, newItems, total: totalItems },
+      heatmap: heatmapData,
+      retentionRate,
+      timeSpentToday: estimatedMinutes,
+      studiedToday
+    };
+  } catch (error) {
+    console.error("Error fetching detailed stats:", error);
+    return null;
+  }
+}
+
+export async function getLeaderboardAction() {
+  try {
+    const users = await prisma.user.findMany({
+      orderBy: { points: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        points: true,
+        streakCount: true
+      },
+      take: 50 // Get top 50 users
+    });
+
+    return { success: true, users };
+  } catch (error) {
+    console.error("Error fetching leaderboard:", error);
+    return { error: "Lỗi khi lấy dữ liệu bảng xếp hạng." };
+  }
+}

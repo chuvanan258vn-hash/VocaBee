@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Trophy, Target, BookOpen, Flame, CheckCircle2, TrendingUp } from "lucide-react";
 
 interface DashboardProps {
     stats: {
@@ -20,104 +19,88 @@ export default function Dashboard({ stats }: DashboardProps) {
     const vocabPercentage = Math.min(Math.round((learnedToday / dailyGoal) * 100), 100);
 
     return (
-        <div className="w-full max-w-5xl space-y-6 mb-12 animate-in fade-in slide-in-from-top-4 duration-1000">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="w-full max-w-7xl space-y-6 animate-in fade-in slide-in-from-top-4 duration-1000">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                {/* Main Progress Card (8 cols) */}
-                <div className="lg:col-span-8 glass relative overflow-hidden p-6 sm:p-8 rounded-[2.5rem] border border-white/40 dark:border-white/10 shadow-2xl flex flex-col md:flex-row items-center gap-8 group">
-                    {/* Subtle Background Glow */}
-                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-yellow-400/10 blur-[100px] rounded-full group-hover:bg-yellow-400/20 transition-colors duration-700" />
-
-                    {/* Progress Circle container */}
-                    <div className="relative shrink-0 flex items-center justify-center w-40 h-40">
-                        <svg className="w-full h-full -rotate-90">
-                            <circle
-                                cx="80" cy="80" r="70"
-                                stroke="currentColor"
-                                strokeWidth="12"
-                                fill="transparent"
-                                className="text-slate-100 dark:text-slate-800/50"
-                            />
+                {/* Main Progress Card (2/3 cols) */}
+                <div className="lg:col-span-2 glass-panel rounded-3xl p-6 sm:p-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
+                    <div className="relative w-40 h-40 sm:w-48 sm:h-48 shrink-0 flex items-center justify-center">
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" fill="none" r="45" stroke="currentColor" strokeWidth="4" className="text-slate-200 dark:text-slate-700/50"></circle>
                             <motion.circle
-                                cx="80" cy="80" r="70"
-                                stroke="currentColor"
-                                strokeWidth="12"
-                                strokeDasharray={440}
-                                initial={{ strokeDashoffset: 440 }}
-                                animate={{ strokeDashoffset: 440 - (440 * vocabPercentage) / 100 }}
-                                transition={{ duration: 2, ease: "circOut" }}
+                                cx="50" cy="50" fill="none" r="45"
+                                stroke="url(#gradient-segment)"
+                                strokeWidth="4"
+                                strokeDasharray="283"
+                                initial={{ strokeDashoffset: 283 }}
+                                animate={{ strokeDashoffset: 283 - (283 * vocabPercentage) / 100 }}
+                                transition={{ duration: 1.5, ease: "circOut" }}
                                 strokeLinecap="round"
-                                fill="transparent"
-                                className="text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]"
+                                className="drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]"
                             />
+                            <defs>
+                                <linearGradient id="gradient-segment" x1="0%" x2="100%" y1="0%" y2="0%">
+                                    <stop offset="0%" stopColor="#FBBF24"></stop>
+                                    <stop offset="100%" stopColor="#F59E0B"></stop>
+                                </linearGradient>
+                            </defs>
                         </svg>
-
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-10">
                             {learnedToday >= dailyGoal ? (
                                 <motion.div
                                     initial={{ scale: 0.5, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     className="flex flex-col items-center"
                                 >
-                                    <CheckCircle2 className="text-yellow-500 mb-1" size={32} />
-                                    <span className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tighter">Hoàn thành</span>
+                                    <span className="material-symbols-outlined text-primary mb-1 text-[32px] text-shadow-gold">check_circle</span>
+                                    <span className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-tighter">Hoàn thành</span>
                                 </motion.div>
                             ) : (
                                 <>
-                                    <motion.span
-                                        initial={{ scale: 0.5, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        transition={{ delay: 0.5, duration: 0.5 }}
-                                        className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter"
-                                    >
-                                        {vocabPercentage}%
-                                    </motion.span>
-                                    <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mt-0.5">Mục tiêu</span>
+                                    <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tighter">
+                                        {vocabPercentage}<span className="text-2xl text-slate-400 font-medium">%</span>
+                                    </span>
+                                    <span className="text-[10px] text-primary dark:text-primary font-bold uppercase tracking-widest mt-1">Mục tiêu</span>
                                 </>
                             )}
                         </div>
                     </div>
 
-                    {/* Progress Info */}
-                    <div className="flex-1 w-full text-center md:text-left space-y-5 z-10">
+                    <div className="flex-1 text-center md:text-left space-y-6">
                         <div>
-                            <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Lộ trình ngày</h2>
-                                <div className="p-1.5 bg-orange-500/10 rounded-lg">
-                                    <Target className="text-orange-500" size={20} />
-                                </div>
+                            <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                                <h2 className="text-3xl font-bold text-foreground tracking-tight">Lộ trình ngày</h2>
+                                <span className="material-symbols-outlined text-primary text-lg animate-bounce text-shadow-gold">target</span>
                             </div>
-                            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm sm:text-base">
-                                Bạn đã hoàn thành <span className="text-yellow-600 dark:text-yellow-400 font-black tabular-nums">{learnedToday}</span> trong tổng số <span className="font-bold text-slate-700 dark:text-slate-200">{dailyGoal}</span> mục tiêu hôm nay.
+                            <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-md mx-auto md:mx-0">
+                                Bạn đã hoàn thành <span className="font-bold text-gradient-amber">{learnedToday}</span> mục tiêu. {learnedToday >= dailyGoal ? "Thật tuyệt vời! 🐝" : `Hãy tiếp tục cố gắng để đạt ${dailyGoal} mục tiêu hôm nay!`}
                             </p>
                         </div>
-
-                        {/* Badges/Streaks row */}
-                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                            <Badge icon={<Flame size={14} />} label={`${stats.streak || 0} Ngày`} color="orange" />
-                            <Badge icon={<CheckCircle2 size={14} />} label="Mục tiêu" color="yellow" pulse />
+                        <div className="flex flex-wrap justify-center md:justify-start gap-3">
+                            <StatBadge icon={<span className="material-symbols-outlined text-base">local_fire_department</span>} label={`${stats.streak || 0} Ngày Streak`} color="orange" />
+                            <StatBadge icon={<span className="material-symbols-outlined text-base">check_circle</span>} label={`${dailyGoal} Mục tiêu`} color="yellow" />
                             {stats.testVocabToday ? (
-                                <Badge icon={<TrendingUp size={14} />} label={`+${stats.testVocabToday} Test`} color="blue" />
+                                <StatBadge icon={<span className="material-symbols-outlined text-base">trending_up</span>} label={`${stats.testVocabToday} Test`} color="blue" />
                             ) : null}
                         </div>
                     </div>
                 </div>
 
-                {/* Secondary Stats Grid (4 cols) */}
-                <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-1 gap-4 h-full">
-                    <EnhancedStatCard
-                        icon={<BookOpen size={24} />}
+                {/* Secondary Stats Column */}
+                <div className="flex flex-col gap-4">
+                    <StatCard
+                        icon={<span className="material-symbols-outlined text-xl">menu_book</span>}
                         label="Tổng vựng"
                         value={stats.totalWords}
                         color="blue"
-                        delay={0.2}
+                        trend="+12 today"
                     />
-                    <EnhancedStatCard
-                        icon={<Target size={24} />}
+                    <StatCard
+                        icon={<span className="material-symbols-outlined text-xl">history_edu</span>}
                         label="Cần ôn tập"
                         value={stats.dueReviews}
-                        color="orange"
-                        delay={0.4}
+                        color="amber"
+                        variant="high"
                     />
                 </div>
             </div>
@@ -125,47 +108,37 @@ export default function Dashboard({ stats }: DashboardProps) {
     );
 }
 
-function Badge({ icon, label, color, pulse }: { icon: any, label: string, color: 'orange' | 'yellow' | 'blue', pulse?: boolean }) {
+function StatBadge({ icon, label, color }: { icon: any, label: string, color: 'orange' | 'yellow' | 'blue' }) {
     const colors = {
-        orange: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20",
-        yellow: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20",
-        blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+        orange: "text-secondary bg-secondary-glow/10 border-secondary/20",
+        yellow: "text-primary bg-primary/10 border-primary/20",
+        blue: "text-blue-500 bg-blue-500/10 border-blue-500/20",
     };
 
     return (
-        <div className={`px-4 py-1.5 rounded-2xl border flex items-center gap-2 text-xs font-black tracking-wide ${colors[color]} ${pulse ? 'animate-pulse' : ''}`}>
+        <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-bold uppercase tracking-wide backdrop-blur-sm ${colors[color]}`}>
             {icon}
             <span>{label}</span>
         </div>
     );
 }
 
-function EnhancedStatCard({ icon, label, value, color, delay }: { icon: any, label: string, value: number, color: 'blue' | 'orange', delay: number }) {
-    const colors = {
-        blue: "from-blue-500/20 to-indigo-500/10 text-blue-500 border-blue-500/20",
-        orange: "from-orange-500/20 to-red-500/10 text-orange-500 border-orange-500/20",
-    };
-
+function StatCard({ icon, label, value, color, trend, variant }: { icon: any, label: string, value: number, color: 'blue' | 'amber', trend?: string, variant?: 'high' }) {
+    const isAmber = color === 'amber';
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay, duration: 0.8 }}
-            className={`glass h-full p-6 pb-5 rounded-[2rem] border border-white/40 dark:border-white/10 shadow-xl flex flex-col justify-between relative overflow-hidden group hover:scale-[1.02] transition-all duration-300`}
-        >
-            <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${colors[color]} opacity-20 blur-2xl group-hover:opacity-40 transition-opacity`} />
-
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br ${colors[color]} border shadow-inner`}>
-                {icon}
-            </div>
-
-            <div className="z-10">
-                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">{label}</p>
-                <div className="flex items-baseline gap-1">
-                    <p className="text-3xl font-black text-slate-800 dark:text-white tabular-nums tracking-tight">{value}</p>
-                    <div className={`h-1.5 w-1.5 rounded-full ${color === 'blue' ? 'bg-blue-500' : 'bg-orange-500'} animate-pulse`} />
+        <div className={`flex-1 glass-panel rounded-3xl p-6 flex flex-col justify-between relative group overflow-hidden transition-all hover:border-${isAmber ? 'secondary/30' : 'primary/30'}`}>
+            <div className={`absolute right-0 top-0 w-32 h-32 ${isAmber ? 'bg-secondary/5 group-hover:bg-secondary/10' : 'bg-primary/5 group-hover:bg-primary/10'} rounded-bl-full transition-all`}></div>
+            <div className="flex justify-between items-start mb-4 relative z-10">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-inner border ${isAmber ? 'text-secondary bg-secondary/10 border-secondary/20' : 'text-primary bg-primary/10 border-primary/20'}`}>
+                    {icon}
                 </div>
+                {trend && <span className="text-xs font-medium text-slate-500 bg-surface/50 px-2 py-1 rounded-md border border-glass-border">{trend}</span>}
+                {variant === 'high' && <span className="text-xs font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-md border border-secondary/20 shadow-glow">High priority</span>}
             </div>
-        </motion.div>
+            <div className="relative z-10">
+                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">{label}</p>
+                <h3 className="text-4xl font-bold tracking-tighter text-foreground">{value.toLocaleString()}</h3>
+            </div>
+        </div>
     );
 }

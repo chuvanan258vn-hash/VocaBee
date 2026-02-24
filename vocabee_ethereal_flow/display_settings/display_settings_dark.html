@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VocaBee - Cài đặt hiển thị</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#f9cb15",
+                        "background-light": "#f8f8f5",
+                        "background-dark": "#231f0f",
+                        "surface-dark": "#2d2818", 
+                        "surface-light": "#ffffff",
+                    },
+                    fontFamily: {
+                        display: ["Lexend", "Noto Sans", "sans-serif"],
+                        body: ["Noto Sans", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                        lg: "1rem",
+                        xl: "1.5rem",
+                        full: "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display transition-colors duration-200 antialiased overflow-hidden">
+<div class="relative flex h-screen w-full overflow-hidden">
+<!-- Side Navigation -->
+<aside class="flex w-64 flex-col border-r border-slate-200 dark:border-white/10 bg-background-light dark:bg-background-dark h-full">
+<div class="flex h-full flex-col justify-between p-4">
+<div class="flex flex-col gap-4">
+<!-- User Profile -->
+<div class="flex gap-3 items-center px-2">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10 ring-2 ring-primary/20" data-alt="User profile picture placeholder" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCso2ACIiKxnbC013kNea9_r3J3Hfxh2zPHdAZu7oTYy2IoWaysdrNWK3VQIbndIBNGDg5xm96afE_2jIdK-_rFZshQcdsuWVqKNGXBjLX6fZi7r7mFrMlvoIbDKqlr06UhHREYnMoXGjlVohn5KkzYOrCYwbMX2cldFMFCkRUJy17GBJt_POwBuRIW2DAAmwD4S65bs45vxh3rQXQM4gOXNQj6-C-z9fQrxkoN1hfojyH8JWPWmv81GFlCPlyY5bT-IjvToZWcL5Y");'></div>
+<div class="flex flex-col">
+<h1 class="text-slate-900 dark:text-white text-base font-bold leading-normal">VocaBee</h1>
+<p class="text-slate-500 dark:text-[#bbb49b] text-sm font-normal leading-normal">Học ngoại ngữ</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors">home</span>
+<p class="text-slate-700 dark:text-slate-200 text-sm font-medium leading-normal">Trang chủ</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors">menu_book</span>
+<p class="text-slate-700 dark:text-slate-200 text-sm font-medium leading-normal">Từ vựng</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors">school</span>
+<p class="text-slate-700 dark:text-slate-200 text-sm font-medium leading-normal">Luyện tập</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group" href="#">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400 group-hover:text-primary transition-colors">bar_chart</span>
+<p class="text-slate-700 dark:text-slate-200 text-sm font-medium leading-normal">Thống kê</p>
+</a>
+<!-- Active State -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 dark:bg-[#3a3627] border border-primary/20 dark:border-primary/10" href="#">
+<span class="material-symbols-outlined text-primary fill-1">settings</span>
+<p class="text-slate-900 dark:text-white text-sm font-medium leading-normal">Cài đặt</p>
+</a>
+</nav>
+</div>
+<!-- Bottom Action -->
+<button class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 transition-colors w-full">
+<span class="material-symbols-outlined">logout</span>
+<p class="text-sm font-medium leading-normal">Đăng xuất</p>
+</button>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 h-full overflow-y-auto bg-background-light dark:bg-background-dark">
+<div class="container mx-auto max-w-4xl px-8 py-10">
+<!-- Header -->
+<div class="mb-10">
+<h1 class="text-slate-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em] mb-2">Cài đặt hiển thị</h1>
+<p class="text-slate-500 dark:text-[#bbb49b] text-base font-normal">Tùy chỉnh giao diện học tập của bạn để có trải nghiệm tốt nhất.</p>
+</div>
+<!-- Theme Selection -->
+<section class="mb-12">
+<h2 class="text-slate-800 dark:text-white text-xl font-bold mb-5 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">palette</span>
+                        Giao diện
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Light Mode Card -->
+<div class="group cursor-pointer">
+<div class="relative w-full aspect-video rounded-xl border-2 border-slate-200 dark:border-white/10 group-hover:border-primary/50 transition-all overflow-hidden mb-3 bg-white">
+<div class="absolute inset-0 p-4 opacity-80">
+<div class="w-1/4 h-full bg-slate-100 absolute left-0 top-0 border-r border-slate-200"></div>
+<div class="w-full h-8 bg-slate-50 absolute top-0 left-0 border-b border-slate-200"></div>
+<div class="absolute top-12 left-[30%] w-[60%] h-4 bg-slate-200 rounded"></div>
+<div class="absolute top-20 left-[30%] w-[60%] h-24 bg-primary/20 rounded border border-primary/30"></div>
+</div>
+<!-- Selection Indicator -->
+<div class="absolute top-3 right-3 size-6 rounded-full border-2 border-slate-300 bg-white dark:bg-slate-800"></div>
+</div>
+<div class="px-1">
+<p class="text-slate-900 dark:text-white text-base font-medium">Chế độ sáng</p>
+<p class="text-slate-500 dark:text-[#bbb49b] text-sm">Giao diện sáng</p>
+</div>
+</div>
+<!-- Dark Mode Card (Active) -->
+<div class="group cursor-pointer">
+<div class="relative w-full aspect-video rounded-xl border-2 border-primary ring-2 ring-primary/20 transition-all overflow-hidden mb-3 bg-[#181711]">
+<div class="absolute inset-0 p-4 opacity-90">
+<div class="w-1/4 h-full bg-[#231f0f] absolute left-0 top-0 border-r border-white/5"></div>
+<div class="w-full h-8 bg-[#231f0f] absolute top-0 left-0 border-b border-white/5"></div>
+<div class="absolute top-12 left-[30%] w-[60%] h-4 bg-white/10 rounded"></div>
+<div class="absolute top-20 left-[30%] w-[60%] h-24 bg-primary/20 rounded border border-primary/30"></div>
+</div>
+<!-- Selection Indicator -->
+<div class="absolute top-3 right-3 size-6 rounded-full border-[6px] border-primary bg-white"></div>
+</div>
+<div class="px-1">
+<p class="text-slate-900 dark:text-white text-base font-medium">Chế độ tối</p>
+<p class="text-slate-500 dark:text-[#bbb49b] text-sm">Giao diện tối</p>
+</div>
+</div>
+<!-- System Mode Card -->
+<div class="group cursor-pointer">
+<div class="relative w-full aspect-video rounded-xl border-2 border-slate-200 dark:border-white/10 group-hover:border-primary/50 transition-all overflow-hidden mb-3 bg-gradient-to-br from-white to-[#181711]">
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-4xl text-slate-400 dark:text-slate-500">settings_brightness</span>
+</div>
+<!-- Selection Indicator -->
+<div class="absolute top-3 right-3 size-6 rounded-full border-2 border-slate-300 dark:border-slate-600 bg-transparent"></div>
+</div>
+<div class="px-1">
+<p class="text-slate-900 dark:text-white text-base font-medium">Tự động</p>
+<p class="text-slate-500 dark:text-[#bbb49b] text-sm">Theo hệ thống</p>
+</div>
+</div>
+</div>
+</section>
+<hr class="border-slate-200 dark:border-white/10 my-8"/>
+<!-- Brightness Slider -->
+<section class="mb-12">
+<h2 class="text-slate-800 dark:text-white text-xl font-bold mb-5 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">brightness_5</span>
+                        Độ sáng
+                    </h2>
+<div class="bg-surface-light dark:bg-surface-dark p-6 rounded-xl border border-slate-200 dark:border-white/5">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400 dark:text-slate-500">brightness_low</span>
+<div class="relative flex-1 h-12 flex items-center">
+<!-- Track -->
+<div class="w-full h-2 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[75%] rounded-full"></div>
+</div>
+<!-- Thumb -->
+<div class="absolute left-[75%] -translate-x-1/2 w-6 h-6 bg-white rounded-full shadow-lg border-2 border-primary cursor-pointer hover:scale-110 transition-transform"></div>
+</div>
+<span class="material-symbols-outlined text-slate-800 dark:text-primary">brightness_high</span>
+</div>
+</div>
+</section>
+<!-- Accent Color Picker -->
+<section class="mb-12">
+<h2 class="text-slate-800 dark:text-white text-xl font-bold mb-5 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">format_paint</span>
+                        Màu chủ đạo
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Gold Option (Active) -->
+<div class="flex items-center gap-4 p-4 rounded-xl border-2 border-primary bg-primary/5 cursor-pointer">
+<div class="size-10 rounded-full bg-[#f9cb15] shadow-sm flex items-center justify-center">
+<span class="material-symbols-outlined text-[#231f0f] text-xl">check</span>
+</div>
+<div class="flex flex-col">
+<span class="text-slate-900 dark:text-white font-medium">VocaBee Gold</span>
+<span class="text-xs text-slate-500 dark:text-slate-400">Mặc định</span>
+</div>
+</div>
+<!-- Cyan Option -->
+<div class="flex items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
+<div class="size-10 rounded-full bg-cyan-400 shadow-sm group-hover:scale-110 transition-transform"></div>
+<div class="flex flex-col">
+<span class="text-slate-900 dark:text-white font-medium">Electric Cyan</span>
+<span class="text-xs text-slate-500 dark:text-slate-400">Hiện đại</span>
+</div>
+</div>
+<!-- Purple Option -->
+<div class="flex items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors group">
+<div class="size-10 rounded-full bg-purple-500 shadow-sm group-hover:scale-110 transition-transform"></div>
+<div class="flex flex-col">
+<span class="text-slate-900 dark:text-white font-medium">Deep Purple</span>
+<span class="text-xs text-slate-500 dark:text-slate-400">Sáng tạo</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Action Buttons -->
+<div class="flex justify-end gap-3 mt-8">
+<button class="px-6 py-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 font-medium transition-colors">
+                        Đặt lại mặc định
+                    </button>
+<button class="px-6 py-2.5 rounded-lg bg-primary text-[#231f0f] hover:bg-primary/90 font-bold transition-all shadow-lg shadow-primary/20">
+                        Lưu thay đổi
+                    </button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

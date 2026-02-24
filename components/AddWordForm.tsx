@@ -78,16 +78,16 @@ export default function AddWordForm() {
   };
 
   return (
-    <form onSubmit={handleSave} className="p-8 bg-white/70 dark:bg-slate-900/40 backdrop-blur-xl rounded-3xl shadow-2xl space-y-6 border border-white/20 dark:border-slate-700/50 w-full max-w-4xl transition-all hover:shadow-yellow-500/5">
+    <form onSubmit={handleSave} className="p-8 glass-panel rounded-3xl shadow-[var(--shadow-glass)] space-y-6 w-full max-w-4xl transition-all hover:shadow-[var(--shadow-glow)]">
       <div className="flex items-center gap-4 mb-4">
-        <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent to-slate-200 dark:to-slate-700/50"></div>
+        <div className="flex-1 h-[1px] bg-gradient-to-r from-transparent to-glass-border"></div>
         <div className="flex flex-col items-center gap-2">
-          <div className="h-12 w-12 bg-yellow-400 rounded-2xl flex items-center justify-center shadow-lg shadow-yellow-500/20 animate-bounce-slow">
+          <div className="h-12 w-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center shadow-glow-primary animate-bounce-slow">
             <span className="text-2xl">🐝</span>
           </div>
-          <h2 className="text-lg font-black text-slate-800 dark:text-white tracking-[0.2em] shrink-0 uppercase">THÊM TỪ VỰNG MỚI VÀO TỔ ONG</h2>
+          <h2 className="text-lg font-black text-foreground tracking-[0.2em] shrink-0 uppercase text-shadow-gold">THÊM TỪ VỰNG MỚI VÀO TỔ ONG</h2>
         </div>
-        <div className="flex-1 h-[1px] bg-gradient-to-l from-transparent to-slate-200 dark:to-slate-700/50"></div>
+        <div className="flex-1 h-[1px] bg-gradient-to-l from-transparent to-glass-border"></div>
       </div>
 
       {/* Hàng 1: Từ vựng & Loại từ */}
@@ -105,7 +105,7 @@ export default function AddWordForm() {
             <input
               type="text"
               placeholder="v.d: Persistence"
-              className={`w-full p-3 bg-white dark:bg-slate-800/50 border ${isDuplicate ? 'border-rose-500 ring-4 ring-rose-500/10' : 'border-slate-200 dark:border-slate-700'} text-slate-900 dark:text-white rounded-2xl focus:ring-4 ${isDuplicate ? 'focus:ring-rose-500/20 focus:border-rose-500' : 'focus:ring-yellow-400/20 focus:border-yellow-400'} outline-none transition-all placeholder:text-slate-400 text-sm font-semibold`}
+              className={`input-premium w-full p-3 text-foreground ${isDuplicate ? '!border-rose-500 ring-4 ring-rose-500/10 focus:ring-rose-500/20 focus:border-rose-500' : ''} placeholder:text-slate-400 text-sm font-semibold`}
               value={term}
               onChange={(e) => setTerm(e.target.value)}
               required
@@ -156,8 +156,8 @@ export default function AddWordForm() {
                   type="button"
                   onClick={() => setWordType(type.full)}
                   className={`relative py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300 hover:scale-110 active:scale-95 overflow-hidden group/btn ${wordType === type.full
-                    ? `${styles.bg} shadow-lg shadow-current/30 ring-2 ${styles.ring}/30`
-                    : 'bg-slate-100 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-white/5 border border-transparent hover:border-slate-200 dark:hover:border-slate-600'
+                    ? `${styles.bg} shadow-glow-primary ring-2 ${styles.ring}/50`
+                    : 'bg-surface dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-white/5 border border-transparent hover:border-amber-200 dark:hover:border-amber-600/30'
                     }`}
                 >
                   <div className={`absolute inset-0 opacity-0 group-hover/btn:opacity-10 transition-opacity bg-current`} />
@@ -178,7 +178,7 @@ export default function AddWordForm() {
             {wordType && (
               <>
                 <div className={`absolute inset-0 opacity-20 dark:opacity-40 ${getWordTypeColor(wordType)}`} />
-                <div className={`absolute inset-0 border-2 rounded-2xl opacity-10 dark:opacity-20 ${getWordTypeStyles(wordType).border}`} style={{ backgroundColor: 'transparent' }} />
+                <div className={`absolute inset-0 border-2 rounded-2xl opacity-10 dark:opacity-20 ${getWordTypeStyles(wordType).border}`} />
               </>
             )}
 
@@ -212,7 +212,7 @@ export default function AddWordForm() {
           <input
             type="text"
             placeholder="/pəˈsɪstəns/"
-            className="w-full p-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all placeholder:text-slate-400 text-sm font-mono"
+            className="input-premium w-full p-3 text-foreground placeholder:text-slate-400 text-sm font-mono"
             value={phonetic}
             onChange={(e) => setPhonetic(e.target.value)}
           />
@@ -222,7 +222,7 @@ export default function AddWordForm() {
           <input
             type="text"
             placeholder="v.d: endurance"
-            className="w-full p-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all placeholder:text-slate-400 text-sm"
+            className="input-premium w-full p-3 text-foreground placeholder:text-slate-400 text-sm"
             value={synonyms}
             onChange={(e) => setSynonyms(e.target.value)}
           />
@@ -234,7 +234,7 @@ export default function AddWordForm() {
         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Nghĩa tiếng Việt</label>
         <textarea
           placeholder="Dịch nghĩa chi tiết của từ này..."
-          className="w-full p-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all placeholder:text-slate-400 min-h-[80px] resize-none text-sm font-medium"
+          className="input-premium w-full p-3 text-foreground placeholder:text-slate-400 min-h-[80px] resize-none text-sm font-medium"
           value={definition}
           onChange={(e) => setDefinition(e.target.value)}
           required
@@ -246,7 +246,7 @@ export default function AddWordForm() {
         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Ví dụ minh họa</label>
         <textarea
           placeholder="Cách dùng từ trong câu thực tế..."
-          className="w-full p-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-2xl focus:ring-4 focus:ring-yellow-400/20 focus:border-yellow-400 outline-none transition-all placeholder:text-slate-400 min-h-[80px] resize-none text-sm italic"
+          className="input-premium w-full p-3 text-foreground placeholder:text-slate-400 min-h-[80px] resize-none text-sm italic"
           value={example}
           onChange={(e) => setExample(e.target.value)}
         />
@@ -256,7 +256,7 @@ export default function AddWordForm() {
       <button
         type="submit"
         disabled={loading || isDuplicate}
-        className={`w-full py-4 rounded-2xl font-black text-lg transition-all shadow-xl flex items-center justify-center gap-2 ${loading || isDuplicate ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed text-slate-500' : 'bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white shadow-yellow-500/20 scale-100 hover:scale-[1.02] active:scale-[0.98]'
+        className={`w-full py-4 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 ${loading || isDuplicate ? 'bg-slate-300 dark:bg-surface cursor-not-allowed text-slate-500' : 'btn-amber text-[#FFFFFF] hover:text-[#FFFFFF]'
           }`}
       >
         {loading ? (

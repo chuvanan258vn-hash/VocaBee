@@ -1,0 +1,69 @@
+﻿node.exe : ΓÜá Warning: Next.js inferred 
+your workspace root, but it may not be 
+correct.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" 
+"C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: 
+    (ΓÜá Warning: Ne...not be correct.:Str  
+  ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommand 
+   Error
+ 
+ We detected multiple lockfiles and 
+selected the directory of G:\myProject\NextJ
+s\VocaBeeProject\package-lock.json as the 
+root directory.
+ To silence this warning, set 
+`turbopack.root` in your Next.js config, or 
+consider removing one of the lockfiles if 
+it's not needed.
+   See https://nextjs.org/docs/app/api-refer
+ence/config/next-config-js/turbopack#root-di
+rectory for more information.
+ Detected additional lockfiles: 
+   * G:\myProject\NextJs\VocaBeeProject\voca
+bee-srs\package-lock.json
+
+Γû▓ Next.js 16.1.1 (Turbopack)
+- Environments: .env.local, .env
+- Experiments (use with caution):
+  ┬╖ serverActions
+
+ΓÜá The "middleware" file convention is 
+deprecated. Please use "proxy" instead. 
+Learn more: https://nextjs.org/docs/messages
+/middleware-to-proxy
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 2.3s
+  Running TypeScript ...
+Failed to compile.
+
+./components/Dashboard.tsx:4:61
+Type error: Module '"lucide-react"' has no 
+exported member 'Hive'.
+
+[0m [90m 2 |[39m
+ [90m 3 |[39m [36mimport[39m { motion } 
+[36mfrom[39m 
+[32m"framer-motion"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 4 |[39m 
+[36mimport[39m { 
+[33mBookOpen[39m[33m,[39m 
+[33mTarget[39m[33m,[39m 
+[33mFlame[39m[33m,[39m 
+[33mCheckCircle2[39m[33m,[39m 
+[33mTrendingUp[39m[33m,[39m 
+[33mHive[39m } [36mfrom[39m 
+[32m"lucide-react"[39m[33m;[39m
+ [90m   |[39m                             
+                                
+[31m[1m^[22m[39m
+ [90m 5 |[39m
+ [90m 6 |[39m [36minterface[39m 
+[33mDashboardProps[39m {
+ [90m 7 |[39m     stats[33m:[39m {[0m
+Next.js build worker exited with code: 1 
+and signal: null

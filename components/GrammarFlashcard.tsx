@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Volume2, Send, CheckCircle2, AlertCircle, HelpCircle, ChevronRight, Lightbulb, SkipForward } from "lucide-react";
 import { reviewGrammarCardAction } from "@/app/actions";
 
 interface GrammarCard {
@@ -86,20 +85,20 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass dark:bg-slate-900/80 p-4 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-white/20 dark:border-white/5 shadow-2xl relative overflow-hidden"
+                className="bg-white dark:bg-surface-card p-6 sm:p-10 rounded-2xl md:rounded-3xl shadow-xl border border-slate-200 dark:border-slate-700 relative overflow-hidden"
             >
                 {/* Card Type Tag */}
                 <div className="absolute top-4 right-4 sm:top-6 sm:right-8 flex items-center gap-2">
                     {card.repetition === 0 ? (
-                        <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-yellow-400 text-slate-900 text-[8px] sm:text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">
+                        <span className="px-3 py-1 bg-primary/20 text-primary dark:bg-primary/10 text-[10px] font-semibold uppercase tracking-wider rounded-full">
                             TỪ MỚI
                         </span>
                     ) : (
-                        <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[8px] sm:text-[10px] font-black uppercase tracking-widest rounded-full border border-slate-300/50 dark:border-slate-700/50">
+                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-semibold uppercase tracking-wider rounded-full">
                             ÔN TẬP
                         </span>
                     )}
-                    <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-yellow-400/10 text-yellow-600 dark:text-yellow-400 text-[8px] sm:text-[10px] font-black uppercase tracking-widest rounded-full border border-yellow-400/20">
+                    <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-semibold uppercase tracking-wider rounded-full border border-primary/20">
                         {card.type.replace("_", " ")}
                     </span>
                 </div>
@@ -107,29 +106,30 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                 <div className="space-y-6 sm:space-y-8">
                     {/* Prompt section */}
                     <div className="space-y-3 sm:space-y-4 pt-2">
-                        <div className="flex items-center gap-2 text-slate-400 font-bold text-[10px] sm:text-xs uppercase tracking-tighter">
-                            <HelpCircle size={12} className="sm:w-[14px] sm:h-[14px]" />
+                        <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-tighter">
+                            <span className="material-symbols-outlined text-sm">help</span>
                             <span>Question / Task</span>
                         </div>
-                        <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white leading-tight">
+                        <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white leading-tight">
                             {card.prompt}
                         </h2>
                         <div className="flex items-center gap-2">
                             <button
+                                title="Phát âm"
                                 onClick={() => handleSpeak(card.prompt)}
-                                className="p-1.5 sm:p-2 bg-slate-100 dark:bg-white/5 rounded-xl text-slate-400 hover:text-yellow-500 transition-colors"
+                                className="size-10 rounded-full bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center transition-all duration-300"
                             >
-                                <Volume2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+                                <span className="material-symbols-outlined text-[20px]">volume_up</span>
                             </button>
                             {card.hint && (
                                 <button
                                     onClick={() => setShowHint(!showHint)}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition-all ${showHint
-                                        ? "bg-yellow-400 text-slate-900"
-                                        : "bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-yellow-500"
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${showHint
+                                        ? "bg-primary text-slate-900"
+                                        : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary"
                                         }`}
                                 >
-                                    <Lightbulb size={12} className="sm:w-[14px] sm:h-[14px]" />
+                                    <span className="material-symbols-outlined text-[16px]">lightbulb</span>
                                     <span>{showHint ? "ẨN GỢI Ý" : "GỢI Ý"}</span>
                                 </button>
                             )}
@@ -141,9 +141,9 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: "auto" }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="p-3 sm:p-4 bg-yellow-400/5 border border-yellow-400/20 rounded-2xl overflow-hidden"
+                                    className="p-3 sm:p-4 bg-primary/5 border border-primary/20 rounded-2xl overflow-hidden"
                                 >
-                                    <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400/80 italic font-medium">
+                                    <p className="text-xs sm:text-sm text-primary italic font-medium">
                                         💡 {card.hint}
                                     </p>
                                 </motion.div>
@@ -160,9 +160,9 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                                         <button
                                             key={i}
                                             onClick={() => { setUserInput(opt); }}
-                                            className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl text-left font-bold border-2 transition-all text-sm sm:text-base ${userInput === opt
-                                                ? "bg-yellow-400 border-yellow-400 text-slate-900 shadow-md"
-                                                : "bg-slate-50 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-300 hover:border-slate-200 dark:hover:border-white/10"
+                                            className={`p-4 rounded-xl text-left font-bold border-2 transition-all text-sm sm:text-base ${userInput === opt
+                                                ? "bg-primary/10 border-primary text-foreground shadow-[0_0_15px_rgba(251,191,36,0.15)]"
+                                                : "bg-slate-50 dark:bg-surface-lighter/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary/50"
                                                 }`}
                                         >
                                             <span className="mr-3 text-slate-300">{String.fromCharCode(65 + i)}.</span>
@@ -177,7 +177,7 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                                         value={userInput}
                                         onChange={(e) => setUserInput(e.target.value)}
                                         placeholder="Type your answer here..."
-                                        className="w-full p-4 sm:p-6 bg-slate-50 dark:bg-white/5 border-2 border-transparent focus:border-yellow-400 rounded-2xl sm:rounded-3xl outline-none text-base sm:text-xl font-bold text-slate-800 dark:text-white transition-all min-h-[100px] sm:min-h-[120px] resize-none"
+                                        className="w-full p-4 sm:p-6 bg-slate-50 dark:bg-surface-lighter/30 border border-slate-200 dark:border-slate-700 focus:border-primary rounded-2xl outline-none text-base sm:text-lg font-medium text-slate-900 dark:text-white transition-all min-h-[100px] resize-none focus:ring-2 focus:ring-primary/20"
                                         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
                                     />
                                 ) : (
@@ -187,28 +187,28 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                                         value={userInput}
                                         onChange={(e) => setUserInput(e.target.value)}
                                         placeholder="Type here..."
-                                        className="w-full p-4 sm:p-6 bg-slate-50 dark:bg-white/5 border-2 border-transparent focus:border-yellow-400 rounded-2xl sm:rounded-3xl outline-none text-xl sm:text-3xl font-black text-slate-800 dark:text-white transition-all text-center"
+                                        className="w-full p-4 sm:p-6 bg-slate-50 dark:bg-surface-lighter/30 border border-slate-200 dark:border-slate-700 focus:border-primary rounded-2xl outline-none text-xl sm:text-2xl font-bold text-slate-900 dark:text-white transition-all text-center focus:ring-2 focus:ring-primary/20"
                                         onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
                                     />
                                 )
                             )}
 
-                            <div className="flex gap-2 sm:gap-3">
+                            <div className="flex gap-3">
                                 <button
                                     onClick={handleSubmit}
                                     disabled={!userInput.trim()}
-                                    className="flex-[2] py-4 sm:py-5 bg-slate-900 dark:bg-yellow-400 text-white dark:text-slate-900 font-black rounded-xl sm:rounded-[1.5rem] flex items-center justify-center gap-2 sm:gap-3 active:scale-[0.98] transition-all disabled:opacity-50 text-sm sm:text-base"
+                                    className="flex-[2] py-4 bg-primary hover:bg-amber-400 text-[#0F172A] font-bold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-primary/20 active:scale-[0.98]"
                                 >
-                                    <Send size={18} className="sm:w-[20px] sm:h-[20px]" />
+                                    <span className="material-symbols-outlined text-[20px]">send</span>
                                     <span>GỬI ĐÁP ÁN</span>
                                 </button>
 
                                 <button
                                     onClick={handleDontKnow}
-                                    className="flex-1 py-4 sm:py-5 bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-red-500 font-bold rounded-xl sm:rounded-[1.5rem] flex items-center justify-center gap-2 hover:bg-slate-200 dark:hover:bg-white/10 transition-all text-[10px] sm:text-xs"
+                                    className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500 font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-xs border border-transparent hover:border-red-500/30"
                                     title="Tôi không biết đáp án"
                                 >
-                                    <SkipForward size={18} className="sm:w-[20px] sm:h-[20px]" />
+                                    <span className="material-symbols-outlined text-[20px]">skip_next</span>
                                     <span className="hidden xs:inline">BỎ QUA</span>
                                 </button>
                             </div>
@@ -220,31 +220,31 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                             className="space-y-6 sm:space-y-8"
                         >
                             {/* Result Display */}
-                            <div className={`p-4 sm:p-6 rounded-2xl sm:rounded-3xl border-2 ${isCorrect
+                            <div className={`p-4 sm:p-6 rounded-2xl border ${isCorrect
                                 ? "bg-green-500/10 border-green-500/20"
                                 : "bg-red-500/10 border-red-500/20"
                                 }`}>
-                                <div className="flex items-center gap-3 mb-2">
+                                <div className="flex items-center gap-2 mb-3">
                                     {isCorrect ? (
-                                        <CheckCircle2 size={18} className="text-green-500" />
+                                        <span className="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
                                     ) : (
-                                        <AlertCircle size={18} className="text-red-500" />
+                                        <span className="material-symbols-outlined text-red-500 text-[20px]">error</span>
                                     )}
-                                    <span className={`font-black uppercase tracking-widest text-[10px] sm:text-xs ${isCorrect ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                                    <span className={`font-bold uppercase tracking-widest text-xs ${isCorrect ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
                                         }`}>
                                         {isCorrect ? "Chính xác!" : "Cần xem lại"}
                                     </span>
                                 </div>
-                                <div className="space-y-3 sm:space-y-4">
-                                    <p className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white leading-tight">
+                                <div className="space-y-4">
+                                    <p className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
                                         {card.answer}
                                     </p>
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => handleSpeak(card.answer)}
-                                            className="px-2.5 py-1.5 bg-white/50 dark:bg-white/5 rounded-xl text-slate-400 hover:text-yellow-500 transition-colors flex items-center gap-2 text-[10px] font-bold"
+                                            className="px-3 py-1.5 bg-white/50 dark:bg-white/5 rounded-lg text-slate-500 hover:text-primary transition-colors flex items-center gap-2 text-xs font-bold border border-slate-200 dark:border-white/10"
                                         >
-                                            <Volume2 size={14} /> Listen
+                                            <span className="material-symbols-outlined text-[16px]">volume_up</span> Listen
                                         </button>
                                     </div>
                                 </div>
@@ -252,8 +252,8 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
 
                             {/* Explanation */}
                             {card.explanation && (
-                                <div className="p-4 sm:p-6 bg-blue-500/5 dark:bg-white/5 rounded-2xl sm:rounded-3xl border border-blue-500/10">
-                                    <p className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 leading-relaxed italic">
+                                <div className="p-4 sm:p-5 bg-blue-500/5 dark:bg-slate-800/50 rounded-2xl border border-blue-500/20">
+                                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300 leading-relaxed italic">
                                         💡 {card.explanation}
                                     </p>
                                 </div>
@@ -262,18 +262,18 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                             {/* Self-grading Buttons */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                                 {[
-                                    { grade: 0, label: "Học lại", color: "text-red-500", icon: "↺" },
-                                    { grade: 1, label: "Khó", color: "text-orange-500", icon: "!" },
-                                    { grade: 2, label: "Dễ", color: "text-green-500", icon: "✓" },
-                                    { grade: 3, label: "Rất dễ", color: "text-blue-500", icon: "⚡" },
+                                    { grade: 0, label: "Học lại", color: "text-red-500", icon: "refresh" },
+                                    { grade: 1, label: "Khó", color: "text-amber-500", icon: "priority_high" },
+                                    { grade: 2, label: "Dễ", color: "text-green-500", icon: "check" },
+                                    { grade: 3, label: "Rất dễ", color: "text-blue-500", icon: "bolt" },
                                 ].map((btn) => (
                                     <button
                                         key={btn.grade}
                                         onClick={() => handleGrade(btn.grade)}
-                                        className="flex flex-col items-center gap-1 sm:gap-2 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-100 dark:bg-white/5 active:scale-[0.95] transition-all group"
+                                        className="flex flex-col items-center gap-2 p-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.95] transition-all group border border-transparent hover:border-slate-300 dark:hover:border-slate-600"
                                     >
-                                        <span className={`text-lg sm:text-xl font-black ${btn.color}`}>{btn.icon}</span>
-                                        <span className="text-[8px] sm:text-[10px] font-black uppercase text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 truncate w-full">{btn.label}</span>
+                                        <span className={`material-symbols-outlined text-2xl font-bold ${btn.color}`}>{btn.icon}</span>
+                                        <span className="text-xs font-bold uppercase text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 truncate w-full flex-shrink-0">{btn.label}</span>
                                     </button>
                                 ))}
                             </div>

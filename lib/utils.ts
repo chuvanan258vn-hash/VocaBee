@@ -253,3 +253,7 @@ export function parseGrammarCSV(text: string): any[] {
     }
     return result;
 }
+
+export function cn(...inputs: any[]) {
+    return inputs.flat().filter(Boolean).join(" ");
+}

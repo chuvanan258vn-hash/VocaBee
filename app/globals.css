@@ -1,79 +1,185 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #fdfcf4;
-  --foreground: #1e293b;
-  --card: #ffffff;
-  --glass: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  /* Soft, warm background for light mode */
+  --background: #FDFBF7;
+  --foreground: #1E1B18;
+  /* Golden Amber */
+  --primary: #F59E0B;
+  --primary-glow: rgba(245, 158, 11, 0.4);
+  --secondary: #B45309;
+  --secondary-glow: rgba(180, 83, 9, 0.3);
+  --surface: #FFFFFF;
+  --glass: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(245, 158, 11, 0.15);
+  --font-display: 'Lexend', sans-serif;
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card: #1e293b;
-  --glass: rgba(15, 23, 42, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  /* Deep, luxurious slate/charcoal for dark mode */
+  --background: #0B0F19;
+  --foreground: #F1F5F9;
+  /* Brighter Amber for dark mode contrast */
+  --primary: #FBBF24;
+  --surface: #131B2F;
+  --glass: rgba(19, 27, 47, 0.75);
+  --glass-border: rgba(251, 191, 36, 0.15);
+  --progress: #10B981;
+  --neon-green: #059669;
+  --accent-amber: #FBBF24;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-glow: var(--primary-glow);
+  --color-secondary: var(--secondary);
+  --color-secondary-glow: var(--secondary-glow);
+  --color-surface: var(--surface);
   --color-glass: var(--glass);
   --color-glass-border: var(--glass-border);
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --color-progress: var(--progress);
+  --color-neon-green: var(--neon-green);
+  --color-accent-amber: var(--accent-amber);
+  --font-sans: var(--font-display);
+  --font-display: var(--font-display);
+
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px rgba(245, 158, 11, 0.3);
+  --shadow-glow-primary: 0 0 25px rgba(245, 158, 11, 0.4);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: var(--font-display);
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 .glass {
   background: var(--glass);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  backdrop-filter: blur(20px) saturate(200%);
   border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-glass);
 }
 
-.glass-morphism {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
+.glass-panel {
+  background: rgba(19, 27, 47, 0.65);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+}
+
+.amber-glass-gradient {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(180, 83, 9, 0.05) 100%);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
-.premium-shadow {
-  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.25);
+.dark .amber-glass-gradient {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(217, 119, 6, 0.05) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.25);
 }
 
-@keyframes bounce-slow {
-
-  0%,
-  100% {
-    transform: translateY(-5%);
-    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-  }
-
-  50% {
-    transform: translateY(0);
-    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
-  }
+/* Premium Inputs */
+.input-premium {
+  background: var(--surface);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-.animate-bounce-slow {
-  animation: bounce-slow 3s infinite;
+.dark .input-premium {
+  background: #131B2F;
+  border: 1px solid #1E293B;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+.input-premium:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-glow);
+  outline: none;
+}
+
+/* Premium Buttons */
+.btn-amber {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-amber:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+  background: linear-gradient(135deg, #FCD34D 0%, var(--primary) 100%);
+}
+
+.btn-amber:active {
+  transform: translateY(1px);
+}
+
+/* Text Gradients */
+.text-gradient-amber {
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+.dark .text-gradient-amber {
+  background-image: linear-gradient(135deg, #FCD34D, var(--primary));
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.2);
+  border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.5);
+}
+
+.text-shadow-gold {
+  text-shadow: 0 0 12px var(--primary-glow);
+}
+
+.filled {
+  font-variation-settings: 'FILL' 1;
+}
+
+/* 3D Transform Utilities */
 .perspective-1000 {
   perspective: 1000px;
 }
@@ -83,10 +189,6 @@ body {
 }
 
 .backface-hidden {
-  backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-}
-
-.rotate-y-180 {
-  transform: rotateY(180deg);
+  backface-visibility: hidden;
 }

@@ -123,7 +123,7 @@ export default async function ReviewPage() {
     }
 
     return (
-        <main className="flex min-h-screen flex-col items-center bg-background dark:bg-background transition-colors font-sans px-4 pb-20">
+        <main className="min-h-screen bg-background font-sans">
             <ReviewSession dueWords={interleaved as any} />
         </main>
     );

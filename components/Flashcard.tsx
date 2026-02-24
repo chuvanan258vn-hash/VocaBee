@@ -57,161 +57,198 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
     };
 
     return (
-        <div className="w-full max-w-xl mx-auto perspective-1000 h-[420px] sm:h-[500px]">
-            <motion.div
-                className="relative w-full h-[420px] sm:h-[500px] cursor-pointer preserve-3d"
-                initial={false}
-                animate={{ rotateY: isFlipped ? 180 : 0 }}
-                transition={{
-                    type: "spring",
-                    stiffness: 260,
-                    damping: 20,
-                    mass: 1
-                }}
-                onAnimationComplete={() => setIsAnimating(false)}
-                onClick={handleFlip}
-            >
-                {/* Front Side: The Word */}
-                <div className="absolute inset-0 backface-hidden w-full h-full p-6 sm:p-8 bg-white/70 dark:bg-slate-900/50 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-slate-700/50 shadow-2xl flex flex-col items-center justify-center text-center space-y-4">
-                    {/* Top Toolbar */}
-                    <div
-                        className="absolute top-0 left-0 w-full p-4 sm:p-6 flex justify-between items-center"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex items-center gap-2">
-                            {word.repetition === 0 ? (
-                                <span className="px-2 py-0.5 bg-yellow-400 text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm">
-                                    TỪ MỚI
-                                </span>
-                            ) : (
-                                <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-lg border border-slate-300/50 dark:border-slate-700/50">
-                                    ÔN TẬP
-                                </span>
-                            )}
-                            <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 hover:text-yellow-500 transition-colors cursor-help">
-                                <span className="text-sm">💡</span>
-                                <span className="text-[10px] font-bold uppercase tracking-wider hidden xs:inline">Gợi ý</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 sm:gap-4">
-                            <button className="hover:text-yellow-500 transition-colors">
-                                <span className="text-sm">✏️</span>
-                            </button>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    speak(word.word);
-                                }}
-                                className="hover:text-yellow-500 transition-colors"
-                                title="Phát âm"
-                            >
-                                <span className="text-sm">🔊</span>
-                            </button>
-                            <button className="hover:text-yellow-500 transition-colors">
-                                <span className="text-sm">⭐</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="h-10 w-10 sm:h-14 sm:w-14 bg-yellow-400/20 rounded-2xl flex items-center justify-center mb-2 sm:mb-4">
-                        <span className="text-2xl sm:text-3xl">🐝</span>
-                    </div>
-                    <h2 className="text-3xl sm:text-5xl font-black text-slate-800 dark:text-white tracking-tight">{word.word}</h2>
-                    {word.pronunciation && (
-                        <p className="text-lg sm:text-xl font-mono text-slate-400 dark:text-slate-500 italic">{word.pronunciation}</p>
-                    )}
-
-                    {/* Quick Next Button */}
-                    <div className="absolute bottom-6 sm:bottom-10 w-full px-8 sm:px-12" onClick={(e) => e.stopPropagation()}>
-                        <button
-                            onClick={() => handleReview(5)}
-                            className="w-full py-2.5 sm:py-3 px-6 bg-yellow-400/10 hover:bg-yellow-400 text-yellow-500 hover:text-slate-900 border border-yellow-500/30 rounded-xl sm:rounded-2xl font-black transition-all flex items-center justify-center gap-2 group text-xs sm:text-sm"
-                        >
-                            <span>ĐÃ BIẾT - TIẾP THEO</span>
-                            <span className="group-hover:translate-x-1 transition-transform">→</span>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Back Side: The Meaning & Details */}
-                <div
-                    className="absolute inset-0 backface-hidden w-full h-full p-6 sm:p-8 bg-slate-900 dark:bg-slate-800 text-white rounded-3xl border border-yellow-400/30 shadow-2xl flex flex-col items-center justify-center text-center rotate-y-180"
-                    style={{ transform: 'rotateY(180deg)' }}
+        <div className="w-full max-w-4xl mx-auto px-4 py-8">
+            <div className="group perspective-1000 w-full min-h-[600px] md:min-h-[750px] cursor-pointer relative">
+                <motion.div
+                    className="relative w-full h-full duration-700 preserve-3d group-hover:shadow-glow-primary transition-all flex flex-col"
+                    initial={false}
+                    animate={{ rotateY: isFlipped ? 180 : 0 }}
+                    transition={{
+                        type: "spring",
+                        stiffness: 260,
+                        damping: 20,
+                        mass: 1
+                    }}
+                    style={{ height: '100%', minHeight: 'inherit' }}
+                    onAnimationComplete={() => setIsAnimating(false)}
+                    onClick={handleFlip}
                 >
-                    {/* Top Toolbar (Back) */}
-                    <div
-                        className="absolute top-0 left-0 w-full p-4 sm:p-6 flex justify-between items-center text-slate-500"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex items-center gap-1.5 text-yellow-500/50">
-                            <span className="text-sm">💡</span>
-                            <span className="text-[10px] font-bold uppercase tracking-wider hidden xs:inline">Đã mở</span>
-                        </div>
-                        <div className="flex items-center gap-3 sm:gap-4">
-                            <button className="hover:text-yellow-500 transition-colors">
-                                <span className="text-sm">✏️</span>
+                    {/* Front Side: Large Word - Matches screen5.html */}
+                    <div className="absolute inset-0 backface-hidden w-full h-full bg-surface rounded-[40px] shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col p-12 md:p-20 items-center justify-center overflow-hidden">
+                        {/* Top Toolbar */}
+                        <div
+                            className="absolute top-10 right-10 flex gap-5"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-all duration-300" title="Add to favorites">
+                                <span className="material-symbols-outlined text-[36px]">star</span>
                             </button>
+                        </div>
+
+                        <div className="mb-12 md:mb-16">
+                            <span className="px-6 py-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-sm font-black uppercase tracking-[0.3em]">
+                                {word.repetition === 0 ? 'TỪ MỚI' : 'ÔN TẬP'}
+                            </span>
+                        </div>
+
+                        <div className="flex flex-col md:flex-row items-center justify-center gap-10 md:gap-16 mb-12">
+                            <h1 className="text-7xl md:text-9xl font-black text-center text-slate-900 dark:text-white tracking-tighter leading-none select-none">
+                                {word.word}
+                            </h1>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     speak(word.word);
                                 }}
-                                className="hover:text-yellow-500 transition-colors"
+                                className="flex-shrink-0 size-24 md:size-32 rounded-full bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center transition-all duration-500 shadow-[0_0_35px_-5px_rgba(250,204,21,0.4)] hover:shadow-[0_0_50px_-5px_rgba(250,204,21,0.6)] active:scale-90 group/audio"
+                                title="Play Audio"
                             >
-                                <span className="text-sm">🔊</span>
-                            </button>
-                            <button className="hover:text-yellow-500 transition-colors">
-                                <span className="text-sm">⭐</span>
+                                <span className="material-symbols-outlined text-[56px] md:text-[72px] group-hover/audio:scale-110 transition-transform duration-700">volume_up</span>
                             </button>
                         </div>
-                    </div>
 
-                    <div className="space-y-4 sm:space-y-6 w-full">
-                        <div>
-                            <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2">
-                                <h3 className="text-2xl sm:text-3xl font-black text-yellow-400">{word.word}</h3>
-                                {word.wordType && (
-                                    <span className={`px-2 py-0.5 ${getWordTypeColor(word.wordType)} text-white text-[8px] sm:text-[10px] font-black rounded-lg uppercase tracking-wider shadow-sm`}>
-                                        {normalizeWordType(word.wordType)}
-                                    </span>
-                                )}
-                            </div>
-                            <p className="text-xl sm:text-2xl font-bold text-white leading-tight">{word.meaning}</p>
-                        </div>
-
-                        {word.example && (
-                            <div className="p-3 sm:p-4 bg-white/5 rounded-2xl border border-white/10 italic text-slate-300 text-xs sm:text-sm line-clamp-3 sm:line-clamp-none">
-                                "{word.example}"
-                            </div>
+                        {word.pronunciation && (
+                            <p className="text-slate-400 dark:text-slate-500 text-3xl font-medium mt-6 italic opacity-0 group-hover:opacity-100 transition-all duration-500 tracking-widest bg-slate-50 dark:bg-white/5 px-8 py-2 rounded-full">
+                                /{word.pronunciation.replace(/^\/|\/$/g, '')}/
+                            </p>
                         )}
 
-                        <div className="pt-4 sm:pt-6 border-t border-white/10 w-full" onClick={(e) => e.stopPropagation()}>
-                            <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 sm:mb-4">Bạn nhớ từ này thế nào?</p>
-                            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                                <button
-                                    onClick={() => handleReview(0)}
-                                    className="py-2.5 sm:py-3 px-2 sm:px-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/50 rounded-xl font-extrabold transition-all text-[10px] sm:text-sm uppercase"
-                                >
-                                    Quên
-                                </button>
-                                <button
-                                    onClick={() => handleReview(3)}
-                                    className="py-2.5 sm:py-3 px-2 sm:px-4 bg-yellow-500/10 hover:bg-yellow-500 text-yellow-500 hover:text-white border border-yellow-500/50 rounded-xl font-extrabold transition-all text-[10px] sm:text-sm uppercase"
-                                >
-                                    Khó
-                                </button>
-                                <button
-                                    onClick={() => handleReview(5)}
-                                    className="py-2.5 sm:py-3 px-2 sm:px-4 bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white border border-green-500/50 rounded-xl font-extrabold transition-all text-[10px] sm:text-sm uppercase"
-                                >
-                                    Dễ
-                                </button>
-                            </div>
+                        <div className="absolute bottom-12 text-slate-400 dark:text-slate-500 text-sm font-black flex items-center gap-4 uppercase tracking-[0.3em] opacity-40 animate-pulse">
+                            <span className="material-symbols-outlined text-[28px]">touch_app</span>
+                            Chạm để lật
                         </div>
+                    </div>
 
+                    {/* Back Side: The Meaning & Details - Matches screen6.html layout exactly */}
+                    <div
+                        className="absolute inset-0 backface-hidden w-full h-full bg-surface rounded-[40px] shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col p-12 md:p-16 [transform:rotateY(180deg)] overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="w-full h-full flex flex-col">
+                            {/* Header Section */}
+                            <div className="w-full flex justify-between items-center mb-10">
+                                <span className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.5em] bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-xl">
+                                    {normalizeWordType(word.wordType || 'Word')}
+                                </span>
+                                <div className="flex gap-4">
+                                    <button className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-all duration-300">
+                                        <span className="material-symbols-outlined text-[28px]">edit</span>
+                                    </button>
+                                    <button className="p-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-all duration-300">
+                                        <span className="material-symbols-outlined text-[28px]">star</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Word Header with Line */}
+                            <div className="mb-12 w-full border-b-2 border-slate-100 dark:border-slate-800/60 pb-10 flex flex-col items-center">
+                                <div className="flex items-center justify-center gap-6 mb-3">
+                                    <h3 className="text-4xl md:text-5xl font-black text-slate-700 dark:text-slate-300 tracking-tighter">{word.word}</h3>
+                                    <button
+                                        onClick={() => speak(word.word)}
+                                        className="size-14 rounded-full bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center transition-all shadow-md active:scale-90"
+                                    >
+                                        <span className="material-symbols-outlined text-[32px]">volume_up</span>
+                                    </button>
+                                </div>
+                                {word.pronunciation && (
+                                    <span className="text-xl font-mono text-slate-500 tracking-[0.2em] bg-slate-50 dark:bg-white/5 px-6 py-1.5 rounded-full">/{word.pronunciation.replace(/^\/|\/$/g, '')}/</span>
+                                )}
+                            </div>
+
+                            {/* Main Content: Meaning - TRULY BIG */}
+                            <div className="flex-1 flex flex-col items-center justify-center w-full gap-12 px-6">
+                                <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white leading-[1.2] tracking-tight text-center max-w-full mx-auto break-words overflow-visible">
+                                    {word.meaning}
+                                </h1>
+
+                                {/* Illustration - Premium Placeholders */}
+                                <div className="w-52 h-52 md:w-72 md:h-72 rounded-[50px] overflow-hidden bg-white/5 border-2 border-primary/20 shrink-0 shadow-[0_0_50px_rgba(250,204,21,0.25)] flex items-center justify-center group/img relative transition-all duration-700 hover:scale-105">
+                                    <span className="material-symbols-outlined text-8xl text-primary/20 group-hover/img:scale-110 transition-transform duration-1000">image</span>
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                                </div>
+                            </div>
+
+                            {/* Footer: Examples */}
+                            {word.example && (
+                                <div className="mt-12 w-full bg-slate-50/50 dark:bg-white/5 rounded-[32px] p-10 border border-slate-100/50 dark:border-slate-700/30 shadow-inner">
+                                    <p className="text-3xl text-slate-600 dark:text-slate-300 font-bold italic leading-relaxed text-center">
+                                        "{word.example}"
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* Rating Buttons - Spacious and Matching Design */}
+            <AnimatePresence>
+                {isFlipped && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 30 }}
+                        transition={{ duration: 0.5, ease: "circOut" }}
+                        className="w-full grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 mb-16"
+                    >
+                        <button
+                            onClick={() => handleReview(0)}
+                            className="group flex flex-col items-center justify-center gap-3 h-28 md:h-32 rounded-[30px] border-2 border-red-500/10 hover:border-red-500 bg-surface hover:bg-red-500/5 transition-all duration-400 shadow-2xl hover:shadow-red-500/20 active:scale-95"
+                        >
+                            <span className="text-lg font-black text-red-500 uppercase tracking-[0.3em]">Again</span>
+                            <span className="text-sm text-slate-500 group-hover:text-red-500/80 font-black">&lt; 1 MIN</span>
+                        </button>
+                        <button
+                            onClick={() => handleReview(3)}
+                            className="group flex flex-col items-center justify-center gap-3 h-28 md:h-32 rounded-[30px] border-2 border-orange-500/10 hover:border-orange-500 bg-surface hover:bg-orange-500/5 transition-all duration-400 shadow-2xl hover:shadow-orange-500/20 active:scale-95"
+                        >
+                            <span className="text-lg font-black text-orange-500 uppercase tracking-[0.3em]">Hard</span>
+                            <span className="text-sm text-slate-500 group-hover:text-orange-500/80 font-black">2 DAYS</span>
+                        </button>
+                        <button
+                            onClick={() => handleReview(4)}
+                            className="group flex flex-col items-center justify-center gap-3 h-28 md:h-32 rounded-[30px] border-2 border-green-500/10 hover:border-green-500 bg-surface hover:bg-green-500/5 transition-all duration-400 shadow-2xl hover:shadow-green-500/20 active:scale-95"
+                        >
+                            <span className="text-lg font-black text-green-500 uppercase tracking-[0.3em]">Good</span>
+                            <span className="text-sm text-slate-500 group-hover:text-green-500/80 font-black">4 DAYS</span>
+                        </button>
+                        <button
+                            onClick={() => handleReview(5)}
+                            className="group flex flex-col items-center justify-center gap-3 h-28 md:h-32 rounded-[30px] border-2 border-teal-500/10 hover:border-teal-500 bg-surface hover:bg-teal-500/5 transition-all duration-400 shadow-2xl hover:shadow-teal-500/20 active:scale-95"
+                        >
+                            <span className="text-lg font-black text-teal-500 uppercase tracking-[0.3em]">Easy</span>
+                            <span className="text-sm text-slate-500 group-hover:text-teal-500/80 font-black">7 DAYS</span>
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {!isFlipped && (
+                <div className="mt-20 flex flex-col items-center gap-10 w-full max-w-md mx-auto mb-16">
+                    <button
+                        onClick={handleFlip}
+                        className="group/flip relative px-12 py-5 bg-surface/40 hover:bg-surface/60 backdrop-blur-xl border border-white/10 hover:border-primary/50 text-foreground rounded-[28px] font-black text-2xl shadow-2xl transition-all hover:scale-[1.05] active:scale-[0.95] flex items-center gap-6 overflow-hidden"
+                    >
+                        {/* Glowing Background Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover/flip:translate-x-[100%] transition-transform duration-1000"></div>
+
+                        <div className="size-12 rounded-2xl bg-primary/10 group-hover/flip:bg-primary/20 flex items-center justify-center transition-colors">
+                            <span className="material-symbols-outlined text-primary text-[32px] group-hover/flip:rotate-180 transition-transform duration-700">flip</span>
+                        </div>
+                        <span className="relative z-10 tracking-tight">Lật Thẻ</span>
+                    </button>
+
+                    <div className="flex items-center gap-5 px-6 py-2.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 text-xs font-black tracking-[0.3em] uppercase opacity-60 backdrop-blur-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[18px]">space_bar</span>
+                            <span>SPACE</span>
+                        </div>
+                        <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+                        <span>ĐỂ LẬT</span>
                     </div>
                 </div>
-            </motion.div>
+            )}
         </div>
     );
 }
