@@ -104,6 +104,7 @@ Tập hợp các file script chạy độc lập phục vụ nhu cầu Debug ho�
 
 Để đảm bảo tính nhất quán trong quá trình phát triển tự động, các AI Agent khi tham gia chỉnh sửa mã nguồn cần tuân thủ:
 - **Skill thiết kế**: Đọc kỹ file [.agents/vocaBeeSkill.md](file:///.agents/vocaBeeSkill.md) trước khi thực hiện bất kỳ thay đổi nào liên quan đến giao diện (UI/UX).
+- **Skill SM-2**: Tuân thủ [.agents/sm2Skill.md](file:///.agents/sm2Skill.md) khi làm việc với logic ôn tập và thuật toán ghi nhớ.
 - **Skill Git Push**: Khi đẩy code, tuân thủ [.agents/gitPushSkill.md](file:///.agents/gitPushSkill.md) để viết Commit Message chuẩn quốc tế (Conventional Commits) và đảm bảo an toàn repository.
 - **Quy tắc Task**: Luôn cập nhật tiến độ vào `brain/task.md` và ghi nhận thay đổi vào `README.md` ngay lập tức.
 - **Tiêu chuẩn UI**: Tuyệt đối sử dụng các Design Tokens trong `globals.css` (Glass, Amber, Premium Input/Button) để duy trì phong cách **Ethereal Flow**.
