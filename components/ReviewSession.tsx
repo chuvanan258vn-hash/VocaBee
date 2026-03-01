@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Flashcard from './Flashcard';
+import FlashcardInput from './FlashcardInput';
 import GrammarFlashcard from './GrammarFlashcard';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
@@ -13,6 +15,19 @@ interface ReviewSessionProps {
 export default function ReviewSession({ dueWords }: ReviewSessionProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isDone, setIsDone] = useState(false);
+    // Track if current card should be presented as Input or Flip
+    const [useInputMode, setUseInputMode] = useState(false);
+
+    // Randomize mode whenever currentIndex changes
+    useEffect(() => {
+        if (!isDone && dueWords[currentIndex]) {
+            // Grammar cards always use standard mode for now, 
+            // Vocabulary cards have a 50% chance to be Input mode
+            const isGrammar = !!dueWords[currentIndex].prompt;
+            setUseInputMode(!isGrammar && Math.random() > 0.5);
+        }
+    }, [currentIndex, isDone, dueWords]);
+
 
     if (dueWords.length === 0) {
         return (
@@ -137,9 +152,12 @@ export default function ReviewSession({ dueWords }: ReviewSessionProps) {
                         >
                             {currentWord.prompt ? (
                                 <GrammarFlashcard card={currentWord} onNext={handleNext} />
+                            ) : useInputMode ? (
+                                <FlashcardInput word={currentWord} onNext={handleNext} />
                             ) : (
                                 <Flashcard word={currentWord} onNext={handleNext} />
                             )}
+
                         </motion.div>
                     </AnimatePresence>
                 </div>

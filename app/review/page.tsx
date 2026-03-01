@@ -61,6 +61,18 @@ export default async function ReviewPage() {
             nextReview: { lte: now },
             isDeferred: false
         } as any,
+        select: {
+            id: true,
+            word: true,
+            wordType: true,
+            meaning: true,
+            pronunciation: true,
+            example: true,
+            synonyms: true,
+            interval: true,
+            repetition: true,
+            efactor: true,
+        },
         orderBy: { nextReview: 'asc' },
     });
 
@@ -69,14 +81,27 @@ export default async function ReviewPage() {
     let newWords: any[] = [];
     if (canLearnMoreCount > 0) {
         // First, get high-prio test words that haven't been studied yet
+        // Use interval: 0 (not just repetition: 0) to exclude forgotten words
         const testNewWords = await prisma.vocabulary.findMany({
             where: {
                 userId: user.id,
-                repetition: 0,
+                interval: 0, // Strictly never-studied words only
                 source: "TEST",
                 importanceScore: { gte: 3 },
-                nextReview: { lte: now } // Respect the 1-day delay if forgotten
+                createdAt: { lt: todayStart } // 1-day buffer
             } as any,
+            select: {
+                id: true,
+                word: true,
+                wordType: true,
+                meaning: true,
+                pronunciation: true,
+                example: true,
+                synonyms: true,
+                interval: true,
+                repetition: true,
+                efactor: true,
+            },
             take: canLearnMoreCount,
             orderBy: { createdAt: 'desc' }
         });
@@ -88,11 +113,23 @@ export default async function ReviewPage() {
             scheduledNewWords = await prisma.vocabulary.findMany({
                 where: {
                     userId: user.id,
-                    repetition: 0,
+                    interval: 0, // Strictly never-studied words only
                     source: "COLLECTION",
                     isDeferred: false,
-                    nextReview: { lte: now } // Respect the 1-day delay if forgotten
+                    createdAt: { lt: todayStart } // 1-day buffer
                 } as any,
+                select: {
+                    id: true,
+                    word: true,
+                    wordType: true,
+                    meaning: true,
+                    pronunciation: true,
+                    example: true,
+                    synonyms: true,
+                    interval: true,
+                    repetition: true,
+                    efactor: true,
+                },
                 take: remainingNewCount,
                 orderBy: { createdAt: 'desc' }
             });

@@ -17,10 +17,10 @@ export function normalizeWordType(wordType: string | null | undefined): string {
     // Order matters: More specific types first
     if (isPhrase) return "Cụm từ";
     if (isIdiom) return "Thành ngữ";
+    if (isAdv) return "Trạng từ";
+    if (isAdj) return "Tính từ";
     if (isNoun) return "Danh từ";
     if (isVerb) return "Động từ";
-    if (isAdj) return "Tính từ";
-    if (isAdv) return "Trạng từ";
     if (isPrep) return "Giới từ";
 
     return "Khác";

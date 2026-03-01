@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { updateWordAction, deleteWordAction } from "@/app/actions";
 import { Edit2, Trash2, Check, X, Volume2, Star } from "lucide-react";
 import { useToast } from "./ToastProvider";
@@ -8,6 +8,7 @@ import { getWordTypeColor, speak, normalizeWordType, getWordTypeStyles } from "@
 
 export default function WordItem({ item }: { item: any }) {
     const { showToast } = useToast();
+    const [isStarred, setIsStarred] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editData, setEditData] = useState({
         word: item.word,
@@ -18,7 +19,22 @@ export default function WordItem({ item }: { item: any }) {
         example: item.example || "",
     });
     const [loading, setLoading] = useState(false);
-    const [isStarred, setIsStarred] = useState(false);
+
+    const resetForm = () => {
+        setEditData({
+            word: item.word,
+            wordType: item.wordType || "",
+            meaning: item.meaning,
+            pronunciation: item.pronunciation || "",
+            synonyms: item.synonyms || "",
+            example: item.example || "",
+        });
+    };
+
+    // Reset edit data when item changes (sync with server)
+    useEffect(() => {
+        resetForm();
+    }, [item]);
 
     const handleUpdate = async () => {
         setLoading(true);
@@ -187,7 +203,10 @@ export default function WordItem({ item }: { item: any }) {
 
                 <div className="flex justify-end gap-3 pt-4">
                     <button
-                        onClick={() => setIsEditing(false)}
+                        onClick={() => {
+                            setIsEditing(false);
+                            resetForm();
+                        }}
                         className="px-6 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center gap-2 font-bold"
                         disabled={loading}
                     >

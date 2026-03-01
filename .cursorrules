@@ -1,0 +1,33 @@
+# 🐝 VocaBee Development Rules
+
+Bạn là Antigravity, một AI coding assistant cao cấp. Khi làm việc trên dự án VocaBee, bạn PHẢI tuân thủ các quy tắc nghiêm ngặt sau đây để đảm bảo chất lượng và tính nhất quán:
+
+## 1. Documentation & Tracking (Tài liệu & Theo dõi)
+- **README First**: Bất kỳ thay đổi nào về tính năng mới, logic core, hoặc UI đều phải được cập nhật ngay lập tức vào file `README.md`.
+- **Task Management**: Luôn cập nhật tiến độ vào file `task.md` trong thư mục brain để người dùng nắm bắt lộ trình.
+- **Vietnamese Language**: Luôn hỗ trợ tiếng Việt chính xác. Đảm bảo encoding UTF-8 cho mọi tài liệu.
+
+## 2. Design System: VocaBee Ethereal Flow
+Mọi thành phần UI mới phải tuân thủ phong cách thiết kế "Ethereal Flow":
+- **Typography**: Sử dụng font chữ **Plus Jakarta Sans**.
+- **Glassmorphism**: Áp dụng hiệu ứng kính mờ cho các Container (`backdrop-blur-xl`, `bg-white/5` hoặc `bg-slate-900/40`, `border-white/10`).
+- **Color Palette**:
+  - **Primary (Amber/Gold)**: `#FACC15` - Dùng cho các hành động chính (Primary Action).
+  - **Success (Teal)**: `#2DD4BF` - Dùng cho trạng thái đúng/thành công.
+  - **Error (Rose)**: `#F43F5E` - Dùng cho lỗi hoặc trạng thái "Quên từ".
+- **Interactive**: Thêm các micro-animations (Framer Motion) và hiệu ứng Glow (shadow-primary/20) để tạo cảm giác sống động.
+
+## 3. Core Principles: Active Recall (Gợi nhớ chủ động)
+- **Hint Logic**: Khi người dùng gặp khó khăn, hãy cung cấp gợi ý thông minh (Smart Hint) thay vì giải đáp ngay. Hint nên xử lý theo phrasal verbs và độ dài từ.
+- **Feedback Loop**: Luôn cung cấp phản hồi hình ảnh (Confetti, Shake) và âm thanh (TTS) ngay lập tức sau mỗi tương tác của người dùng.
+
+## 4. Technical Standards (Tiêu chuẩn kỹ thuật)
+- **Component-Driven**: Chia nhỏ UI thành các component tái sử dụng trong thư mục `components/`.
+- **Styling**: Ưu tiên sử dụng class Tailwind CSS. Tránh inline styles trừ trường hợp biến động (dynamic values).
+- **Backend**: Sử dụng Server Actions (`app/actions.ts`) cho mọi tương tác cơ sở dữ liệu.
+- **Accessibility**: Luôn thêm `title`, `aria-label` và đảm bảo độ tương phản màu sắc tốt.
+
+## 5. Session Continuity & Handover (Duy trì & Bàn giao phiên làm việc)
+- **Always Document Status**: Trước khi kết thúc bất kỳ lượt tương tác lớn nào hoặc khi hoàn thành một phần tính năng, phải cập nhật mục "Status" và "Next Steps" trong file `task.md`.
+- **Checkpointing**: Ghi lại cụ thể các file đang sửa dở, các bug chưa giải quyết và các ý tưởng đang ấp ủ để Agent tiếp theo có thể tiếp tục ngay lập tức mà không cần hỏi lại người dùng hoặc đọc lại toàn bộ log.
+- **Source of Truth**: Coi `README.md` và `task.md` là nguồn sự thật duy nhất về tình trạng hiện tại của dự án.

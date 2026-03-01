@@ -192,3 +192,36 @@ body {
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
+
+/* Flashcard Flip */
+.card-flip-container {
+  perspective: 1400px;
+}
+
+.card-flip-inner {
+  position: relative;
+  height: 520px;
+  min-height: 520px;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 0.65s cubic-bezier(0.35, 0.1, 0.25, 1);
+}
+
+.card-flip-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.card-face-back {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: rotateY(180deg);
+}
+
+.card-ambient-glow {
+  background: radial-gradient(ellipse at 50% 0%, rgba(250, 204, 21, 0.04) 0%, transparent 70%);
+}

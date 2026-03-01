@@ -14,7 +14,12 @@ export async function addWordAction(formData: any) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Bạn cần đăng nhập để thêm từ! 🐝" };
 
-  const word = formData.word.trim()
+  const { wordType, meaning, pronunciation, example, synonyms } = formData;
+  const word = formData.word?.trim();
+
+  if (!word || !wordType || !meaning?.trim()) {
+    return { error: "Vui lòng điền đầy đủ các thông tin bắt buộc! 🐝" };
+  }
 
   try {
     // 1. Kiểm tra xem từ này đã có trong "Tổ ong" của user này chưa
@@ -110,7 +115,7 @@ export async function deleteWordAction(id: string) {
     return { error: "Lỗi kỹ thuật, không thể xóa từ." };
   }
 }
-export async function reviewWordAction(id: string, quality: number) {
+export async function reviewWordAction(id: string, quality: number, isTypingBonus: boolean = false) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Bạn cần đăng nhập để ôn tập! 🐝" };
 
@@ -126,6 +131,7 @@ export async function reviewWordAction(id: string, quality: number) {
     // Award points: 1 point for any review, +1 bonus for Good/Easy (quality >= 4)
     let pointsToAdd = 1;
     if (quality >= 4) pointsToAdd += 1;
+    if (isTypingBonus && quality >= 4) pointsToAdd += 1; // Extra +1 for perfect typing without hints
 
     // Update points immediately
     await prisma.user.update({
@@ -134,12 +140,17 @@ export async function reviewWordAction(id: string, quality: number) {
     });
 
     // --- THUẬT TOÁN SM-2 ---
-    const { interval: nextInterval, repetition: nextRepetition, efactor: nextEfactor, nextReview: nextReviewDate } = calculateSm2({
+    let { interval: nextInterval, repetition: nextRepetition, efactor: nextEfactor, nextReview: nextReviewDate } = calculateSm2({
       interval: word.interval,
       repetition: word.repetition,
       efactor: word.efactor,
       quality: quality
     });
+
+    // Extra SM-2 bonus for typing correctly without hints
+    if (isTypingBonus && quality >= 4) {
+      nextEfactor = Math.min(nextEfactor + 0.1, 2.8); // Slight boost to ease factor, cap at 2.8
+    }
 
     await prisma.vocabulary.update({
       where: { id: id },

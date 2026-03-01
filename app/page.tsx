@@ -8,10 +8,10 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { getDashboardStats } from './actions';
 import SmartCaptureTrigger from '@/components/SmartCaptureTrigger';
-import SeedButton from '@/components/SeedButton';
 import { getAuthenticatedUser } from '@/lib/user';
 import Sidebar from '@/components/Sidebar';
 import { LeaderboardWidget, ActivityWidget } from '@/components/DashboardWidgets';
+import SrsDebugPanel from '@/components/SrsDebugPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,9 +28,20 @@ export default async function Home() {
   // Lấy các từ đến hạn ôn tập (Thời điểm hiện tại)
   const now = new Date();
 
+  // Tính "Hôm nay" bắt đầu từ 4:00 AM (đồng bộ với review page)
+  const todayStart = new Date(now);
+  if (now.getHours() < 4) {
+    todayStart.setDate(todayStart.getDate() - 1);
+  }
+  todayStart.setHours(4, 0, 0, 0);
+
   let dueReviewsCount = 0;
   let hasNewWords = false;
-  let allWords: any[] = [];
+  const isDev = process.env.NODE_ENV === 'development';
+
+  // Debug data — chỉ query khi ở môi trường development
+  let debugData = null;
+
   if (user) {
     dueReviewsCount = await prisma.vocabulary.count({
       where: {
@@ -41,15 +52,84 @@ export default async function Home() {
       } as any
     });
 
-    hasNewWords = await prisma.vocabulary.count({
+    const newWordsCount = await prisma.vocabulary.count({
       where: {
         userId: user.id,
         interval: 0,
         nextReview: { lte: now }
       } as any
-    }) > 0;
+    });
+    hasNewWords = newWordsCount > 0;
 
-    // allWords logic removed - accessed via Vocabulary page
+    // === Debug queries (chỉ chạy trong dev) ===
+    if (isDev) {
+      const [forgottenWords, newTestWords, newCollectionWords, deferredWords, totalWords, learnedToday] =
+        await Promise.all([
+          // Từ bị quên: interval > 0 nhưng repetition = 0
+          prisma.vocabulary.count({
+            where: {
+              userId: user.id,
+              interval: { gt: 0 },
+              repetition: 0,
+              nextReview: { lte: now },
+              isDeferred: false
+            } as any
+          }),
+          // Từ mới từ TEST chưa học
+          prisma.vocabulary.count({
+            where: {
+              userId: user.id,
+              interval: 0,
+              source: 'TEST',
+              importanceScore: { gte: 3 },
+              createdAt: { lt: todayStart }
+            } as any
+          }),
+          // Từ mới từ COLLECTION chưa học
+          prisma.vocabulary.count({
+            where: {
+              userId: user.id,
+              interval: 0,
+              source: 'COLLECTION',
+              isDeferred: false,
+              createdAt: { lt: todayStart }
+            } as any
+          }),
+          // Từ đang bị hoãn trong Inbox
+          prisma.vocabulary.count({
+            where: { userId: user.id, isDeferred: true } as any
+          }),
+          // Tổng số từ
+          prisma.vocabulary.count({
+            where: { userId: user.id } as any
+          }),
+          // Đã học hôm nay
+          prisma.vocabulary.count({
+            where: {
+              userId: user.id,
+              updatedAt: { gte: todayStart },
+              OR: [
+                { repetition: { gte: 1 } },
+                { nextReview: { gt: now } }
+              ]
+            } as any
+          }),
+        ]);
+
+      debugData = {
+        dueReviews: dueReviewsCount,
+        forgottenWords,
+        newWords: newWordsCount,
+        deferredWords,
+        totalWords,
+        todayStart: todayStart.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+        queryTime: now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+        newTestWords,
+        newCollectionWords,
+        dailyGoal: (user as any).dailyNewWordGoal || 20,
+        learnedToday,
+      };
+    }
   }
 
   const canLearnNewVocab = stats && stats.learnedToday < stats.dailyGoal && hasNewWords;
@@ -129,16 +209,18 @@ export default async function Home() {
 
           {stats && <Dashboard stats={stats} />}
 
-          {allWords.length === 0 && <SeedButton />}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            <div className="lg:col-span-2 flex flex-col h-full">
               <AddWordForm />
             </div>
             <div className="flex flex-col gap-8">
               <SmartCaptureTrigger />
               <LeaderboardWidget />
               <ActivityWidget />
+              {/* SRS Debug Panel — chỉ hiển thị trong development */}
+              {isDev && debugData && <SrsDebugPanel data={debugData} />}
             </div>
           </div>
 

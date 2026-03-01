@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { reviewGrammarCardAction } from "@/app/actions";
+import { calculateSm2 } from "@/lib/sm2";
 
 interface GrammarCard {
     id: string;
@@ -14,6 +15,8 @@ interface GrammarCard {
     explanation?: string | null;
     tags?: string | null;
     repetition: number;
+    interval: number;
+    efactor: number;
 }
 
 interface GrammarFlashcardProps {
@@ -71,6 +74,27 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
         onNext();
     };
 
+    const getNextReviewLabel = (grade: number) => {
+        let quality = 0;
+        if (grade === 1) quality = 3;
+        if (grade === 2) quality = 4;
+        if (grade === 3) quality = 5;
+
+        if (quality === 0 && grade === 0) return "< 1 MIN";
+
+        const result = calculateSm2({
+            interval: card.interval,
+            repetition: card.repetition,
+            efactor: card.efactor,
+            quality: quality
+        });
+
+        const days = result.interval;
+        if (days === 0) return "< 1 DAY";
+        if (days === 1) return "1 DAY";
+        return `${days} DAYS`;
+    };
+
     const handleSpeak = (text: string) => {
         if ("speechSynthesis" in window) {
             const utterance = new SpeechSynthesisUtterance(text);
@@ -89,12 +113,19 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
             >
                 {/* Card Type Tag */}
                 <div className="absolute top-4 right-4 sm:top-6 sm:right-8 flex items-center gap-2">
-                    {card.repetition === 0 ? (
-                        <span className="px-3 py-1 bg-primary/20 text-primary dark:bg-primary/10 text-[10px] font-semibold uppercase tracking-wider rounded-full">
+                    {card.repetition === 0 && card.interval === 0 ? (
+                        <span className="flex items-center gap-1.5 px-3 py-1 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-cyan-500/20">
+                            <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
                             TỪ MỚI
                         </span>
+                    ) : card.repetition === 0 && card.interval > 0 ? (
+                        <span className="flex items-center gap-1.5 px-3 py-1 bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-violet-500/20">
+                            <span className="material-symbols-outlined text-[12px]">replay</span>
+                            HỌC LẠI
+                        </span>
                     ) : (
-                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-semibold uppercase tracking-wider rounded-full">
+                        <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-amber-500/20">
+                            <span className="material-symbols-outlined text-[12px]">history</span>
                             ÔN TẬP
                         </span>
                     )}
@@ -262,18 +293,19 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                             {/* Self-grading Buttons */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                                 {[
-                                    { grade: 0, label: "Học lại", color: "text-red-500", icon: "refresh" },
-                                    { grade: 1, label: "Khó", color: "text-amber-500", icon: "priority_high" },
-                                    { grade: 2, label: "Dễ", color: "text-green-500", icon: "check" },
-                                    { grade: 3, label: "Rất dễ", color: "text-blue-500", icon: "bolt" },
+                                    { grade: 0, label: "Again", color: "text-red-500", icon: "refresh" },
+                                    { grade: 1, label: "Hard", color: "text-amber-500", icon: "priority_high" },
+                                    { grade: 2, label: "Good", color: "text-green-500", icon: "check" },
+                                    { grade: 3, label: "Easy", color: "text-blue-500", icon: "bolt" },
                                 ].map((btn) => (
                                     <button
                                         key={btn.grade}
                                         onClick={() => handleGrade(btn.grade)}
-                                        className="flex flex-col items-center gap-2 p-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.95] transition-all group border border-transparent hover:border-slate-300 dark:hover:border-slate-600"
+                                        className="flex flex-col items-center gap-1 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.95] transition-all group border border-transparent hover:border-slate-300 dark:hover:border-slate-600"
                                     >
-                                        <span className={`material-symbols-outlined text-2xl font-bold ${btn.color}`}>{btn.icon}</span>
-                                        <span className="text-xs font-bold uppercase text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 truncate w-full flex-shrink-0">{btn.label}</span>
+                                        <span className={`material-symbols-outlined text-xl font-bold ${btn.color}`}>{btn.icon}</span>
+                                        <span className="text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">{btn.label}</span>
+                                        <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200">{getNextReviewLabel(btn.grade)}</span>
                                     </button>
                                 ))}
                             </div>
