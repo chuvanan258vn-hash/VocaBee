@@ -64,16 +64,10 @@ model GrammarCard {
   type          String   // CLOZE, PRODUCTION, ERROR_CORRECTION, MCQ, TRANSFORMATION, EXPLANATION
   prompt        String   
   answer        String   
-  meaning       String?
   options       String?  
   hint          String?  
   explanation   String?  
   tags          String?  
-  
-  // Notebook specialized fields
-  myError       String?
-  trap          String?
-  goldenRule    String?
 
   // Rule-based fields
   importanceScore Int      @default(0)
@@ -105,4 +99,3 @@ model PasswordResetToken {
 
   @@unique([email, token])
 }
-

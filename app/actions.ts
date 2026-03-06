@@ -1,7 +1,6 @@
 'use server'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import crypto from 'crypto'
 import { auth, signOut } from '@/auth'
 import { calculateSm2 } from '@/lib/sm2'
 
@@ -116,11 +115,7 @@ export async function deleteWordAction(id: string) {
     return { error: "Lỗi kỹ thuật, không thể xóa từ." };
   }
 }
-export async function reviewWordAction(
-  id: string,
-  quality: number,
-  isTypingBonus: boolean = false
-) {
+export async function reviewWordAction(id: string, quality: number, isTypingBonus: boolean = false) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Bạn cần đăng nhập để ôn tập! 🐝" };
 
@@ -441,63 +436,32 @@ export async function addGrammarCardAction(data: {
   type: string;
   prompt: string;
   answer: string;
-  meaning?: string | null;
   options?: string | null;
   hint?: string | null;
   explanation?: string | null;
   tags?: string | null;
-  myError?: string | null;
-  trap?: string | null;
-  goldenRule?: string | null;
 }) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Bạn cần đăng nhập để thêm thẻ ngữ pháp! 🐝" };
 
   try {
-    const isModelSync = !!(prisma as any).grammarCard;
-
-    if (isModelSync) {
-      await (prisma as any).grammarCard.create({
-        data: {
-          type: data.type.toUpperCase(),
-          prompt: data.prompt,
-          answer: data.answer,
-          meaning: data.meaning,
-          options: data.options,
-          hint: data.hint,
-          explanation: data.explanation,
-          tags: data.tags,
-          myError: data.myError,
-          trap: data.trap,
-          goldenRule: data.goldenRule,
-          userId: user.id,
-          source: 'MANUAL',
-          importanceScore: 0
-        }
-      });
-    } else {
-      // Raw SQL fallback if type checking fails
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO GrammarCard (id, userId, type, prompt, answer, meaning, options, hint, explanation, tags, myError, trap, goldenRule, interval, repetition, efactor, nextReview, createdAt, updatedAt, isDeferred, source, importanceScore) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 2.0, ?, ?, ?, 0, 'MANUAL', 0)`,
-        crypto.randomUUID(),
-        user.id,
-        data.type.toUpperCase(),
-        data.prompt,
-        data.answer,
-        data.meaning,
-        data.options,
-        data.hint,
-        data.explanation,
-        data.tags,
-        data.myError,
-        data.trap,
-        data.goldenRule,
-        new Date().toISOString(),
-        new Date().toISOString(),
-        new Date().toISOString()
-      );
-    }
+    // Use raw SQL to avoid Prisma client sync issues
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO GrammarCard (id, userId, type, prompt, answer, options, hint, explanation, tags, interval, repetition, efactor, nextReview, createdAt, updatedAt, isDeferred, source, importanceScore) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 2.0, ?, ?, ?, 0, 'MANUAL', 0)`,
+      crypto.randomUUID(),
+      user.id,
+      data.type,
+      data.prompt,
+      data.answer,
+      data.options,
+      data.hint,
+      data.explanation,
+      data.tags,
+      new Date().toISOString(),
+      new Date().toISOString(),
+      new Date().toISOString()
+    );
 
     revalidatePath('/');
     return { success: true };
@@ -507,10 +471,7 @@ export async function addGrammarCardAction(data: {
   }
 }
 
-export async function reviewGrammarCardAction(
-  id: string,
-  grade: number
-) {
+export async function reviewGrammarCardAction(id: string, grade: number) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Cần đăng nhập" };
 
@@ -784,7 +745,6 @@ export async function importGrammarCardsAction(cards: any[]) {
       const cardType = (item.type || "PRODUCTION").toUpperCase().trim();
       const promptTrim = item.prompt.trim();
       const answerTrim = item.answer.trim();
-      const meaningStr = item.meaning ? String(item.meaning).trim() : null;
       const optionsStr = item.options ? String(item.options).trim() : null;
       const hintStr = item.hint ? String(item.hint).trim() : "";
       const explanationStr = item.explanation ? String(item.explanation).trim() : "";
@@ -815,7 +775,6 @@ export async function importGrammarCardsAction(cards: any[]) {
               data: {
                 type: cardType,
                 answer: answerTrim,
-                meaning: meaningStr,
                 options: optionsStr,
                 hint: hintStr,
                 explanation: explanationStr,
@@ -824,8 +783,8 @@ export async function importGrammarCardsAction(cards: any[]) {
             });
           } else {
             await prisma.$executeRawUnsafe(
-              `UPDATE GrammarCard SET type = ?, answer = ?, meaning = ?, options = ?, hint = ?, explanation = ?, tags = ? WHERE id = ?`,
-              cardType, answerTrim, meaningStr, optionsStr, hintStr, explanationStr, tagsStr, existingId
+              `UPDATE GrammarCard SET type = ?, answer = ?, options = ?, hint = ?, explanation = ?, tags = ? WHERE id = ?`,
+              cardType, answerTrim, optionsStr, hintStr, explanationStr, tagsStr, existingId
             );
           }
         } else {
@@ -835,7 +794,6 @@ export async function importGrammarCardsAction(cards: any[]) {
                 type: cardType,
                 prompt: promptTrim,
                 answer: answerTrim,
-                meaning: meaningStr,
                 options: optionsStr,
                 hint: hintStr,
                 explanation: explanationStr,
@@ -845,9 +803,9 @@ export async function importGrammarCardsAction(cards: any[]) {
             });
           } else {
             await prisma.$executeRawUnsafe(
-              `INSERT INTO GrammarCard (id, type, prompt, answer, meaning, options, hint, explanation, tags, userId, nextReview, interval, repetition, efactor) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              crypto.randomUUID(), cardType, promptTrim, answerTrim, meaningStr, optionsStr, hintStr, explanationStr, tagsStr, user.id,
+              `INSERT INTO GrammarCard (id, type, prompt, answer, options, hint, explanation, tags, userId, nextReview, interval, repetition, efactor) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              crypto.randomUUID(), cardType, promptTrim, answerTrim, optionsStr, hintStr, explanationStr, tagsStr, user.id,
               new Date().toISOString(), 0, 0, 2.0
             );
           }
@@ -999,9 +957,9 @@ export async function smartCaptureAction(data: {
     } else if (data.prompt) {
       // Grammar capture
       await prisma.$executeRawUnsafe(
-        `INSERT INTO GrammarCard (id, type, prompt, answer, meaning, importanceScore, source, isDeferred, userId, tags, explanation, hint, nextReview, interval, repetition, efactor, createdAt, updatedAt) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        crypto.randomUUID(), data.type || "PRODUCTION", data.prompt.trim(), data.answer || "", data.meaning || null,
+        `INSERT INTO GrammarCard (id, type, prompt, answer, importanceScore, source, isDeferred, userId, tags, explanation, hint, nextReview, interval, repetition, efactor, createdAt, updatedAt) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        crypto.randomUUID(), data.type || "PRODUCTION", data.prompt.trim(), data.answer || "",
         data.importanceScore, data.source, isDeferred ? 1 : 0, user.id, tagPrefix, data.explanation || "", data.hint || "",
         new Date().toISOString(), 0, 0, 2.0, new Date().toISOString(), new Date().toISOString()
       );

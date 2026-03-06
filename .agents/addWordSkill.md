@@ -40,9 +40,5 @@ File: `app/actions.ts`
   - Hover hiệu ứng shadow glow (`shadow-[var(--shadow-glow)]`).
   - Sử dụng `getWordTypeStyles` từ `lib/utils` để đồng bộ màu sắc theo loại từ.
 
-## 5. Synchronization Rule (Quy tắc đồng bộ)
-- **Đồng bộ Form**: Mọi thay đổi về cấu trúc trường (thêm/xóa/sửa field) trong Form Thêm từ vựng (`AddWordForm.tsx`) **BẮT BUỘC** phải được cập nhật tương ứng cho Form Chỉnh sửa của `WordItem.tsx`.
-- **Giao diện & Tính năng**: Đảm bảo các tính năng hỗ trợ (ví dụ: Gợi ý ví dụ, check trùng, các icon hỗ trợ) và phong cách UI (grid layout, premium styles) phải luôn nhất quán giữa hai form này để mang lại trải nghiệm người dùng đồng nhất.
-
 > [!IMPORTANT]
 > Khi thêm trường mới vào Form, hãy nhớ cập nhật cả `prisma/schema.prisma` và các hàm `addWordAction`, `updateWordAction` tương ứng.

@@ -50,7 +50,6 @@ const StatusBadge = ({ repetition, interval }: { repetition: number; interval: n
 
 export default function Flashcard({ word, onNext }: FlashcardProps) {
     const [isFlipped, setIsFlipped] = useState(false);
-    const [isChecking, setIsChecking] = useState(false);
     const { showToast } = useToast();
 
     const handleFlip = useCallback(() => {
@@ -81,14 +80,12 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
     }, [word.id]);
 
     const handleReview = async (quality: number) => {
-        setIsChecking(true);
-        const result = await reviewWordAction(word.id, quality, false);
+        const result = await reviewWordAction(word.id, quality);
         if (result.success) {
             onNext();
         } else {
             showToast(result.error || "Lỗi khi cập nhật", "error");
         }
-        setIsChecking(false);
     };
 
     const getNextReviewLabel = (quality: number) => {
@@ -256,28 +253,18 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 16 }}
                         transition={{ duration: 0.3, ease: 'easeOut' }}
-                        className="w-full flex flex-col items-center gap-6"
+                        className="grid grid-cols-2 md:grid-cols-4 gap-3"
                     >
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key="buttons"
-                                className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
+                        {ratingButtons.map(({ quality, label, sublabel, color, border }) => (
+                            <button
+                                key={quality}
+                                onClick={() => handleReview(quality)}
+                                className={`group flex flex-col items-center justify-center gap-1.5 py-5 rounded-2xl border-2 border-slate-200/70 dark:border-slate-800/70 bg-surface/80 ${border} shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95`}
                             >
-                                {ratingButtons.map(({ quality, label, sublabel, color, border }) => (
-                                    <button
-                                        key={quality}
-                                        onClick={() => handleReview(quality)}
-                                        disabled={isChecking}
-                                        className={`group flex flex-col items-center justify-center gap-1.5 py-5 rounded-2xl border-2 border-slate-200/70 dark:border-slate-800/70 bg-surface/80 ${border} shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50`}
-                                    >
-                                        <span className={`text-sm font-black ${color} uppercase tracking-[0.1em]`}>{label}</span>
-                                        <span className="text-[10px] text-slate-400 font-semibold">{sublabel}</span>
-                                    </button>
-                                ))}
-                            </motion.div>
-                        </AnimatePresence>
+                                <span className={`text-sm font-black ${color} uppercase tracking-[0.1em]`}>{label}</span>
+                                <span className="text-[10px] text-slate-400 font-semibold">{sublabel}</span>
+                            </button>
+                        ))}
                     </motion.div>
                 ) : (
                     <motion.div

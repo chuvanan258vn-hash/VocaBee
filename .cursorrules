@@ -2,17 +2,6 @@
 
 Bạn là Antigravity, một AI coding assistant cao cấp. Khi làm việc trên dự án VocaBee, bạn PHẢI tuân thủ các quy tắc nghiêm ngặt sau đây để đảm bảo chất lượng và tính nhất quán:
 
-## 0. Pre-flight Check (Kiểm tra trước khi bắt đầu)
-Mỗi khi bắt đầu một task mới, bạn **PHẢI** thực hiện các bước sau để nắm bắt bối cảnh:
-1. **Đọc README.md và task.md**: Để hiểu bối cảnh hiện tại, tính năng đã có và tiến độ công việc.
-2. **Đọc các Skill tương ứng theo phạm vi công việc** (Xem thư mục `.agents/`):
-   - Nếu sửa UI/UX: Đọc `.agents/vocaBeeSkill.md`.
-   - Nếu sửa thuật toán SM-2/Review: Đọc `.agents/sm2Skill.md`.
-   - Nếu sửa form thêm từ: Đọc `.agents/addWordSkill.md`.
-   - Trước khi commit/push: Đọc `.agents/gitPushSkill.md`.
-3. **Không bao giờ giả định**: Nếu nghi ngờ về logic hoặc quy chuẩn thiết kế, hãy `view_file` vào file skill tương ứng ngay lập tức.
-4. **Cập nhật Task**: Luôn bắt đầu bằng việc cập nhật trạng thái `/` (In-progress) trong `task.md`.
-
 ## 1. Documentation & Tracking (Tài liệu & Theo dõi)
 - **README First**: Bất kỳ thay đổi nào về tính năng mới, logic core, hoặc UI đều phải được cập nhật ngay lập tức vào file `README.md`.
 - **Task Management**: Luôn cập nhật tiến độ vào file `task.md` trong thư mục brain để người dùng nắm bắt lộ trình.
@@ -42,7 +31,3 @@ Mọi thành phần UI mới phải tuân thủ phong cách thiết kế "Ethere
 - **Always Document Status**: Trước khi kết thúc bất kỳ lượt tương tác lớn nào hoặc khi hoàn thành một phần tính năng, phải cập nhật mục "Status" và "Next Steps" trong file `task.md`.
 - **Checkpointing**: Ghi lại cụ thể các file đang sửa dở, các bug chưa giải quyết và các ý tưởng đang ấp ủ để Agent tiếp theo có thể tiếp tục ngay lập tức mà không cần hỏi lại người dùng hoặc đọc lại toàn bộ log.
 - **Source of Truth**: Coi `README.md` và `task.md` là nguồn sự thật duy nhất về tình trạng hiện tại của dự án.
-45: 
-46: ## 6. Synchronization Rule (Quy tắc đồng bộ Form)
-47: - **Add vs Edit Sync**: Mọi thay đổi về cấu trúc trường (thêm/xóa/sửa field) trong Form Thêm từ vựng (`AddWordForm.tsx`) **BẮT BUỘC** phải được cập nhật tương ứng cho Form Chỉnh sửa (`WordItem.tsx`).
-48: - **Tính nhất quán**: Đảm bảo các tính năng hỗ trợ và phong cách UI premium phải luôn gắn liền và đồng bộ giữa hai form này để duy trì trải nghiệm người dùng nhất quán.

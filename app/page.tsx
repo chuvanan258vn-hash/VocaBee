@@ -1,7 +1,6 @@
 // app/page.tsx
 import { auth } from '@/auth';
 import AddWordForm from '@/components/AddWordForm';
-import AddGrammarForm from '@/components/AddGrammarForm';
 import Dashboard from '@/components/Dashboard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { redirect } from 'next/navigation';
@@ -38,10 +37,6 @@ export default async function Home() {
 
   let dueReviewsCount = 0;
   let hasNewWords = false;
-
-  let dueGrammarCount = 0;
-  let hasGrammarReview = false;
-
   const isDev = process.env.NODE_ENV === 'development';
 
   // Debug data — chỉ query khi ở môi trường development
@@ -65,23 +60,6 @@ export default async function Home() {
       } as any
     });
     hasNewWords = newWordsCount > 0;
-
-    dueGrammarCount = await prisma.grammarCard.count({
-      where: {
-        userId: user.id,
-        nextReview: { lte: now },
-        isDeferred: false
-      } as any
-    });
-
-    const newGrammarCount = await prisma.grammarCard.count({
-      where: {
-        userId: user.id,
-        interval: 0,
-        nextReview: { lte: now }
-      } as any
-    });
-    hasGrammarReview = dueGrammarCount > 0 || (stats && stats.learnedToday < (user as any).dailyNewGrammarGoal && newGrammarCount > 0) || false;
 
     // === Debug queries (chỉ chạy trong dev) ===
     if (isDev) {
@@ -135,7 +113,7 @@ export default async function Home() {
                 { nextReview: { gt: now } }
               ]
             } as any
-          })
+          }),
         ]);
 
       debugData = {
@@ -152,7 +130,6 @@ export default async function Home() {
         learnedToday,
       };
     }
-
   }
 
   const canLearnNewVocab = stats && stats.learnedToday < stats.dailyGoal && hasNewWords;
@@ -220,41 +197,8 @@ export default async function Home() {
                   </div>
                 </div>
                 <Link
-                  href="/review?type=vocab"
+                  href="/review"
                   className="relative z-10 w-full md:w-auto group overflow-hidden bg-primary text-[#0F172A] font-bold text-sm py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_25px_rgba(251,191,36,0.4)] hover:bg-amber-300 hover:scale-[1.02] flex items-center justify-center gap-3"
-                >
-                  BẮT ĐẦU NGAY
-                  <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Daily Mission Banner - Grammar */}
-          {hasGrammarReview && (
-            <div className="rounded-3xl p-1 md:p-1.5 relative overflow-hidden group mb-2" style={{ background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.4) 0%, rgba(168, 85, 247, 0.4) 100%)', boxShadow: '0 0 15px rgba(168, 85, 247, 0.2)' }}>
-              <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 to-purple-500/10 pointer-events-none"></div>
-              <div className="absolute -right-20 -top-20 w-64 h-64 bg-purple-500/20 blur-3xl rounded-full pointer-events-none group-hover:bg-purple-500/30 transition-colors duration-500"></div>
-              <div className="bg-surface/40 backdrop-blur-md rounded-2xl p-6 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-white/5">
-                <div className="flex items-center gap-6 w-full md:w-auto relative z-10">
-                  <div className="w-14 h-14 bg-gradient-to-br from-sky-400 to-purple-500 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/30">
-                    <span className="material-symbols-outlined text-white text-3xl">rule</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
-                      <p className="text-sky-500 dark:text-sky-300 text-xs font-bold uppercase tracking-widest">Nhiệm vụ hàng ngày</p>
-                    </div>
-                    <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
-                      Hệ thống đã chuẩn bị <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-purple-600 dark:from-sky-300 dark:to-purple-300">
-                        {dueGrammarCount > 0 ? `${dueGrammarCount} lượt` : 'ngữ pháp mới'}
-                      </span> ôn tập ngữ pháp
-                    </h3>
-                  </div>
-                </div>
-                <Link
-                  href="/review?type=grammar"
-                  className="relative z-10 w-full md:w-auto group overflow-hidden bg-gradient-to-r from-sky-400 to-purple-500 text-white font-bold text-sm py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:shadow-[0_0_25px_rgba(168,85,247,0.5)] hover:bg-purple-500 hover:scale-[1.02] flex items-center justify-center gap-3"
                 >
                   BẮT ĐẦU NGAY
                   <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -268,9 +212,8 @@ export default async function Home() {
 
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-            <div className="lg:col-span-2 flex flex-col gap-8">
+            <div className="lg:col-span-2 flex flex-col h-full">
               <AddWordForm />
-              <AddGrammarForm />
             </div>
             <div className="flex flex-col gap-8">
               <SmartCaptureTrigger />

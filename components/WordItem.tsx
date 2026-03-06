@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { updateWordAction, deleteWordAction, checkDuplicateWordAction } from "@/app/actions";
-import { Edit2, Trash2, Check, X, Volume2, Star, Loader2 } from "lucide-react";
+import { updateWordAction, deleteWordAction } from "@/app/actions";
+import { Edit2, Trash2, Check, X, Volume2, Star } from "lucide-react";
 import { useToast } from "./ToastProvider";
 import { getWordTypeColor, speak, normalizeWordType, getWordTypeStyles } from "@/lib/utils";
 
@@ -19,133 +19,6 @@ export default function WordItem({ item }: { item: any }) {
         example: item.example || "",
     });
     const [loading, setLoading] = useState(false);
-    const [isSuggesting, setIsSuggesting] = useState(false);
-    const [isDuplicate, setIsDuplicate] = useState(false);
-    const [isChecking, setIsChecking] = useState(false);
-
-    const handleSuggestExample = async () => {
-        if (!editData.word.trim()) {
-            showToast("Vui lòng nhập từ vựng trước! 🐝", "error");
-            return;
-        }
-
-        setIsSuggesting(true);
-        try {
-            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${editData.word.trim().toLowerCase()}`);
-            if (!response.ok) throw new Error("Not found");
-
-            const data = await response.json();
-
-            // Get Pronunciation (Phonetic)
-            if (!editData.pronunciation) {
-                let foundPhonetic = "";
-                // First look for top-level phonetic
-                if (data[0].phonetic) {
-                    foundPhonetic = data[0].phonetic;
-                } else if (data[0].phonetics && data[0].phonetics.length > 0) {
-                    // Then look into phonetics array
-                    const withText = data[0].phonetics.find((p: any) => p.text);
-                    if (withText) foundPhonetic = withText.text;
-                }
-
-                if (foundPhonetic) {
-                    setEditData(prev => ({ ...prev, pronunciation: foundPhonetic }));
-                }
-            }
-
-            let foundExample = "";
-            for (const entry of data) {
-                for (const meaning of entry.meanings) {
-                    if (editData.wordType && meaning.partOfSpeech.toLowerCase() !== editData.wordType.toLowerCase()) continue;
-                    for (const def of meaning.definitions) {
-                        if (def.example) {
-                            foundExample = def.example;
-                            break;
-                        }
-                    }
-                    if (foundExample) break;
-                }
-                if (foundExample) break;
-            }
-
-            if (!foundExample) {
-                for (const entry of data) {
-                    for (const meaning of entry.meanings) {
-                        for (const def of meaning.definitions) {
-                            if (def.example) {
-                                foundExample = def.example;
-                                break;
-                            }
-                        }
-                        if (foundExample) break;
-                    }
-                    if (foundExample) break;
-                }
-            }
-
-            if (foundExample) {
-                setEditData(prev => ({ ...prev, example: foundExample }));
-                showToast("Đã tìm thấy ví dụ mẫu! ✨", "success");
-            } else {
-                showToast("Không tìm thấy ví dụ mẫu cho từ này. 🐝", "info");
-            }
-        } catch (error) {
-            showToast("Không tìm thấy ví dụ mẫu. 🐝", "info");
-        } finally {
-            setIsSuggesting(false);
-        }
-    };
-
-    useEffect(() => {
-        if (!isEditing || !editData.word.trim() || editData.pronunciation.trim()) return;
-
-        const timer = setTimeout(async () => {
-            try {
-                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${editData.word.trim().toLowerCase()}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    let foundPhonetic = "";
-                    if (data[0].phonetic) {
-                        foundPhonetic = data[0].phonetic;
-                    } else if (data[0].phonetics && data[0].phonetics.length > 0) {
-                        const withText = data[0].phonetics.find((p: any) => p.text);
-                        if (withText) foundPhonetic = withText.text;
-                    }
-                    if (foundPhonetic) {
-                        setEditData(prev => ({ ...prev, pronunciation: foundPhonetic }));
-                    }
-                }
-            } catch (error) {
-                console.error("Auto-phonetic fetch error:", error);
-            }
-        }, 800);
-
-        return () => clearTimeout(timer);
-    }, [editData.word, isEditing, editData.pronunciation]);
-
-    useEffect(() => {
-        if (!isEditing || !editData.word.trim()) {
-            setIsDuplicate(false);
-            return;
-        }
-
-        // Don't check if the word is same as the original item word
-        if (editData.word.trim().toLowerCase() === item.word.toLowerCase()) {
-            setIsDuplicate(false);
-            return;
-        }
-
-        const timer = setTimeout(async () => {
-            setIsChecking(true);
-            const res = await checkDuplicateWordAction(editData.word);
-            if (res && "exists" in res) {
-                setIsDuplicate(!!res.exists);
-            }
-            setIsChecking(false);
-        }, 600);
-
-        return () => clearTimeout(timer);
-    }, [editData.word, isEditing, item.word]);
 
     const resetForm = () => {
         setEditData({
@@ -200,34 +73,17 @@ export default function WordItem({ item }: { item: any }) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                        <div className="flex items-center justify-between ml-1">
-                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Từ vựng <span className="text-rose-500">*</span></label>
-                            {isChecking && (
-                                <div className="flex items-center gap-1 text-[10px] text-yellow-500 font-bold animate-pulse">
-                                    <Loader2 size={10} className="animate-spin" /> Đang kiểm tra...
-                                </div>
-                            )}
-                        </div>
-                        <div className="relative">
-                            <input
-                                className={`input-premium w-full p-3 text-foreground font-bold ${isDuplicate ? '!border-rose-500 ring-4 ring-rose-500/10' : ''}`}
-                                placeholder="v.d: Persistence"
-                                value={editData.word}
-                                onChange={(e) => setEditData({ ...editData, word: e.target.value })}
-                            />
-                            {isDuplicate && (
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-rose-500 animate-pulse pointer-events-none">
-                                    <span className="material-symbols-outlined text-[18px]">error</span>
-                                </div>
-                            )}
-                        </div>
-                        {isDuplicate && (
-                            <p className="text-[10px] font-bold text-rose-500 ml-1 italic">Từ này đã có rồi! 🐝</p>
-                        )}
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Từ vựng</label>
+                        <input
+                            className="input-premium w-full p-3 text-foreground font-bold"
+                            placeholder="Từ vựng"
+                            value={editData.word}
+                            onChange={(e) => setEditData({ ...editData, word: e.target.value })}
+                        />
                     </div>
                     <div className="space-y-4 md:col-span-1">
                         <div className="flex items-center justify-between ml-1">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">Phân loại <span className="text-rose-500">*</span></label>
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">Phân loại từ vựng</label>
                             {editData.wordType && (
                                 <button
                                     type="button"
@@ -308,8 +164,8 @@ export default function WordItem({ item }: { item: any }) {
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Phiên âm</label>
                         <input
-                            className="input-premium w-full p-3 text-foreground font-mono"
-                            placeholder="/pəˈsɪstəns/"
+                            className="input-premium w-full p-3 text-foreground"
+                            placeholder="Phiên âm (/.../)"
                             value={editData.pronunciation}
                             onChange={(e) => setEditData({ ...editData, pronunciation: e.target.value })}
                         />
@@ -318,51 +174,31 @@ export default function WordItem({ item }: { item: any }) {
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Từ đồng nghĩa</label>
                         <input
                             className="input-premium w-full p-3 text-foreground"
-                            placeholder="v.d: endurance"
+                            placeholder="Từ đồng nghĩa"
                             value={editData.synonyms}
                             onChange={(e) => setEditData({ ...editData, synonyms: e.target.value })}
                         />
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Nghĩa tiếng Việt <span className="text-rose-500">*</span></label>
-                        <textarea
-                            className="input-premium w-full p-3 text-foreground font-medium h-24 resize-none"
-                            placeholder="Dịch nghĩa chi tiết của từ này..."
-                            value={editData.meaning}
-                            onChange={(e) => setEditData({ ...editData, meaning: e.target.value })}
-                        />
-                    </div>
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between ml-1">
-                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Ví dụ minh họa</label>
-                            <button
-                                type="button"
-                                onClick={handleSuggestExample}
-                                disabled={isSuggesting || !editData.word.trim()}
-                                className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-                                title="Tự động gợi ý ví dụ tử điển"
-                            >
-                                {isSuggesting ? (
-                                    <Loader2 size={10} className="animate-spin" />
-                                ) : (
-                                    <span className="material-symbols-outlined text-[14px] leading-none group-hover:rotate-12 transition-transform">auto_awesome</span>
-                                )}
-                                <span className="text-[10px] font-black uppercase tracking-wider">Gợi ý</span>
-                            </button>
-                        </div>
-                        <textarea
-                            className="input-premium w-full p-3 text-foreground h-24 resize-none italic"
-                            placeholder="Cách dùng từ trong câu thực tế..."
-                            value={editData.example}
-                            onChange={(e) => setEditData({ ...editData, example: e.target.value })}
-                        />
-                        <p className="text-[9px] text-slate-400 dark:text-slate-500 italic ml-1 font-medium mt-1">
-                            💡 Câu ví dụ sẽ được dùng làm bài tập "điền vào chỗ trống" trong chế độ Typing Bonus.
-                        </p>
-                    </div>
+                <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Nghĩa tiếng Việt</label>
+                    <input
+                        className="input-premium w-full p-3 text-foreground font-medium"
+                        placeholder="Nghĩa tiếng Việt"
+                        value={editData.meaning}
+                        onChange={(e) => setEditData({ ...editData, meaning: e.target.value })}
+                    />
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Ví dụ minh họa</label>
+                    <textarea
+                        className="input-premium w-full p-4 text-foreground h-24 resize-none italic"
+                        placeholder="Ví dụ minh họa"
+                        value={editData.example}
+                        onChange={(e) => setEditData({ ...editData, example: e.target.value })}
+                    />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
