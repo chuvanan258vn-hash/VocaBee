@@ -10,13 +10,16 @@ interface GrammarCard {
     type: string;
     prompt: string;
     answer: string;
+    meaning?: string | null;
     options?: string | null;
     hint?: string | null;
     explanation?: string | null;
-    tags?: string | null;
     repetition: number;
     interval: number;
     efactor: number;
+    myError?: string | null;
+    trap?: string | null;
+    goldenRule?: string | null;
 }
 
 interface GrammarFlashcardProps {
@@ -30,6 +33,7 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
     const [isCorrect, setIsCorrect] = useState(false);
     const [showExplanation, setShowExplanation] = useState(false);
     const [showHint, setShowHint] = useState(false);
+    const [isChecking, setIsChecking] = useState(false);
     const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
     // Parse options if it's an MCQ card
@@ -51,6 +55,7 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
         let match = cleanUser === cleanAnswer;
 
         if (card.type === "PRODUCTION") {
+            // For production, we could allow minor punctuation differences
             match = cleanUser === cleanAnswer;
         }
 
@@ -66,11 +71,18 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
     };
 
     const handleGrade = async (grade: number) => {
-        await reviewGrammarCardAction(card.id, grade);
+        setIsChecking(true);
+        let quality = 0;
+        if (grade === 1) quality = 3;
+        if (grade === 2) quality = 4;
+        if (grade === 3) quality = 5;
+
+        await reviewGrammarCardAction(card.id, quality);
         // Reset state for next card
         setUserInput("");
         setIsSubmitted(false);
         setShowExplanation(false);
+        setIsChecking(false);
         onNext();
     };
 
@@ -105,213 +117,319 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
     };
 
     return (
-        <div className="w-full max-w-2xl mx-auto">
+        <div className="w-full max-w-2xl mx-auto px-4 sm:px-0">
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-surface-card p-6 sm:p-10 rounded-2xl md:rounded-3xl shadow-xl border border-slate-200 dark:border-slate-700 relative overflow-hidden"
+                className="relative group"
             >
-                {/* Card Type Tag */}
-                <div className="absolute top-4 right-4 sm:top-6 sm:right-8 flex items-center gap-2">
-                    {card.repetition === 0 && card.interval === 0 ? (
-                        <span className="flex items-center gap-1.5 px-3 py-1 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-cyan-500/20">
-                            <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
-                            TỪ MỚI
-                        </span>
-                    ) : card.repetition === 0 && card.interval > 0 ? (
-                        <span className="flex items-center gap-1.5 px-3 py-1 bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-violet-500/20">
-                            <span className="material-symbols-outlined text-[12px]">replay</span>
-                            HỌC LẠI
-                        </span>
-                    ) : (
-                        <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-amber-500/20">
-                            <span className="material-symbols-outlined text-[12px]">history</span>
-                            ÔN TẬP
-                        </span>
-                    )}
-                    <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-semibold uppercase tracking-wider rounded-full border border-primary/20">
-                        {card.type.replace("_", " ")}
-                    </span>
-                </div>
+                {/* Visual glow background */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-sky-500/20 to-purple-600/20 rounded-[2.5rem] blur opacity-40 group-hover:opacity-60 transition duration-1000"></div>
 
-                <div className="space-y-6 sm:space-y-8">
-                    {/* Prompt section */}
-                    <div className="space-y-3 sm:space-y-4 pt-2">
-                        <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-tighter">
-                            <span className="material-symbols-outlined text-sm">help</span>
-                            <span>Question / Task</span>
-                        </div>
-                        <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                            {card.prompt}
-                        </h2>
-                        <div className="flex items-center gap-2">
-                            <button
-                                title="Phát âm"
-                                onClick={() => handleSpeak(card.prompt)}
-                                className="size-10 rounded-full bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center transition-all duration-300"
-                            >
-                                <span className="material-symbols-outlined text-[20px]">volume_up</span>
-                            </button>
-                            {card.hint && (
-                                <button
-                                    onClick={() => setShowHint(!showHint)}
-                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${showHint
-                                        ? "bg-primary text-slate-900"
-                                        : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-primary"
-                                        }`}
-                                >
-                                    <span className="material-symbols-outlined text-[16px]">lightbulb</span>
-                                    <span>{showHint ? "ẨN GỢI Ý" : "GỢI Ý"}</span>
-                                </button>
+                <div className="relative bg-white/80 dark:bg-slate-900/60 backdrop-blur-2xl p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl border border-white/20 dark:border-slate-800/50 overflow-hidden">
+
+                    {/* Decorative Elements */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 rounded-full -ml-16 -mb-16 blur-3xl"></div>
+
+                    {/* Header Tags */}
+                    <div className="absolute top-4 right-4 sm:top-6 sm:right-8 flex items-center gap-2 z-10">
+                        <div className="hidden xs:flex items-center gap-2">
+                            {card.repetition === 0 && card.interval === 0 ? (
+                                <span className="flex items-center gap-1.5 px-3 py-1 bg-sky-500/10 text-sky-500 dark:text-sky-300 text-[9px] font-black uppercase tracking-wider rounded-full border border-sky-500/20">
+                                    <span className="material-symbols-outlined text-[12px] filled">auto_awesome</span>
+                                    TỪ MỚI
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-1.5 px-3 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-300 text-[9px] font-black uppercase tracking-wider rounded-full border border-purple-500/20">
+                                    <span className="material-symbols-outlined text-[12px] filled">history</span>
+                                    ÔN TẬP
+                                </span>
                             )}
                         </div>
-
-                        <AnimatePresence>
-                            {showHint && card.hint && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="p-3 sm:p-4 bg-primary/5 border border-primary/20 rounded-2xl overflow-hidden"
-                                >
-                                    <p className="text-xs sm:text-sm text-primary italic font-medium">
-                                        💡 {card.hint}
-                                    </p>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-widest rounded-full border border-slate-200 dark:border-slate-700/50">
+                            {card.type.replace("_", " ")}
+                        </span>
                     </div>
 
-                    {/* Input section */}
-                    {!isSubmitted ? (
-                        <div className="space-y-4 sm:space-y-6">
-                            {card.type === "MCQ" ? (
-                                <div className="grid grid-cols-1 gap-2 sm:gap-3">
-                                    {options.map((opt, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => { setUserInput(opt); }}
-                                            className={`p-4 rounded-xl text-left font-bold border-2 transition-all text-sm sm:text-base ${userInput === opt
-                                                ? "bg-primary/10 border-primary text-foreground shadow-[0_0_15px_rgba(251,191,36,0.15)]"
-                                                : "bg-slate-50 dark:bg-surface-lighter/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary/50"
-                                                }`}
-                                        >
-                                            <span className="mr-3 text-slate-300">{String.fromCharCode(65 + i)}.</span>
-                                            {opt}
-                                        </button>
-                                    ))}
-                                </div>
-                            ) : (
-                                card.type === "PRODUCTION" || card.type === "TRANSFORMATION" ? (
-                                    <textarea
-                                        ref={inputRef as any}
-                                        value={userInput}
-                                        onChange={(e) => setUserInput(e.target.value)}
-                                        placeholder="Type your answer here..."
-                                        className="w-full p-4 sm:p-6 bg-slate-50 dark:bg-surface-lighter/30 border border-slate-200 dark:border-slate-700 focus:border-primary rounded-2xl outline-none text-base sm:text-lg font-medium text-slate-900 dark:text-white transition-all min-h-[100px] resize-none focus:ring-2 focus:ring-primary/20"
-                                        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-                                    />
-                                ) : (
-                                    <input
-                                        ref={inputRef as any}
-                                        type="text"
-                                        value={userInput}
-                                        onChange={(e) => setUserInput(e.target.value)}
-                                        placeholder="Type here..."
-                                        className="w-full p-4 sm:p-6 bg-slate-50 dark:bg-surface-lighter/30 border border-slate-200 dark:border-slate-700 focus:border-primary rounded-2xl outline-none text-xl sm:text-2xl font-bold text-slate-900 dark:text-white transition-all text-center focus:ring-2 focus:ring-primary/20"
-                                        onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
-                                    />
-                                )
-                            )}
-
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={handleSubmit}
-                                    disabled={!userInput.trim()}
-                                    className="flex-[2] py-4 bg-primary hover:bg-amber-400 text-[#0F172A] font-bold rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-primary/20 active:scale-[0.98]"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">send</span>
-                                    <span>GỬI ĐÁP ÁN</span>
-                                </button>
-
-                                <button
-                                    onClick={handleDontKnow}
-                                    className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500 font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-xs border border-transparent hover:border-red-500/30"
-                                    title="Tôi không biết đáp án"
-                                >
-                                    <span className="material-symbols-outlined text-[20px]">skip_next</span>
-                                    <span className="hidden xs:inline">BỎ QUA</span>
-                                </button>
+                    <div className="space-y-6 sm:space-y-8 relative z-10">
+                        {/* Prompt section */}
+                        <div className="space-y-3 sm:space-y-5 pt-4">
+                            <div className="flex items-center gap-2 text-sky-500/60 font-black text-[10px] uppercase tracking-[0.2em]">
+                                <span className="size-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                                <span>Question Task</span>
                             </div>
+
+                            <h2 className="font-plus text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
+                                {card.prompt}
+                            </h2>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => handleSpeak(card.prompt)}
+                                    className="p-2.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 transition-all active:scale-95"
+                                    title="Listen"
+                                >
+                                    <span className="material-symbols-outlined text-xl filled">volume_up</span>
+                                </button>
+
+                                {(card.hint || card.meaning) && (
+                                    <button
+                                        onClick={() => setShowHint(!showHint)}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black transition-all ${showHint
+                                                ? "bg-purple-500 text-white shadow-lg shadow-purple-500/25"
+                                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-purple-500 border border-transparent hover:border-purple-500/30"
+                                            }`}
+                                    >
+                                        <span className="material-symbols-outlined text-sm filled">lightbulb</span>
+                                        <span>{showHint ? "ẨN GỢI Ý" : "XEM GỢI Ý"}</span>
+                                    </button>
+                                )}
+                            </div>
+
+                            <AnimatePresence>
+                                {showHint && (card.hint || card.meaning) && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10, height: 0 }}
+                                        animate={{ opacity: 1, y: 0, height: "auto" }}
+                                        exit={{ opacity: 0, y: -10, height: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="p-4 sm:p-5 bg-gradient-to-br from-purple-500/5 to-sky-500/5 border border-purple-500/10 rounded-2xl shadow-inner mt-2">
+                                            <div className="space-y-3">
+                                                {card.meaning && (
+                                                    <div className="flex items-start gap-3">
+                                                        <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[8px] font-black uppercase mt-0.5">Nghĩa</span>
+                                                        <p className="text-sm sm:text-base text-slate-700 dark:text-slate-200 font-bold italic leading-relaxed">
+                                                            "{card.meaning}"
+                                                        </p>
+                                                    </div>
+                                                )}
+                                                {card.hint && (
+                                                    <div className="flex items-start gap-3 pt-2 border-t border-purple-500/10">
+                                                        <span className="px-2 py-0.5 rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400 text-[8px] font-black uppercase mt-0.5 shrink-0">Gợi ý</span>
+                                                        <p className="text-xs sm:text-sm text-sky-600 dark:text-sky-400 font-medium">
+                                                            {card.hint}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
-                    ) : (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="space-y-6 sm:space-y-8"
-                        >
-                            {/* Result Display */}
-                            <div className={`p-4 sm:p-6 rounded-2xl border ${isCorrect
-                                ? "bg-green-500/10 border-green-500/20"
-                                : "bg-red-500/10 border-red-500/20"
-                                }`}>
-                                <div className="flex items-center gap-2 mb-3">
-                                    {isCorrect ? (
-                                        <span className="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
-                                    ) : (
-                                        <span className="material-symbols-outlined text-red-500 text-[20px]">error</span>
-                                    )}
-                                    <span className={`font-bold uppercase tracking-widest text-xs ${isCorrect ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                                        }`}>
-                                        {isCorrect ? "Chính xác!" : "Cần xem lại"}
-                                    </span>
+
+                        {/* Input Area */}
+                        {!isSubmitted ? (
+                            <div className="space-y-5 sm:space-y-6">
+                                {card.type === "MCQ" ? (
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {options.map((opt, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => setUserInput(opt)}
+                                                className={`group flex items-center p-4 rounded-2xl text-left font-bold border-2 transition-all relative overflow-hidden ${userInput === opt
+                                                        ? "bg-sky-500/10 border-sky-400 text-sky-600 dark:text-sky-300 shadow-lg shadow-sky-500/10"
+                                                        : "bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-sky-400/50"
+                                                    }`}
+                                            >
+                                                <span className={`size-7 rounded-lg flex items-center justify-center mr-4 text-xs tracking-tighter transition-colors ${userInput === opt ? "bg-sky-400 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-500"
+                                                    }`}>
+                                                    {String.fromCharCode(65 + i)}
+                                                </span>
+                                                <span className="text-sm sm:text-base">{opt}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="relative group/input">
+                                        <div className="absolute -inset-0.5 bg-gradient-to-r from-sky-400 to-purple-500 rounded-2xl blur opacity-10 group-focus-within/input:opacity-30 transition duration-500"></div>
+                                        {card.type === "PRODUCTION" || card.type === "TRANSFORMATION" ? (
+                                            <textarea
+                                                ref={inputRef as any}
+                                                value={userInput}
+                                                onChange={(e) => setUserInput(e.target.value)}
+                                                placeholder="Viết đáp án tại đây..."
+                                                className="relative w-full p-5 sm:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none text-base sm:text-lg font-bold text-foreground focus:border-sky-400 transition-all min-h-[120px] resize-none"
+                                                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
+                                            />
+                                        ) : (
+                                            <input
+                                                ref={inputRef as any}
+                                                type="text"
+                                                value={userInput}
+                                                onChange={(e) => setUserInput(e.target.value)}
+                                                placeholder="Nhập câu trả lời..."
+                                                className="relative w-full p-5 sm:p-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none text-xl sm:text-2xl font-black text-foreground text-center focus:border-sky-400 transition-all"
+                                                onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+                                                autoComplete="off"
+                                            />
+                                        )
+                                        }
+                                    </div>
+                                )}
+
+                                <div className="flex gap-3 sm:gap-4 pt-2">
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={!userInput.trim()}
+                                        className="flex-[2.5] py-4.5 bg-gradient-to-r from-sky-400 to-purple-500 hover:from-sky-300 hover:to-purple-400 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-3 transition-all disabled:opacity-50 disabled:grayscale shadow-[0_10px_20px_-5px_rgba(56,189,248,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(56,189,248,0.6)] active:scale-[0.97] group"
+                                    >
+                                        <span>GỬI ĐÁP ÁN</span>
+                                        <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">send</span>
+                                    </button>
+
+                                    <button
+                                        onClick={handleDontKnow}
+                                        className="flex-1 py-4.5 bg-slate-100 dark:bg-slate-800/80 text-slate-500 hover:text-red-500 dark:hover:text-red-400 font-bold text-[11px] rounded-2xl flex items-center justify-center gap-2 transition-all border border-transparent hover:border-red-500/20 active:scale-[0.97]"
+                                        title="Bỏ qua câu này"
+                                    >
+                                        <span className="material-symbols-outlined text-base">skip_next</span>
+                                        <span className="hidden xs:inline uppercase tracking-widest">Bỏ qua</span>
+                                    </button>
                                 </div>
-                                <div className="space-y-4">
-                                    <p className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                                        {card.answer}
-                                    </p>
-                                    <div className="flex gap-2">
+                            </div>
+                        ) : (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="space-y-6 sm:space-y-8"
+                            >
+                                {/* Result Feedback */}
+                                <div className={`relative p-6 sm:p-8 rounded-3xl border-2 overflow-hidden ${isCorrect
+                                        ? "bg-green-500/5 border-green-500/20"
+                                        : "bg-red-500/5 border-red-500/20"
+                                    }`}>
+                                    <div className={`absolute top-0 right-0 p-4 opacity-5 bg-gradient-to-br ${isCorrect ? "from-green-500 to-emerald-600" : "from-red-500 to-rose-600"} w-32 h-32 rounded-full -mr-12 -mt-12`}></div>
+
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className={`size-8 rounded-full flex items-center justify-center border ${isCorrect ? "bg-green-500/20 border-green-500/30 text-green-500" : "bg-red-500/20 border-red-500/30 text-red-500"
+                                            }`}>
+                                            <span className="material-symbols-outlined text-base filled">
+                                                {isCorrect ? "check_circle" : "error"}
+                                            </span>
+                                        </div>
+                                        <span className={`text-[11px] font-black uppercase tracking-[0.2em] ${isCorrect ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                                            }`}>
+                                            {isCorrect ? "Rất tốt! 🎉" : "Cần lưu ý thêm 🐝"}
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-5">
+                                        <p className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
+                                            {card.answer}
+                                        </p>
+
                                         <button
                                             onClick={() => handleSpeak(card.answer)}
-                                            className="px-3 py-1.5 bg-white/50 dark:bg-white/5 rounded-lg text-slate-500 hover:text-primary transition-colors flex items-center gap-2 text-xs font-bold border border-slate-200 dark:border-white/10"
+                                            className="flex items-center gap-2 px-4 py-2 bg-white/50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-sky-500 font-black text-[10px] uppercase transition-all shadow-sm active:scale-95"
                                         >
-                                            <span className="material-symbols-outlined text-[16px]">volume_up</span> Listen
+                                            <span className="material-symbols-outlined text-base filled">volume_up</span>
+                                            <span>Nghe lại</span>
                                         </button>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Explanation */}
-                            {card.explanation && (
-                                <div className="p-4 sm:p-5 bg-blue-500/5 dark:bg-slate-800/50 rounded-2xl border border-blue-500/20">
-                                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300 leading-relaxed italic">
-                                        💡 {card.explanation}
-                                    </p>
+                                {/* Explanation & Analysis */}
+                                <div className="space-y-4">
+                                    {card.explanation && (
+                                        <div className="p-5 bg-sky-500/5 border border-sky-500/10 rounded-2xl">
+                                            <p className="text-sm font-medium text-slate-600 dark:text-slate-300 italic leading-relaxed">
+                                                💡 {card.explanation}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Specialized Notebook Analysis */}
+                                    <AnimatePresence>
+                                        {(card.myError || card.trap || card.goldenRule) && (
+                                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                                                {card.myError && (
+                                                    <div className="bg-slate-100/50 dark:bg-slate-800/40 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800">
+                                                        <div className="flex items-center gap-2 mb-2 font-black uppercase text-[10px] text-slate-500 tracking-widest">
+                                                            <span className="material-symbols-outlined text-sm">history_edu</span>
+                                                            Lỗi của bạn
+                                                        </div>
+                                                        <p className="text-sm text-slate-700 dark:text-slate-300 italic font-medium">
+                                                            "{card.myError}"
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {card.trap && (
+                                                    <div className="bg-rose-500/5 dark:bg-rose-500/10 rounded-2xl p-4 sm:p-5 border border-rose-500/10">
+                                                        <div className="flex items-center gap-2 mb-2 font-black uppercase text-[10px] text-rose-500 tracking-widest">
+                                                            <span className="material-symbols-outlined text-sm filled">warning</span>
+                                                            Cái bẫy (The Trap) 🪤
+                                                        </div>
+                                                        <p className="text-sm text-rose-700 dark:text-rose-300 font-bold leading-snug">
+                                                            {card.trap}
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {card.goldenRule && (
+                                                    <div className="bg-amber-500/10 dark:bg-amber-500/5 rounded-2xl p-4 sm:p-5 border-2 border-amber-500/20 ring-1 ring-amber-500/10 shadow-[0_5px_15px_rgba(251,191,36,0.1)]">
+                                                        <div className="flex items-center gap-2 mb-2 font-black uppercase text-[10px] text-amber-600 dark:text-amber-500 tracking-widest">
+                                                            <span className="material-symbols-outlined text-sm filled animate-pulse">auto_awesome</span>
+                                                            Quy tắc vàng 🍯
+                                                        </div>
+                                                        <p className="text-base text-amber-900 dark:text-amber-200 font-black leading-tight">
+                                                            {card.goldenRule}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
-                            )}
 
-                            {/* Self-grading Buttons */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                                {[
-                                    { grade: 0, label: "Again", color: "text-red-500", icon: "refresh" },
-                                    { grade: 1, label: "Hard", color: "text-amber-500", icon: "priority_high" },
-                                    { grade: 2, label: "Good", color: "text-green-500", icon: "check" },
-                                    { grade: 3, label: "Easy", color: "text-blue-500", icon: "bolt" },
-                                ].map((btn) => (
-                                    <button
-                                        key={btn.grade}
-                                        onClick={() => handleGrade(btn.grade)}
-                                        className="flex flex-col items-center gap-1 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.95] transition-all group border border-transparent hover:border-slate-300 dark:hover:border-slate-600"
-                                    >
-                                        <span className={`material-symbols-outlined text-xl font-bold ${btn.color}`}>{btn.icon}</span>
-                                        <span className="text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">{btn.label}</span>
-                                        <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200">{getNextReviewLabel(btn.grade)}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </motion.div>
-                    )}
+                                {/* Grading Buttons */}
+                                <div className="pt-2">
+                                    <div className="text-center mb-4">
+                                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Đánh giá độ khó</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        {[
+                                            { grade: 0, label: "Again", color: "text-rose-500", icon: "refresh", bg: "hover:bg-rose-500/5", border: "hover:border-rose-500/30" },
+                                            { grade: 1, label: "Hard", color: "text-amber-500", icon: "priority_high", bg: "hover:bg-amber-500/5", border: "hover:border-amber-500/30" },
+                                            { grade: 2, label: "Good", color: "text-emerald-500", icon: "check", bg: "hover:bg-emerald-500/5", border: "hover:border-emerald-500/30" },
+                                            { grade: 3, label: "Easy", color: "text-sky-500", icon: "bolt", bg: "hover:bg-sky-500/5", border: "hover:border-sky-500/30" },
+                                        ].map((btn) => (
+                                            <button
+                                                key={btn.grade}
+                                                disabled={isChecking}
+                                                onClick={() => handleGrade(btn.grade)}
+                                                className={`flex flex-col items-center gap-1.5 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 transition-all active:scale-95 disabled:opacity-50 ${btn.bg} ${btn.border} group`}
+                                            >
+                                                <span className={`material-symbols-outlined text-lg ${btn.color} font-bold group-hover:scale-110 transition-transform`}>
+                                                    {btn.icon}
+                                                </span>
+                                                <span className="text-[10px] font-black uppercase text-slate-700 dark:text-slate-300">{btn.label}</span>
+                                                <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500">
+                                                    {getNextReviewLabel(btn.grade)}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </div>
                 </div>
+            </motion.div>
+
+            {/* Hint for Enter key */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.3 }}
+                className="mt-6 text-center"
+            >
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-center gap-2">
+                    <span className="px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-700">Enter</span>
+                    để tiếp tục
+                </p>
             </motion.div>
         </div>
     );

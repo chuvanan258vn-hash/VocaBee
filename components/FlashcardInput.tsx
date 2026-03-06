@@ -32,6 +32,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
     const [showAnswer, setShowAnswer] = useState(false);
     const [shake, setShake] = useState(false);
     const [showHint, setShowHint] = useState(false);
+    const [usedAudioHint, setUsedAudioHint] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Reset state when word changes
@@ -40,6 +41,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
         setIsCorrect(null);
         setShowAnswer(false);
         setShowHint(false);
+        setUsedAudioHint(false);
         if (inputRef.current) {
             inputRef.current.focus();
         }
@@ -108,8 +110,9 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
 
     const handleReview = async (quality: number) => {
         setIsChecking(true);
-        // Bonus only applies for Good (4) or Easy (5) quality AND if typed correctly without hints
-        const isTypingBonus = isCorrect === true && !showHint && quality >= 4;
+        // Bonus only applies for Good (4) or Easy (5) quality AND if typed correctly without ANY hints (visual or audio)
+        const isTypingBonus = isCorrect === true && !showHint && !usedAudioHint && quality >= 4;
+
         const result = await reviewWordAction(word.id, quality, isTypingBonus);
         if (result.success) {
             onNext();
@@ -149,7 +152,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
 
                 {/* Typing Bonus Badge */}
                 <AnimatePresence>
-                    {isCorrect === true && !showHint && (
+                    {isCorrect === true && !showHint && !usedAudioHint && (
                         <motion.div
                             initial={{ opacity: 0, scale: 0.5, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -236,16 +239,41 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                                 </span>
                             </div>
 
-                            {/* New Hint Button Placement */}
-                            {!showHint && (
-                                <button
-                                    onClick={() => setShowHint(true)}
-                                    className="group flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-primary/5 hover:bg-primary/20 border border-primary/20 hover:border-primary/40 text-primary transition-all duration-500 animate-bounce-subtle"
-                                >
-                                    <span className="material-symbols-outlined text-[18px] filled">lightbulb</span>
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Xem gợi ý (Hint)</span>
-                                </button>
-                            )}
+                            {/* New Hint Buttons Placement */}
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="flex gap-4">
+                                    {!showHint && (
+                                        <button
+                                            onClick={() => {
+                                                setShowHint(true);
+                                                setInputValue("");
+                                            }}
+                                            className="group flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-primary/5 hover:bg-primary/20 border border-primary/20 hover:border-primary/40 text-primary transition-all duration-500"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px] filled text-amber-500">lightbulb</span>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Xem gợi ý</span>
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => {
+                                            speak(word.word);
+                                            if (!showAnswer) setUsedAudioHint(true);
+                                        }}
+                                        className="group flex flex-col items-center gap-1"
+                                        title="Nghe phát âm (sử dụng sẽ tắt thưởng gõ chính xác)"
+                                    >
+                                        <div className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-primary/5 hover:bg-primary/20 border border-primary/20 hover:border-primary/40 text-primary transition-all duration-500">
+                                            <span className="material-symbols-outlined text-[18px] filled text-teal-500">volume_up</span>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Nghe phát âm</span>
+                                        </div>
+                                    </button>
+                                </div>
+                                {(showHint || usedAudioHint) && !showAnswer && (
+                                    <p className="text-[9px] font-bold text-rose-500 uppercase tracking-widest animate-pulse">
+                                        Đã mất quyền nhận Typing Bonus 🐝
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -358,24 +386,33 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                             key="rating-buttons"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="w-full"
+                            className="w-full flex flex-col items-center gap-6"
                         >
-                            <h4 className="text-center text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">
-                                Bạn đánh giá độ khó thế nào?
-                            </h4>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {ratingButtons.map(({ quality, label, sublabel, color, border }) => (
-                                    <button
-                                        key={quality}
-                                        onClick={() => handleReview(quality)}
-                                        disabled={isChecking}
-                                        className={`group flex flex-col items-center justify-center gap-1.5 py-5 rounded-2xl border-2 border-slate-200/70 dark:border-slate-800/70 bg-surface/80 ${border} shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50`}
-                                    >
-                                        <span className={`text-sm font-black ${color} uppercase tracking-[0.1em]`}>{label}</span>
-                                        <span className="text-[10px] text-slate-400 font-semibold">{sublabel}</span>
-                                    </button>
-                                ))}
-                            </div>
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key="buttons"
+                                    className="w-full"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                >
+                                    <h4 className="text-center text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">
+                                        Bạn đánh giá độ khó thế nào?
+                                    </h4>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {ratingButtons.map(({ quality, label, sublabel, color, border }) => (
+                                            <button
+                                                key={quality}
+                                                onClick={() => handleReview(quality)}
+                                                disabled={isChecking}
+                                                className={`group flex flex-col items-center justify-center gap-1.5 py-5 rounded-2xl border-2 border-slate-200/70 dark:border-slate-800/70 bg-surface/80 ${border} shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50`}
+                                            >
+                                                <span className={`text-sm font-black ${color} uppercase tracking-[0.1em]`}>{label}</span>
+                                                <span className="text-[10px] text-slate-400 font-semibold">{sublabel}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            </AnimatePresence>
                         </motion.div>
                     )}
 

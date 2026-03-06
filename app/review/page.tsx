@@ -6,7 +6,14 @@ import ReviewSession from '@/components/ReviewSession';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ReviewPage() {
+type Props = {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function ReviewPage(props: Props) {
+    const searchParams = await props.searchParams;
+    const reviewType = searchParams.type;
+
     const session = await auth();
     if (!session?.user?.email) redirect('/login');
 
@@ -138,30 +145,56 @@ export default async function ReviewPage() {
         newWords = [...testNewWords, ...scheduledNewWords];
     }
 
-    // Interleave Logic: Mix Due and New items for better flow
+    // 3. Lấy thêm các thẻ NGỮ PHÁP đến hạn (Priority 2)
+    const dueGrammar = await prisma.grammarCard.findMany({
+        where: {
+            userId: user.id,
+            nextReview: { lte: now },
+            isDeferred: false
+        } as any,
+        orderBy: { nextReview: 'asc' },
+    });
+
+    // Interleave Logic: Mix Due Vocab, New Vocab, and Grammar for better flow
     const interleaved: any[] = [];
     let reviewIdx = 0;
     let newIdx = 0;
+    let grammarIdx = 0;
 
-    // Pattern: 3-4 Reviews followed by 1 New item
-    while (reviewIdx < dueWords.length || newIdx < newWords.length) {
-        // Add up to 3 reviews
+    // Pattern: 2-3 Reviews, 1 New item, 1 Grammar item
+    while (reviewIdx < dueWords.length || newIdx < newWords.length || grammarIdx < dueGrammar.length) {
+        // Add up to 3 vocab reviews
         for (let i = 0; i < 3 && reviewIdx < dueWords.length; i++) {
             interleaved.push(dueWords[reviewIdx++]);
         }
-        // Add 1 new item
+        // Add 1 grammar item
+        if (grammarIdx < dueGrammar.length) {
+            interleaved.push(dueGrammar[grammarIdx++]);
+        }
+        // Add 1 new vocab item
         if (newIdx < newWords.length) {
             interleaved.push(newWords[newIdx++]);
         }
-        // If no more reviews, just drain new items
-        if (reviewIdx >= dueWords.length && newIdx < newWords.length) {
+        // Drain logic
+        if (reviewIdx >= dueWords.length && newIdx >= newWords.length && grammarIdx < dueGrammar.length) {
+            interleaved.push(dueGrammar[grammarIdx++]);
+        }
+        if (reviewIdx >= dueWords.length && grammarIdx >= dueGrammar.length && newIdx < newWords.length) {
             interleaved.push(newWords[newIdx++]);
         }
     }
 
+    // Filter by type if requested
+    let finalItems = interleaved;
+    if (reviewType === 'vocab') {
+        finalItems = interleaved.filter(item => !('type' in item && 'prompt' in item)); // Vocab items don't have 'prompt' (grammar cards have prompt)
+    } else if (reviewType === 'grammar') {
+        finalItems = interleaved.filter(item => 'type' in item && 'prompt' in item); // Only grammar items
+    }
+
     return (
         <main className="min-h-screen bg-background font-sans">
-            <ReviewSession dueWords={interleaved as any} />
+            <ReviewSession dueWords={finalItems as any} />
         </main>
     );
 }

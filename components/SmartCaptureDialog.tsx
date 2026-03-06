@@ -35,6 +35,7 @@ export default function SmartCaptureDialog({ isOpen, onClose }: SmartCaptureDial
         setMeaning("");
         setPrompt("");
         setAnswer("");
+        setMeaning(""); // This is redundant but ensures consistency
         setIsRecurring(false);
         setIsCore(false);
         setIsConfusing(false);
@@ -48,7 +49,7 @@ export default function SmartCaptureDialog({ isOpen, onClose }: SmartCaptureDial
         setIsLoading(true);
         const res = await smartCaptureAction({
             word: mode === "VOCAB" ? word : undefined,
-            meaning: mode === "VOCAB" ? meaning : undefined,
+            meaning: meaning, // This works for both modes now as meaning state is used for both
             prompt: mode === "GRAMMAR" ? prompt : undefined,
             answer: mode === "GRAMMAR" ? answer : undefined,
             source: "TEST",
@@ -148,6 +149,12 @@ export default function SmartCaptureDialog({ isOpen, onClose }: SmartCaptureDial
                                     value={answer}
                                     onChange={(e) => setAnswer(e.target.value)}
                                     placeholder="Đáp án..."
+                                    className="w-full bg-slate-100 dark:bg-white/5 border-none rounded-xl sm:rounded-2xl px-4 py-3 text-sm font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500 transition-all outline-none"
+                                />
+                                <input
+                                    value={meaning}
+                                    onChange={(e) => setMeaning(e.target.value)}
+                                    placeholder="Nghĩa của câu..."
                                     className="w-full bg-slate-100 dark:bg-white/5 border-none rounded-xl sm:rounded-2xl px-4 py-3 text-sm font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500 transition-all outline-none"
                                 />
                             </>

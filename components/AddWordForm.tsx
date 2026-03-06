@@ -16,18 +16,115 @@ export default function AddWordForm() {
   const [example, setExample] = useState('');
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!term.trim()) { setIsDuplicate(false); return; }
     const timer = setTimeout(async () => {
+      // Check Duplicate
       setIsChecking(true);
       const res = await checkDuplicateWordAction(term);
       if (res && 'exists' in res) setIsDuplicate(!!res.exists);
       setIsChecking(false);
+
+      // Auto-fetch Phonetic if empty
+      if (!phonetic.trim()) {
+        try {
+          const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${term.trim().toLowerCase()}`);
+          if (response.ok) {
+            const data = await response.json();
+            let foundPhonetic = "";
+            if (data[0].phonetic) {
+              foundPhonetic = data[0].phonetic;
+            } else if (data[0].phonetics && data[0].phonetics.length > 0) {
+              const withText = data[0].phonetics.find((p: any) => p.text);
+              if (withText) foundPhonetic = withText.text;
+            }
+            if (foundPhonetic) setPhonetic(foundPhonetic);
+          }
+        } catch (error) {
+          console.error("Auto-phonetic fetch error:", error);
+        }
+      }
     }, 600);
     return () => clearTimeout(timer);
   }, [term]);
+
+  const handleSuggestExample = async () => {
+    if (!term.trim()) {
+      showToast("Vui lòng nhập từ vựng trước! 🐝", "error");
+      return;
+    }
+
+    setIsSuggesting(true);
+    try {
+      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${term.trim().toLowerCase()}`);
+      if (!response.ok) throw new Error("Not found");
+
+      const data = await response.json();
+
+      // Get Pronunciation (Phonetic)
+      if (!phonetic) {
+        let foundPhonetic = "";
+        // First look for top-level phonetic
+        if (data[0].phonetic) {
+          foundPhonetic = data[0].phonetic;
+        } else if (data[0].phonetics && data[0].phonetics.length > 0) {
+          // Then look into phonetics array
+          const withText = data[0].phonetics.find((p: any) => p.text);
+          if (withText) foundPhonetic = withText.text;
+        }
+
+        if (foundPhonetic) {
+          setPhonetic(foundPhonetic);
+        }
+      }
+
+      // Look for the first example in the definition structure
+      let foundExample = "";
+      for (const entry of data) {
+        for (const meaning of entry.meanings) {
+          if (wordType && meaning.partOfSpeech.toLowerCase() !== wordType.toLowerCase()) continue;
+          for (const def of meaning.definitions) {
+            if (def.example) {
+              foundExample = def.example;
+              break;
+            }
+          }
+          if (foundExample) break;
+        }
+        if (foundExample) break;
+      }
+
+      // If no example found with specific word type, try any example
+      if (!foundExample) {
+        for (const entry of data) {
+          for (const meaning of entry.meanings) {
+            for (const def of meaning.definitions) {
+              if (def.example) {
+                foundExample = def.example;
+                break;
+              }
+            }
+            if (foundExample) break;
+          }
+          if (foundExample) break;
+        }
+      }
+
+      if (foundExample) {
+        setExample(foundExample);
+        showToast("Đã tìm thấy ví dụ mẫu! ✨", "success");
+      } else {
+        showToast("Không tìm thấy ví dụ mẫu cho từ này. 🐝", "info");
+      }
+    } catch (error) {
+      showToast("Không tìm thấy ví dụ mẫu. 🐝", "info");
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +137,14 @@ export default function AddWordForm() {
       return;
     }
     setLoading(true);
-    const result = await addWordAction({ word: term, meaning: definition, wordType, pronunciation: phonetic, synonyms, example });
+    const result = await addWordAction({
+      word: term,
+      meaning: definition,
+      wordType,
+      pronunciation: phonetic,
+      synonyms,
+      example,
+    });
     if (result?.error) {
       showToast(result.error, "error");
     } else {
@@ -182,13 +286,32 @@ export default function AddWordForm() {
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-1">Ví dụ minh họa</label>
+          <div className="flex items-center justify-between ml-1">
+            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Ví dụ minh họa</label>
+            <button
+              type="button"
+              onClick={handleSuggestExample}
+              disabled={isSuggesting || !term.trim()}
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+              title="Tự động gợi ý ví dụ tử điển"
+            >
+              {isSuggesting ? (
+                <Loader2 size={10} className="animate-spin" />
+              ) : (
+                <span className="material-symbols-outlined text-[14px] leading-none group-hover:rotate-12 transition-transform">auto_awesome</span>
+              )}
+              <span className="text-[10px] font-black uppercase tracking-wider">Gợi ý</span>
+            </button>
+          </div>
           <textarea
             placeholder="Cách dùng từ trong câu thực tế..."
             className="input-premium w-full px-3 py-2 text-foreground placeholder:text-slate-400 min-h-[80px] max-h-[110px] resize-none text-sm italic"
             value={example}
             onChange={(e) => setExample(e.target.value)}
           />
+          <p className="text-[9px] text-slate-400 dark:text-slate-500 italic ml-1 font-medium">
+            💡 Câu ví dụ sẽ được dùng làm bài tập "điền vào chỗ trống" trong chế độ Typing Bonus.
+          </p>
         </div>
       </div>
 
@@ -207,6 +330,7 @@ export default function AddWordForm() {
             value={synonyms} onChange={(e) => setSynonyms(e.target.value)} />
         </div>
       </div>
+
 
       {/* Nút lưu */}
       <button
