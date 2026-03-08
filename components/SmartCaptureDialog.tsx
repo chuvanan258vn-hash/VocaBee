@@ -98,7 +98,12 @@ export default function SmartCaptureDialog({ isOpen, onClose }: SmartCaptureDial
                             </h2>
                             <p className="text-xs sm:text-sm text-slate-500 font-medium">Quyết định nhanh: Thêm ngay hay Hoãn?</p>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full transition-colors">
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full transition-colors"
+                            aria-label="Đóng"
+                            title="Đóng"
+                        >
                             <X size={20} />
                         </button>
                     </div>
@@ -127,12 +132,14 @@ export default function SmartCaptureDialog({ isOpen, onClose }: SmartCaptureDial
                                     value={word}
                                     onChange={(e) => setWord(e.target.value)}
                                     placeholder="Từ mới..."
+                                    aria-label="Nhập từ mới"
                                     className="w-full bg-slate-100 dark:bg-white/5 border-none rounded-xl sm:rounded-2xl px-4 py-3 sm:py-4 text-sm font-bold placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500 transition-all outline-none"
                                 />
                                 <input
                                     value={meaning}
                                     onChange={(e) => setMeaning(e.target.value)}
                                     placeholder="Nghĩa ngắn gọn..."
+                                    aria-label="Nhập nghĩa của từ"
                                     className="w-full bg-slate-100 dark:bg-white/5 border-none rounded-xl sm:rounded-2xl px-4 py-3 text-sm font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500 transition-all outline-none"
                                 />
                             </>
@@ -142,12 +149,14 @@ export default function SmartCaptureDialog({ isOpen, onClose }: SmartCaptureDial
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="Câu hỏi / Cấu trúc..."
+                                    aria-label="Nhập câu hỏi hoặc cấu trúc ngữ pháp"
                                     className="w-full bg-slate-100 dark:bg-white/5 border-none rounded-xl sm:rounded-2xl px-4 py-3 sm:py-4 text-sm font-bold h-20 sm:h-24 placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500 transition-all outline-none resize-none"
                                 />
                                 <input
                                     value={answer}
                                     onChange={(e) => setAnswer(e.target.value)}
                                     placeholder="Đáp án..."
+                                    aria-label="Nhập đáp án"
                                     className="w-full bg-slate-100 dark:bg-white/5 border-none rounded-xl sm:rounded-2xl px-4 py-3 text-sm font-medium placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500 transition-all outline-none"
                                 />
                             </>

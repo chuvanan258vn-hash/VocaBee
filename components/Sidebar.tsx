@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
     { icon: "home", label: "Home", href: "/" },
     { icon: "hive", label: "My Vocabulary", href: "/vocabulary" },
+    { icon: "school", label: "My Grammar", href: "/grammar" },
     { icon: "style", label: "Decks", href: "#" }, // Placeholder for now
     { icon: "leaderboard", label: "Leaderboard", href: "/leaderboard" },
     { icon: "person", label: "Profile", href: "/profile" },

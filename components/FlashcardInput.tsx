@@ -43,6 +43,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
         if (inputRef.current) {
             inputRef.current.focus();
         }
+
     }, [word.id]);
 
     const getHintPattern = () => {
@@ -167,9 +168,24 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                     </span>
 
                     <div className="flex flex-col items-center gap-4 md:gap-6 w-full text-center">
-                        <h2 className="font-plus text-xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight">
-                            {word.meaning}
-                        </h2>
+                        <div className="flex items-center gap-4">
+                            <h2 className="font-plus text-xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight">
+                                {word.meaning}
+                            </h2>
+                            {/* Manual Audio Button (Visible before answer) */}
+                            {!showAnswer && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        speak(word.word);
+                                    }}
+                                    className="size-10 md:size-12 rounded-full bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center transition-all duration-300 shadow-sm active:scale-90"
+                                    title="Nghe phát âm"
+                                >
+                                    <span className="material-symbols-outlined text-xl md:text-2xl filled">volume_up</span>
+                                </button>
+                            )}
+                        </div>
 
                         {word.example && !showAnswer && (
                             <div className="mt-2 bg-slate-50/60 dark:bg-white/5 rounded-xl px-4 py-2 md:px-6 md:py-3 border border-slate-100 dark:border-slate-800/50 max-w-sm md:max-w-md w-full">

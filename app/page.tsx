@@ -1,6 +1,7 @@
 // app/page.tsx
 import { auth } from '@/auth';
 import AddWordForm from '@/components/AddWordForm';
+import ToeicForm from '@/components/ToeicForm';
 import Dashboard from '@/components/Dashboard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { redirect } from 'next/navigation';
@@ -8,10 +9,11 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { getDashboardStats } from './actions';
 import SmartCaptureTrigger from '@/components/SmartCaptureTrigger';
-import { getAuthenticatedUser } from '@/lib/user';
+import { getAuthenticatedUser, VocaBeeUser } from '@/lib/user';
 import Sidebar from '@/components/Sidebar';
 import { LeaderboardWidget, ActivityWidget } from '@/components/DashboardWidgets';
 import SrsDebugPanel from '@/components/SrsDebugPanel';
+import GrammarMenu from '@/components/GrammarMenu';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,105 +37,65 @@ export default async function Home() {
   }
   todayStart.setHours(4, 0, 0, 0);
 
-  let dueReviewsCount = 0;
-  let hasNewWords = false;
   const isDev = process.env.NODE_ENV === 'development';
-
-  // Debug data — chỉ query khi ở môi trường development
   let debugData = null;
 
-  if (user) {
-    dueReviewsCount = await prisma.vocabulary.count({
-      where: {
-        userId: user.id,
-        interval: { gt: 0 },
-        nextReview: { lte: now },
-        isDeferred: false
-      } as any
-    });
+  if (user && isDev) {
+    const [forgottenWords, newTestWords, newCollectionWords, deferredWords, totalWords] =
+      await Promise.all([
+        prisma.vocabulary.count({
+          where: {
+            userId: user.id,
+            interval: { gt: 0 },
+            repetition: 0,
+            nextReview: { lte: now },
+            isDeferred: false
+          } as any
+        }),
+        prisma.vocabulary.count({
+          where: {
+            userId: user.id,
+            interval: 0,
+            source: 'TEST',
+            importanceScore: { gte: 3 },
+            createdAt: { lt: todayStart }
+          } as any
+        }),
+        prisma.vocabulary.count({
+          where: {
+            userId: user.id,
+            interval: 0,
+            source: 'COLLECTION',
+            isDeferred: false,
+            createdAt: { lt: todayStart }
+          } as any
+        }),
+        prisma.vocabulary.count({
+          where: { userId: user.id, isDeferred: true } as any
+        }),
+        prisma.vocabulary.count({
+          where: { userId: user.id } as any
+        }),
+      ]);
 
-    const newWordsCount = await prisma.vocabulary.count({
-      where: {
-        userId: user.id,
-        interval: 0,
-        nextReview: { lte: now }
-      } as any
-    });
-    hasNewWords = newWordsCount > 0;
-
-    // === Debug queries (chỉ chạy trong dev) ===
-    if (isDev) {
-      const [forgottenWords, newTestWords, newCollectionWords, deferredWords, totalWords, learnedToday] =
-        await Promise.all([
-          // Từ bị quên: interval > 0 nhưng repetition = 0
-          prisma.vocabulary.count({
-            where: {
-              userId: user.id,
-              interval: { gt: 0 },
-              repetition: 0,
-              nextReview: { lte: now },
-              isDeferred: false
-            } as any
-          }),
-          // Từ mới từ TEST chưa học
-          prisma.vocabulary.count({
-            where: {
-              userId: user.id,
-              interval: 0,
-              source: 'TEST',
-              importanceScore: { gte: 3 },
-              createdAt: { lt: todayStart }
-            } as any
-          }),
-          // Từ mới từ COLLECTION chưa học
-          prisma.vocabulary.count({
-            where: {
-              userId: user.id,
-              interval: 0,
-              source: 'COLLECTION',
-              isDeferred: false,
-              createdAt: { lt: todayStart }
-            } as any
-          }),
-          // Từ đang bị hoãn trong Inbox
-          prisma.vocabulary.count({
-            where: { userId: user.id, isDeferred: true } as any
-          }),
-          // Tổng số từ
-          prisma.vocabulary.count({
-            where: { userId: user.id } as any
-          }),
-          // Đã học hôm nay
-          prisma.vocabulary.count({
-            where: {
-              userId: user.id,
-              updatedAt: { gte: todayStart },
-              OR: [
-                { repetition: { gte: 1 } },
-                { nextReview: { gt: now } }
-              ]
-            } as any
-          }),
-        ]);
-
-      debugData = {
-        dueReviews: dueReviewsCount,
-        forgottenWords,
-        newWords: newWordsCount,
-        deferredWords,
-        totalWords,
-        todayStart: todayStart.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
-        queryTime: now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
-        newTestWords,
-        newCollectionWords,
-        dailyGoal: (user as any).dailyNewWordGoal || 20,
-        learnedToday,
-      };
-    }
+    debugData = {
+      dueReviews: stats?.dueReviews || 0,
+      forgottenWords,
+      newWords: stats?.learnedToday || 0, // Simplified or just use stats
+      deferredWords,
+      totalWords,
+      todayStart: todayStart.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      queryTime: now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
+      newTestWords,
+      newCollectionWords,
+      dailyGoal: (user as VocaBeeUser).dailyNewWordGoal || 20,
+      learnedToday: stats?.learnedToday || 0,
+      dueGrammar: stats?.dueGrammarCount || 0,
+      learnedGrammarToday: stats?.learnedGrammarToday || 0,
+    };
   }
 
-  const canLearnNewVocab = stats && stats.learnedToday < stats.dailyGoal && hasNewWords;
-  const showButton = dueReviewsCount > 0 || canLearnNewVocab;
+  const showButton = stats && stats.dueReviews > 0;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground font-sans">
@@ -169,6 +131,7 @@ export default async function Home() {
                 <span className="text-lg">👤</span>
               </div>
             </div>
+            <GrammarMenu />
             <ThemeToggle />
           </div>
         </header>
@@ -191,17 +154,50 @@ export default async function Home() {
                     </div>
                     <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
                       Hệ thống đã trộn <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-yellow-600 dark:from-amber-400 dark:to-yellow-200">
-                        {dueReviewsCount > 0 ? `${dueReviewsCount} lượt` : 'nội dung mới'}
+                        {stats.dueReviews} lượt
                       </span> ôn tập & từ mới
                     </h3>
                   </div>
                 </div>
                 <Link
-                  href="/review"
-                  className="relative z-10 w-full md:w-auto group overflow-hidden bg-primary text-[#0F172A] font-bold text-sm py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_25px_rgba(251,191,36,0.4)] hover:bg-amber-300 hover:scale-[1.02] flex items-center justify-center gap-3"
+                  href="/review?type=vocab"
+                  className="relative z-10 w-full md:w-auto md:min-w-[220px] group overflow-hidden bg-primary text-[#0F172A] font-bold text-sm py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(251,191,36,0.3)] hover:shadow-[0_0_25px_rgba(251,191,36,0.4)] hover:bg-amber-300 hover:scale-[1.02] flex items-center justify-center gap-3"
                 >
                   BẮT ĐẦU NGAY
                   <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Grammar Mission Banner */}
+          {stats && stats.dueGrammarCount > 0 && (
+            <div className="purple-glass-gradient rounded-3xl p-1 md:p-1.5 shadow-glow relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-indigo-500/5 pointer-events-none"></div>
+              <div className="absolute -right-20 -top-20 w-64 h-64 bg-purple-500/20 blur-3xl rounded-full pointer-events-none group-hover:bg-purple-500/30 transition-colors duration-500"></div>
+              <div className="bg-surface/40 backdrop-blur-md rounded-2xl p-6 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-white/5">
+                <div className="flex items-center gap-6 w-full md:w-auto relative z-10">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/30">
+                    <span className="material-symbols-outlined text-white text-3xl">psychology</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
+                      <p className="text-purple-500 dark:text-purple-300 text-xs font-bold uppercase tracking-widest">Thử thách Ngữ pháp</p>
+                    </div>
+                    <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
+                      Bạn có <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-indigo-600 dark:from-purple-400 dark:to-indigo-200">
+                        {stats.dueGrammarCount} cấu trúc
+                      </span> đang chờ ôn luyện
+                    </h3>
+                  </div>
+                </div>
+                <Link
+                  href="/review?type=grammar"
+                  className="relative z-10 w-full md:w-auto md:min-w-[220px] group overflow-hidden bg-purple-600 text-white font-bold text-sm py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:bg-purple-500 hover:scale-[1.02] flex items-center justify-center gap-3"
+                >
+                  LUYỆN TẬP NGAY
+                  <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">auto_awesome</span>
                 </Link>
               </div>
             </div>
@@ -212,8 +208,9 @@ export default async function Home() {
 
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-            <div className="lg:col-span-2 flex flex-col h-full">
+            <div className="lg:col-span-2 flex flex-col h-full gap-8">
               <AddWordForm />
+              <ToeicForm />
             </div>
             <div className="flex flex-col gap-8">
               <SmartCaptureTrigger />

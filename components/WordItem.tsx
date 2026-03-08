@@ -19,6 +19,7 @@ export default function WordItem({ item }: { item: any }) {
         example: item.example || "",
     });
     const [loading, setLoading] = useState(false);
+    const [isSuggesting, setIsSuggesting] = useState(false);
 
     const resetForm = () => {
         setEditData({
@@ -35,6 +36,79 @@ export default function WordItem({ item }: { item: any }) {
     useEffect(() => {
         resetForm();
     }, [item]);
+
+    const handleSuggestExample = async () => {
+        if (!editData.word.trim()) {
+            showToast("Vui lòng nhập từ vựng trước! 🐝", "error");
+            return;
+        }
+
+        setIsSuggesting(true);
+        try {
+            const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${editData.word.trim().toLowerCase()}`);
+            if (!response.ok) throw new Error("Not found");
+
+            const data = await response.json();
+
+            // Get Pronunciation (Phonetic) if current is empty
+            let foundPhonetic = "";
+            if (!editData.pronunciation) {
+                if (data[0].phonetic) {
+                    foundPhonetic = data[0].phonetic;
+                } else if (data[0].phonetics && data[0].phonetics.length > 0) {
+                    const withText = data[0].phonetics.find((p: any) => p.text);
+                    if (withText) foundPhonetic = withText.text;
+                }
+            }
+
+            // Look for the first example in the definition structure
+            let foundExample = "";
+            for (const entry of data) {
+                for (const meaning of entry.meanings) {
+                    if (editData.wordType && meaning.partOfSpeech.toLowerCase() !== editData.wordType.toLowerCase()) continue;
+                    for (const def of meaning.definitions) {
+                        if (def.example) {
+                            foundExample = def.example;
+                            break;
+                        }
+                    }
+                    if (foundExample) break;
+                }
+                if (foundExample) break;
+            }
+
+            // If no example found with specific word type, try any example
+            if (!foundExample) {
+                for (const entry of data) {
+                    for (const meaning of entry.meanings) {
+                        for (const def of meaning.definitions) {
+                            if (def.example) {
+                                foundExample = def.example;
+                                break;
+                            }
+                        }
+                        if (foundExample) break;
+                    }
+                    if (foundExample) break;
+                }
+            }
+
+            if (foundExample || foundPhonetic) {
+                setEditData({
+                    ...editData,
+                    example: foundExample || editData.example,
+                    pronunciation: foundPhonetic || editData.pronunciation
+                });
+                if (foundExample) showToast("Đã tìm thấy ví dụ mẫu! ✨", "success");
+            } else {
+                showToast("Không tìm thấy dữ liệu mới cho từ này. 🐝", "info");
+            }
+        } catch (error) {
+            showToast("Không tìm thấy ví dụ mẫu. 🐝", "info");
+        } finally {
+            setIsSuggesting(false);
+        }
+    };
 
     const handleUpdate = async () => {
         setLoading(true);
@@ -103,7 +177,13 @@ export default function WordItem({ item }: { item: any }) {
                                 { short: "ADJ", full: "Adjective" },
                                 { short: "ADV", full: "Adverb" },
                                 { short: "PHR", full: "Phrase" },
+                                { short: "PREP", full: "Preposition" },
+                                { short: "PRON", full: "Pronoun" },
+                                { short: "CONJ", full: "Conjunction" },
                                 { short: "IDM", full: "Idiom" },
+                                { short: "NP", full: "Noun Phrase" },
+                                { short: "VP", full: "Verb Phrase" },
+                                { short: "AP", full: "Adjective Phrase" },
                             ].map((type) => {
                                 const styles = getWordTypeStyles(type.short);
                                 const isSelected = normalizeWordType(editData.wordType) === normalizeWordType(type.full);
@@ -112,17 +192,14 @@ export default function WordItem({ item }: { item: any }) {
                                     <button
                                         key={type.short}
                                         type="button"
+                                        title={type.full}
                                         onClick={() => setEditData({ ...editData, wordType: type.full })}
-                                        className={`relative py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 hover:scale-110 active:scale-95 overflow-hidden group/btn ${isSelected
-                                            ? `${styles.bg} shadow-lg shadow-current/30 ring-2 ${styles.ring}/30`
-                                            : "bg-slate-100 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white border border-transparent hover:border-slate-200 dark:hover:border-slate-600"
+                                        className={`px-3 py-2 rounded-xl text-[10px] font-black transition-all duration-300 border-2 ${isSelected
+                                            ? `${styles.bg} text-white ${styles.border} shadow-[0_0_15px_rgba(37,99,235,0.3)] scale-105`
+                                            : "bg-white/50 dark:bg-slate-800/40 text-slate-500 border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                                             }`}
                                     >
-                                        <div className={`absolute inset-0 opacity-0 group-hover/btn:opacity-10 transition-opacity bg-current`} />
-                                        <span className={`relative z-10 ${isSelected ? "text-white" : ""}`}>{type.short}</span>
-                                        {isSelected && (
-                                            <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                                        )}
+                                        {type.short}
                                     </button>
                                 );
                             })}
@@ -192,7 +269,23 @@ export default function WordItem({ item }: { item: any }) {
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Ví dụ minh họa</label>
+                    <div className="flex items-center justify-between ml-1">
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Ví dụ minh họa</label>
+                        <button
+                            type="button"
+                            onClick={handleSuggestExample}
+                            disabled={isSuggesting || !editData.word.trim()}
+                            className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                            title="Tự động gợi ý ví dụ từ điển"
+                        >
+                            {isSuggesting ? (
+                                <div className="h-3 w-3 border border-current border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <span className="material-symbols-outlined text-[14px] leading-none group-hover:rotate-12 transition-transform">auto_awesome</span>
+                            )}
+                            <span className="text-[10px] font-black uppercase tracking-wider">Gợi ý</span>
+                        </button>
+                    </div>
                     <textarea
                         className="input-premium w-full p-4 text-foreground h-24 resize-none italic"
                         placeholder="Ví dụ minh họa"

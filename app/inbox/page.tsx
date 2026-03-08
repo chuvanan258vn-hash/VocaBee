@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChevronLeft, Inbox, Trash2, CheckCircle2, BookOpen, Brain, Clock, ShieldAlert } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { ChevronLeft, Inbox, Trash2, CheckCircle2, BookOpen, Brain, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { getDeferredItemsAction, manageInboxItemAction } from "@/app/actions";
 import { useToast } from "@/components/ToastProvider";
@@ -12,7 +12,7 @@ export default function InboxPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [vocab, setVocab] = useState<any[]>([]);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
         const res = await getDeferredItemsAction();
         if (res.success) {
@@ -21,11 +21,11 @@ export default function InboxPage() {
             showToast(res.error || "Không thể tải dữ liệu Inbox.", "error");
         }
         setIsLoading(false);
-    };
+    }, [showToast]);
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
     const handleAction = async (id: string, type: "VOCAB" | "GRAMMAR", action: "ADD" | "DELETE") => {
         const res = await manageInboxItemAction(id, type, action);

@@ -104,7 +104,7 @@ export default function ForgotPasswordPage() {
                     <form onSubmit={handleAnswerSubmit} className="space-y-6">
                         <div className="bg-yellow-400/5 border border-yellow-400/20 p-4 rounded-2xl">
                             <p className="text-xs font-bold text-yellow-400 uppercase tracking-widest mb-1">CÂU HỎI:</p>
-                            <p className="text-white font-medium italic">"{question}"</p>
+                            <p className="text-white font-medium italic">&ldquo;{question}&rdquo;</p>
                         </div>
                         <div>
                             <label htmlFor="answer" className="block text-sm font-bold text-slate-300 mb-2">
@@ -168,6 +168,6 @@ export default function ForgotPasswordPage() {
                     </Link>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

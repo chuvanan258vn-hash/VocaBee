@@ -1,22 +1,33 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { ReactNode } from "react";
 
 interface DashboardProps {
     stats: {
         dailyGoal: number;
         learnedToday: number;
+        learnedGrammarToday?: number;
         testVocabToday?: number;
         totalWords: number;
         dueReviews: number;
+        dueGrammarCount?: number;
+        rawVocabDueCount?: number;
+        rawGrammarDueCount?: number;
         streak?: number;
+        points?: number;
     };
 }
 
 export default function Dashboard({ stats }: DashboardProps) {
     const dailyGoal = stats.dailyGoal || 20;
-    const learnedToday = stats.learnedToday || 0;
+    const learnedToday = (stats.learnedToday || 0) + (stats.learnedGrammarToday || 0);
     const vocabPercentage = Math.min(Math.round((learnedToday / dailyGoal) * 100), 100);
+
+    const rawDueTotal = (stats.rawVocabDueCount || 0) + (stats.rawGrammarDueCount || 0);
+    const cappedDueTotal = stats.dueReviews + (stats.dueGrammarCount || 0);
+    const hasMoreReviews = rawDueTotal > cappedDueTotal;
 
     return (
         <div className="w-full max-w-7xl space-y-6 animate-in fade-in slide-in-from-top-4 duration-1000">
@@ -98,9 +109,16 @@ export default function Dashboard({ stats }: DashboardProps) {
                     <StatCard
                         icon={<span className="material-symbols-outlined text-xl">history_edu</span>}
                         label="Cần ôn tập"
-                        value={stats.dueReviews}
+                        value={cappedDueTotal}
                         color="amber"
                         variant="high"
+                        extra={hasMoreReviews ? `+${rawDueTotal - cappedDueTotal} còn lại` : undefined}
+                        footer={hasMoreReviews && (
+                            <Link href="/review?all=true" className="text-[10px] font-black text-amber-500 hover:text-amber-600 transition-colors flex items-center gap-1 group/link mt-2">
+                                ÔN TẬP TẤT CẢ ({rawDueTotal})
+                                <span className="material-symbols-outlined text-[12px] group-hover/link:translate-x-0.5 transition-transform">arrow_forward</span>
+                            </Link>
+                        )}
                     />
                 </div>
             </div>
@@ -108,7 +126,7 @@ export default function Dashboard({ stats }: DashboardProps) {
     );
 }
 
-function StatBadge({ icon, label, color }: { icon: any, label: string, color: 'orange' | 'yellow' | 'blue' }) {
+function StatBadge({ icon, label, color }: { icon: React.ReactNode, label: string, color: 'orange' | 'yellow' | 'blue' }) {
     const colors = {
         orange: "text-secondary bg-secondary-glow/10 border-secondary/20",
         yellow: "text-primary bg-primary/10 border-primary/20",
@@ -123,7 +141,7 @@ function StatBadge({ icon, label, color }: { icon: any, label: string, color: 'o
     );
 }
 
-function StatCard({ icon, label, value, color, trend, variant }: { icon: any, label: string, value: number, color: 'blue' | 'amber', trend?: string, variant?: 'high' }) {
+function StatCard({ icon, label, value, color, trend, variant, extra, footer }: { icon: ReactNode, label: string, value: number, color: 'blue' | 'amber', trend?: string, variant?: 'high', extra?: string, footer?: ReactNode }) {
     const isAmber = color === 'amber';
     return (
         <div className={`flex-1 glass-panel rounded-3xl p-6 flex flex-col justify-between relative group overflow-hidden transition-all hover:border-${isAmber ? 'secondary/30' : 'primary/30'}`}>
@@ -136,8 +154,12 @@ function StatCard({ icon, label, value, color, trend, variant }: { icon: any, la
                 {variant === 'high' && <span className="text-xs font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-md border border-secondary/20 shadow-glow">High priority</span>}
             </div>
             <div className="relative z-10">
-                <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">{label}</p>
-                <h3 className="text-4xl font-bold tracking-tighter text-foreground">{value.toLocaleString()}</h3>
+                <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">{label}</p>
+                    {extra && <span className="text-[10px] font-black text-amber-500/80 uppercase tracking-tighter">{extra}</span>}
+                </div>
+                <h3 className="text-4xl font-bold tracking-tighter text-foreground leading-none">{value.toLocaleString()}</h3>
+                {footer}
             </div>
         </div>
     );

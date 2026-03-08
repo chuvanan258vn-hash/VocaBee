@@ -6,7 +6,13 @@ import ReviewSession from '@/components/ReviewSession';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ReviewPage() {
+export default async function ReviewPage({
+    searchParams
+}: {
+    searchParams: Promise<{ type?: string; all?: string }>;
+}) {
+    const { type, all } = await searchParams;
+    const isReviewAll = all === 'true';
     const session = await auth();
     if (!session?.user?.email) redirect('/login');
 
@@ -22,6 +28,9 @@ export default async function ReviewPage() {
     }
     todayStart.setHours(4, 0, 0, 0);
 
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
     // Count high-prio from_test items added today to implement "Swap, don't add"
     let testVocabToday = 0;
     try {
@@ -35,26 +44,66 @@ export default async function ReviewPage() {
         console.error("Error fetching test vocab count:", e);
     }
 
-    // Count words studied today (any review action)
+    // Count words learned for the FIRST TIME today
     const learnedTodayCount = await prisma.vocabulary.count({
         where: {
             userId: user.id,
             updatedAt: { gte: todayStart },
-            // A word is considered "learned/studied" if it's not new or was updated today
-            OR: [
-                { repetition: { gte: 1 } },
-                { nextReview: { gt: now } } // Recently forgotten or scheduled for future
-            ]
+            repetition: 1
         } as any
     });
 
-    const baseVocabGoal = (user as any).dailyNewWordGoal || 20;
-    const canLearnMoreCount = Math.max(0, baseVocabGoal - learnedTodayCount);
+    // Count words added YESTERDAY that haven't been studied yet (interval: 0)
+    const unlearnedYesterdayVocab = await prisma.vocabulary.count({
+        where: {
+            userId: user.id,
+            interval: 0,
+            isDeferred: false,
+            createdAt: {
+                gte: yesterdayStart,
+                lt: todayStart
+            }
+        } as any
+    });
+
+    const baseVocabGoal = (user as any).dailyNewWordGoal || 30;
+    // Total goal = unlearned from yesterday + normal daily goal (Capped at 30)
+    const totalVocabGoal = Math.min(baseVocabGoal + unlearnedYesterdayVocab, 30);
+    const canLearnMoreCount = Math.max(0, totalVocabGoal - learnedTodayCount);
+
+    // Count grammar learned for the FIRST TIME today
+    const learnedGrammarToday = await (prisma as any).grammarCard.count({
+        where: {
+            userId: user.id,
+            updatedAt: { gte: todayStart },
+            repetition: 1
+        }
+    });
+
+    // Count grammar added YESTERDAY that haven't been studied yet (interval: 0)
+    const unlearnedYesterdayGrammar = await (prisma as any).grammarCard.count({
+        where: {
+            userId: user.id,
+            interval: 0,
+            isDeferred: false,
+            createdAt: {
+                gte: yesterdayStart,
+                lt: todayStart
+            }
+        }
+    });
+
+    const baseGrammarGoal = (user as any).dailyNewGrammarGoal || 30;
+    // Total goal = unlearned from yesterday + normal daily goal
+    const totalGrammarGoal = baseGrammarGoal + unlearnedYesterdayGrammar;
+    const canLearnMoreGrammarCount = Math.max(0, totalGrammarGoal - learnedGrammarToday);
+
+    // --- SESSION LIMITS ---
+    const VOCAB_SESSION_LIMIT = isReviewAll ? 200 : 15;
+    const GRAMMAR_SESSION_LIMIT = isReviewAll ? 100 : 10;
 
     // 1. Lấy các từ ĐANG ÔN TẬP nhưng đến hạn (Priority 1)
-    // Bao gồm cả các từ bị quên (interval > 0, repetition = 0)
-    // EXCLUDE deferred items from regular review flow
-    const dueWords = await prisma.vocabulary.findMany({
+    const dueWords = (type === 'grammar') ? [] : await prisma.vocabulary.findMany({
         where: {
             userId: user.id,
             interval: { gt: 0 },
@@ -74,21 +123,35 @@ export default async function ReviewPage() {
             efactor: true,
         },
         orderBy: { nextReview: 'asc' },
+        take: VOCAB_SESSION_LIMIT
     });
 
+    // 1.5. Lấy các câu NGỮ PHÁP đến hạn (Priority 1)
+    const dueGrammar: any[] = (type === 'vocab') ? [] : await prisma.$queryRawUnsafe(`
+        SELECT * FROM GrammarCard 
+        WHERE userId = ? 
+          AND interval > 0 
+          AND nextReview <= ? 
+          AND isDeferred = 0
+        ORDER BY nextReview ASC 
+        LIMIT ?
+    `, user.id, now.toISOString(), GRAMMAR_SESSION_LIMIT);
+
+    // Calculate remaining slots for new items in this session
+    const vocabSlotsLeft = Math.max(0, VOCAB_SESSION_LIMIT - dueWords.length);
+    const grammarSlotsLeft = Math.max(0, GRAMMAR_SESSION_LIMIT - dueGrammar.length);
+
     // 2. Lấy thêm một số từ MỚI (repetition = 0)
-    // Prioritize high-prio test words (Swap, don't add)
     let newWords: any[] = [];
-    if (canLearnMoreCount > 0) {
-        // First, get high-prio test words that haven't been studied yet
-        // Use interval: 0 (not just repetition: 0) to exclude forgotten words
+    if (vocabSlotsLeft > 0 && canLearnMoreCount > 0 && type !== 'grammar') {
+        const fetchNewCount = Math.min(vocabSlotsLeft, canLearnMoreCount);
+
         const testNewWords = await prisma.vocabulary.findMany({
             where: {
                 userId: user.id,
-                interval: 0, // Strictly never-studied words only
+                interval: 0,
                 source: "TEST",
                 importanceScore: { gte: 3 },
-                createdAt: { lt: todayStart } // 1-day buffer
             } as any,
             select: {
                 id: true,
@@ -102,21 +165,20 @@ export default async function ReviewPage() {
                 repetition: true,
                 efactor: true,
             },
-            take: canLearnMoreCount,
-            orderBy: { createdAt: 'desc' }
+            take: fetchNewCount,
+            orderBy: { createdAt: 'asc' }
         });
 
-        const remainingNewCount = canLearnMoreCount - testNewWords.length;
+        const remainingNewCount = fetchNewCount - testNewWords.length;
 
         let scheduledNewWords: any[] = [];
         if (remainingNewCount > 0) {
             scheduledNewWords = await prisma.vocabulary.findMany({
                 where: {
                     userId: user.id,
-                    interval: 0, // Strictly never-studied words only
+                    interval: 0,
                     source: "COLLECTION",
                     isDeferred: false,
-                    createdAt: { lt: todayStart } // 1-day buffer
                 } as any,
                 select: {
                     id: true,
@@ -131,31 +193,49 @@ export default async function ReviewPage() {
                     efactor: true,
                 },
                 take: remainingNewCount,
-                orderBy: { createdAt: 'desc' }
+                orderBy: { createdAt: 'asc' }
             });
         }
 
         newWords = [...testNewWords, ...scheduledNewWords];
     }
 
+    // 3. Lấy thêm một số câu NGỮ PHÁP MỚI (interval = 0)
+    let newGrammar: any[] = [];
+    if (grammarSlotsLeft > 0 && canLearnMoreGrammarCount > 0 && type !== 'vocab') {
+        const fetchGrammarCount = Math.min(grammarSlotsLeft, canLearnMoreGrammarCount);
+
+        newGrammar = await prisma.$queryRawUnsafe(`
+            SELECT * FROM GrammarCard 
+            WHERE userId = ? 
+              AND interval = 0 
+              AND isDeferred = 0
+            ORDER BY createdAt ASC 
+            LIMIT ?
+        `, user.id, fetchGrammarCount);
+    }
+
     // Interleave Logic: Mix Due and New items for better flow
+    const combinedDue = [...dueWords, ...dueGrammar];
+    const combinedNew = [...newWords, ...newGrammar];
+
     const interleaved: any[] = [];
     let reviewIdx = 0;
     let newIdx = 0;
 
     // Pattern: 3-4 Reviews followed by 1 New item
-    while (reviewIdx < dueWords.length || newIdx < newWords.length) {
+    while (reviewIdx < combinedDue.length || newIdx < combinedNew.length) {
         // Add up to 3 reviews
-        for (let i = 0; i < 3 && reviewIdx < dueWords.length; i++) {
-            interleaved.push(dueWords[reviewIdx++]);
+        for (let i = 0; i < 3 && reviewIdx < combinedDue.length; i++) {
+            interleaved.push(combinedDue[reviewIdx++]);
         }
         // Add 1 new item
-        if (newIdx < newWords.length) {
-            interleaved.push(newWords[newIdx++]);
+        if (newIdx < combinedNew.length) {
+            interleaved.push(combinedNew[newIdx++]);
         }
         // If no more reviews, just drain new items
-        if (reviewIdx >= dueWords.length && newIdx < newWords.length) {
-            interleaved.push(newWords[newIdx++]);
+        if (reviewIdx >= combinedDue.length && newIdx < combinedNew.length) {
+            interleaved.push(combinedNew[newIdx++]);
         }
     }
 

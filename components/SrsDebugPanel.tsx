@@ -24,6 +24,10 @@ interface SrsDebugData {
     dailyGoal: number;
     /** Số từ đã học hôm nay */
     learnedToday: number;
+    /** Ngữ pháp đến hạn */
+    dueGrammar: number;
+    /** Ngữ pháp đã học hôm nay */
+    learnedGrammarToday: number;
 }
 
 interface SrsDebugPanelProps {
@@ -150,6 +154,30 @@ export default function SrsDebugPanel({ data }: SrsDebugPanelProps) {
                 </div>
             </div>
 
+            {/* === PHẦN 1.5: NGỮ PHÁP (Grammar Cards) === */}
+            <div className="mb-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400/80 mb-2 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse inline-block" />
+                    NGỮ PHÁP (Grammar Cards)
+                </p>
+                <div className="bg-surface/40 rounded-2xl px-4 py-1 border border-glass-border">
+                    <DebugRow
+                        label="Ngữ pháp đến hạn"
+                        value={data.dueGrammar}
+                        color="text-purple-400"
+                        icon="psychology"
+                        description="nextReview ≤ now AND isDeferred = false"
+                    />
+                    <DebugRow
+                        label="Ngữ pháp đã luyện hôm nay"
+                        value={data.learnedGrammarToday}
+                        color="text-purple-300"
+                        icon="auto_awesome"
+                        description="updatedAt ≥ 4:00 AM AND (repetition ≥ 1 OR nextReview > now)"
+                    />
+                </div>
+            </div>
+
             {/* === PHẦN 2: TỪ MỚI === */}
             <div className="mb-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400/80 mb-2 flex items-center gap-1.5">
@@ -195,17 +223,17 @@ export default function SrsDebugPanel({ data }: SrsDebugPanelProps) {
                     />
                     <DebugRow
                         label="Đã học hôm nay"
-                        value={data.learnedToday}
+                        value={data.learnedToday + data.learnedGrammarToday}
                         color="text-emerald-400"
                         icon="check_circle"
-                        description="updatedAt ≥ 4:00 sáng hôm nay AND (repetition ≥ 1 OR nextReview > now)"
+                        description="Tổng Vocabulary + Grammar đã hoàn thành"
                     />
                     <DebugRow
                         label="Còn có thể học thêm từ mới"
                         value={canLearnMore}
                         color={canLearnMore > 0 ? "text-amber-400" : "text-slate-500"}
                         icon="add_task"
-                        description={`= dailyGoal (${data.dailyGoal}) − learnedToday (${data.learnedToday})`}
+                        description={`= dailyGoal (${data.dailyGoal}) − (learnedVocab + learnedGrammar)`}
                     />
                 </div>
                 {/* Progress bar */}

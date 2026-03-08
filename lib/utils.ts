@@ -6,17 +6,27 @@ export function normalizeWordType(wordType: string | null | undefined): string {
     const type = wordType.toLowerCase().trim();
 
     // Stricter checks for single letter labels to avoid substrings in "phrase", "verb", etc.
+    const isNounPhrase = ["noun phrase", "cụm danh từ", "np"].some(t => type.includes(t)) || type === "np";
+    const isVerbPhrase = ["verb phrase", "cụm động từ", "vp", "v ph"].some(t => type.includes(t)) || type === "vp";
+    const isAdjPhrase = ["adj phrase", "adjective phrase", "cụm tính từ", "ap"].some(t => type.includes(t)) || type === "ap";
     const isNoun = ["noun", "danh từ", "dt", "n.", "danh từ/cụm từ", "danh từ/tính từ"].some(t => type.includes(t)) || type === "n";
-    const isVerb = ["verb", "động từ", "đt", "v.", "cụm động từ"].some(t => type.includes(t)) || type === "v";
+    const isVerb = ["verb", "động từ", "đt", "v."].some(t => type.includes(t)) || type === "v";
     const isAdj = ["adj", "tính từ", "tt", "adj.", "adjective"].some(t => type.includes(t)) || type === "a";
     const isAdv = ["adv", "trạng từ", "tr", "adv.", "adverb", "phó từ"].some(t => type.includes(t));
     const isPhrase = ["phr", "phrase", "cụm từ", "phr.", "cụm"].some(t => type.includes(t));
     const isIdiom = ["idiom", "thành ngữ", "idm"].some(t => type.includes(t));
     const isPrep = ["prep", "giới từ", "pre"].some(t => type.includes(t));
+    const isPron = ["pron", "pronoun", "đại từ", "pro"].some(t => type.includes(t));
+    const isConj = ["conj", "conjunction", "liên từ", "con"].some(t => type.includes(t));
 
     // Order matters: More specific types first
+    if (isNounPhrase) return "Cụm danh từ";
+    if (isVerbPhrase) return "Cụm động từ";
+    if (isAdjPhrase) return "Cụm tính từ";
     if (isPhrase) return "Cụm từ";
     if (isIdiom) return "Thành ngữ";
+    if (isPron) return "Đại từ";
+    if (isConj) return "Liên từ";
     if (isAdv) return "Trạng từ";
     if (isAdj) return "Tính từ";
     if (isNoun) return "Danh từ";
@@ -41,12 +51,17 @@ export function getWordTypeStyles(wordType: string | null | undefined) {
 
     switch (normalized) {
         case "Danh từ": return { bg: "bg-blue-600", border: "border-blue-600", text: "text-blue-600", ring: "ring-blue-600" };
+        case "Cụm danh từ": return { bg: "bg-sky-600", border: "border-sky-600", text: "text-sky-600", ring: "ring-sky-600" };
         case "Động từ": return { bg: "bg-emerald-600", border: "border-emerald-600", text: "text-emerald-600", ring: "ring-emerald-600" };
+        case "Cụm động từ": return { bg: "bg-violet-600", border: "border-violet-600", text: "text-violet-600", ring: "ring-violet-600" };
         case "Tính từ": return { bg: "bg-rose-600", border: "border-rose-600", text: "text-rose-600", ring: "ring-rose-600" };
+        case "Cụm tính từ": return { bg: "bg-fuchsia-600", border: "border-fuchsia-600", text: "text-fuchsia-600", ring: "ring-fuchsia-600" };
         case "Trạng từ": return { bg: "bg-amber-600", border: "border-amber-600", text: "text-amber-600", ring: "ring-amber-600" };
         case "Cụm từ": return { bg: "bg-indigo-600", border: "border-indigo-600", text: "text-indigo-600", ring: "ring-indigo-600" };
         case "Thành ngữ": return { bg: "bg-purple-600", border: "border-purple-600", text: "text-purple-600", ring: "ring-purple-600" };
         case "Giới từ": return { bg: "bg-cyan-600", border: "border-cyan-600", text: "text-cyan-600", ring: "ring-cyan-600" };
+        case "Đại từ": return { bg: "bg-teal-600", border: "border-teal-600", text: "text-teal-600", ring: "ring-teal-600" };
+        case "Liên từ": return { bg: "bg-pink-600", border: "border-pink-600", text: "text-pink-600", ring: "ring-pink-600" };
         default: return { bg: "bg-slate-600", border: "border-slate-600", text: "text-slate-600", ring: "ring-slate-600" };
     }
 }

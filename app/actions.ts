@@ -4,17 +4,17 @@ import { revalidatePath } from 'next/cache'
 import { auth, signOut } from '@/auth'
 import { calculateSm2 } from '@/lib/sm2'
 
-import { getAuthenticatedUser } from '@/lib/user'
+import { getAuthenticatedUser, VocaBeeUser } from '@/lib/user'
 
 export async function signOutAction() {
   await signOut();
 }
 
-export async function addWordAction(formData: any) {
+export async function addWordAction(formData: Record<string, any>) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Bạn cần đăng nhập để thêm từ! 🐝" };
 
-  const { wordType, meaning, pronunciation, example, synonyms } = formData;
+  const { wordType, meaning } = formData;
   const word = formData.word?.trim();
 
   if (!word || !wordType || !meaning?.trim()) {
@@ -168,8 +168,9 @@ export async function reviewWordAction(id: string, quality: number, isTypingBonu
     if (now.getHours() < 4) todayStart.setDate(todayStart.getDate() - 1);
     todayStart.setHours(4, 0, 0, 0);
 
-    const goal = (user as any).dailyNewWordGoal || 20;
-    const lastGoalMetDate = (user as any).lastGoalMetDate ? new Date((user as any).lastGoalMetDate) : null;
+    const vUser = user as unknown as VocaBeeUser;
+    const goal = vUser.dailyNewWordGoal || 20;
+    const lastGoalMetDate = vUser.lastGoalMetDate ? new Date(vUser.lastGoalMetDate) : null;
 
     // Check if goal already met "today"
     const alreadyMetToday = lastGoalMetDate && lastGoalMetDate >= todayStart;
@@ -194,8 +195,8 @@ export async function reviewWordAction(id: string, quality: number, isTypingBonu
 
           // If last met was exactly yesterday, increment
           if (lastGoalMetDate >= yesterdayStart && lastGoalMetDate < todayStart) {
-            newStreak = ((user as any).streakCount || 0) + 1;
-          } else if ((user as any).streakFreeze > 0) {
+            newStreak = (vUser.streakCount || 0) + 1;
+          } else if (vUser.streakFreeze > 0) {
             // Logic: if they missed multiple days, but have a freeze, we could theoretically save them.
             // For simplicity, we only save if they missed *yesterday* but act as if they didn't?
             // Actually, improved logic: if they are breaking a streak (currentStreak > 0 but lastMet < yesterday), 
@@ -321,20 +322,74 @@ export async function getDashboardStats() {
   }
   todayStart.setHours(4, 0, 0, 0);
 
-  // Count words studied today (any review action)
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+  // 1. Count items successfully learned for the FIRST TIME today (interval: 0 -> interval > 0)
   const learnedToday = await prisma.vocabulary.count({
     where: {
       userId: user.id,
       updatedAt: { gte: todayStart },
-      OR: [
-        { repetition: { gte: 1 } },
-        { nextReview: { gt: now } } // Recently forgotten or scheduled for future
-      ]
+      repetition: 1
     } as any
   });
 
-  // Count due reviews (already studied words, even if currently forgotten)
-  const dueReviews = await prisma.vocabulary.count({
+  const learnedGrammarToday = await (prisma as any).grammarCard.count({
+    where: {
+      userId: user.id,
+      updatedAt: { gte: todayStart },
+      repetition: 1
+    }
+  });
+
+  // 2. Count items added YESTERDAY (unlearned)
+  const unlearnedYesterdayVocab = await prisma.vocabulary.count({
+    where: {
+      userId: user.id,
+      interval: 0,
+      isDeferred: false,
+      createdAt: { gte: yesterdayStart, lt: todayStart }
+    } as any
+  });
+
+  const unlearnedYesterdayGrammar = await (prisma as any).grammarCard.count({
+    where: {
+      userId: user.id,
+      interval: 0,
+      isDeferred: false,
+      createdAt: { gte: yesterdayStart, lt: todayStart }
+    }
+  });
+
+  // 3. Calculate Goals
+  const vUser = user as unknown as VocaBeeUser;
+  const baseVocabGoal = vUser.dailyNewWordGoal || 30;
+  const totalVocabGoal = Math.min(baseVocabGoal + unlearnedYesterdayVocab, 30);
+
+  const baseGrammarGoal = vUser.dailyNewGrammarGoal || 30;
+  const totalGrammarGoal = baseGrammarGoal + unlearnedYesterdayGrammar;
+
+  // 4. Calculate actual available new items (interval = 0)
+  const availableNewVocabCount = await prisma.vocabulary.count({
+    where: { userId: user.id, interval: 0, isDeferred: false } as any
+  });
+  const availableNewGrammarCount = await (prisma as any).grammarCard.count({
+    where: { userId: user.id, interval: 0, isDeferred: false }
+  });
+
+  // Calculate "Can Learn More" (Dynamic Goal Progress limited by available DB items)
+  const canLearnMoreCount = Math.min(
+    Math.max(0, totalVocabGoal - learnedToday),
+    availableNewVocabCount
+  );
+  const canLearnMoreGrammarCount = Math.min(
+    Math.max(0, totalGrammarGoal - learnedGrammarToday),
+    availableNewGrammarCount
+  );
+
+  // --- BANNER COUNTS ---
+  // A. Vocabulary
+  const vocabDueCount = await prisma.vocabulary.count({
     where: {
       userId: user.id,
       interval: { gt: 0 },
@@ -342,13 +397,23 @@ export async function getDashboardStats() {
       isDeferred: false
     } as any
   });
+  const vocabDueToStudy = Math.min(vocabDueCount, 30);
+  const totalDueVocab = vocabDueToStudy + canLearnMoreCount;
 
-  // Calculate "Yesterday" starting from 4:00 AM
-  const yesterdayStart = new Date(todayStart);
-  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+  // B. Grammar
+  const grammarDueCount = await (prisma as any).grammarCard.count({
+    where: {
+      userId: user.id,
+      interval: { gt: 0 },
+      nextReview: { lte: now },
+      isDeferred: false
+    }
+  });
+  const grammarDueToStudy = Math.min(grammarDueCount, 30);
+  const totalDueGrammar = grammarDueToStudy + canLearnMoreGrammarCount;
 
-  let currentStreak = (user as any).streakCount || 0;
-  const lastGoalMetDate = (user as any).lastGoalMetDate ? new Date((user as any).lastGoalMetDate) : null;
+  let currentStreak = vUser.streakCount || 0;
+  const lastGoalMetDate = vUser.lastGoalMetDate ? new Date(vUser.lastGoalMetDate) : null;
 
   // Reset streak if last goal met was before yesterday (and wasn't met today yet)
   // Check for Streak Freeze protection visually
@@ -358,7 +423,7 @@ export async function getDashboardStats() {
     const twoDaysAgo = new Date(yesterdayStart);
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 1);
 
-    if (lastGoalMetDate >= twoDaysAgo && (user as any).streakFreeze > 0) {
+    if (lastGoalMetDate >= twoDaysAgo && vUser.streakFreeze > 0) {
       // Missed 1 day but has freeze -> Show streak as frozen (not 0)
       streakFrozen = true;
       // Don't reset currentStreak variable for display
@@ -393,18 +458,22 @@ export async function getDashboardStats() {
     .filter((w): w is string => !!w)
     .sort();
 
-  const baseVocabGoal = (user as any).dailyNewWordGoal || 20;
+  const totalVocabGoalFinal = totalVocabGoal;
+  const totalGrammarGoalFinal = totalGrammarGoal;
 
   return {
-    dailyGoal: baseVocabGoal,
+    dailyGoal: totalVocabGoalFinal + totalGrammarGoalFinal,
     learnedToday: learnedToday,
+    learnedGrammarToday,
     testVocabToday,
     totalWords: user._count.words,
-    dueReviews: dueReviews,
-    allWordTypes,
+    dueReviews: totalDueVocab,
+    dueGrammarCount: totalDueGrammar,
+    rawVocabDueCount: vocabDueCount,
+    rawGrammarDueCount: grammarDueCount,
+    wordTypes: allWordTypes,
     streak: currentStreak,
-    points: (user as any).points || 0,
-    streakFreeze: (user as any).streakFreeze || 0,
+    points: vUser.points || 0,
     streakFrozen
   };
 }
@@ -419,11 +488,11 @@ export async function updateUserSettingsAction(data: { dailyGoal: number }) {
       where: { id: user.id },
       data: {
         dailyNewWordGoal: data.dailyGoal
-      } as any
+      }
     });
 
     revalidatePath('/');
-    return { success: true, dailyGoal: (updatedUser as any).dailyNewWordGoal };
+    return { success: true, dailyGoal: (updatedUser as unknown as VocaBeeUser).dailyNewWordGoal };
   } catch (error) {
     console.error("Error updating settings:", error);
     return { error: "Lỗi kỹ thuật khi lưu cài đặt." };
@@ -436,9 +505,13 @@ export async function addGrammarCardAction(data: {
   type: string;
   prompt: string;
   answer: string;
+  meaning?: string | null;
   options?: string | null;
   hint?: string | null;
   explanation?: string | null;
+  myError?: string | null;
+  trap?: string | null;
+  goldenRule?: string | null;
   tags?: string | null;
 }) {
   const user = await getAuthenticatedUser();
@@ -447,17 +520,21 @@ export async function addGrammarCardAction(data: {
   try {
     // Use raw SQL to avoid Prisma client sync issues
     await prisma.$executeRawUnsafe(
-      `INSERT INTO GrammarCard (id, userId, type, prompt, answer, options, hint, explanation, tags, interval, repetition, efactor, nextReview, createdAt, updatedAt, isDeferred, source, importanceScore) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 2.0, ?, ?, ?, 0, 'MANUAL', 0)`,
+      `INSERT INTO GrammarCard (id, userId, type, prompt, answer, meaning, options, hint, explanation, myError, trap, goldenRule, tags, interval, repetition, efactor, nextReview, createdAt, updatedAt, isDeferred, source, importanceScore) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 2.0, ?, ?, ?, 0, 'MANUAL', 0)`,
       crypto.randomUUID(),
       user.id,
       data.type,
       data.prompt,
       data.answer,
-      data.options,
-      data.hint,
-      data.explanation,
-      data.tags,
+      data.meaning || null,
+      data.options || null,
+      data.hint || null,
+      data.explanation || null,
+      data.myError || null,
+      data.trap || null,
+      data.goldenRule || null,
+      data.tags || null,
       new Date().toISOString(),
       new Date().toISOString(),
       new Date().toISOString()
@@ -521,7 +598,84 @@ export async function reviewGrammarCardAction(id: string, grade: number) {
     return { success: true };
   } catch (error) {
     console.error("Error reviewing grammar card:", error);
-    return { error: "Lỗi cập nhật tiến độ." };
+    return { error: "Lỗi khi lưu kết quả." };
+  }
+}
+
+export async function getGrammarPaginatedAction(skip: number, take: number, search?: string) {
+  const user = await getAuthenticatedUser();
+  if (!user) return { error: "Bạn cần đăng nhập." };
+
+  try {
+    const whereClause: any = { userId: user.id };
+
+    if (search) {
+      whereClause.OR = [
+        { prompt: { contains: search } },
+        { answer: { contains: search } },
+        { meaning: { contains: search } },
+        { tags: { contains: search } }
+      ];
+    }
+
+    const cards = await (prisma as any).grammarCard.findMany({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take
+    });
+
+    return { success: true, cards };
+  } catch (error) {
+    console.error("Error fetching paginated grammar:", error);
+    return { error: "Lỗi khi lấy dữ liệu ngữ pháp." };
+  }
+}
+
+export async function updateGrammarCardAction(id: string, data: any) {
+  const user = await getAuthenticatedUser();
+  if (!user) return { error: "Bạn cần đăng nhập." };
+
+  try {
+    await (prisma as any).grammarCard.update({
+      where: { id, userId: user.id },
+      data: {
+        type: data.type,
+        prompt: data.prompt,
+        answer: data.answer,
+        meaning: data.meaning,
+        options: data.options,
+        hint: data.hint,
+        explanation: data.explanation,
+        myError: data.myError,
+        trap: data.trap,
+        goldenRule: data.goldenRule,
+        tags: data.tags,
+      }
+    });
+
+    revalidatePath('/grammar');
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating grammar card:", error);
+    return { error: "Lỗi khi cập nhật thẻ ngữ pháp." };
+  }
+}
+
+export async function deleteGrammarCardAction(id: string) {
+  const user = await getAuthenticatedUser();
+  if (!user) return { error: "Bạn cần đăng nhập." };
+
+  try {
+    await (prisma as any).grammarCard.delete({
+      where: { id, userId: user.id }
+    });
+
+    revalidatePath('/grammar');
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting grammar card:", error);
+    return { error: "Lỗi khi xóa thẻ ngữ pháp." };
   }
 }
 
@@ -760,7 +914,7 @@ export async function importGrammarCardsAction(cards: any[]) {
           if (existing) existingId = existing.id;
         } else {
           // Fallback Raw Query to check existence
-          const check: any = await prisma.$queryRawUnsafe(
+          const check = await prisma.$queryRawUnsafe<any[]>(
             `SELECT id FROM GrammarCard WHERE prompt = ? AND userId = ? LIMIT 1`,
             promptTrim,
             user.id
@@ -1280,5 +1434,123 @@ export async function getLeaderboardAction() {
   } catch (error) {
     console.error("Error fetching leaderboard:", error);
     return { error: "Lỗi khi lấy dữ liệu bảng xếp hạng." };
+  }
+}
+
+// --- TOEIC PRACTICE ACTIONS ---
+
+export async function saveToeicQuestionAction(data: {
+  toeicPart: number;
+  prompt: string;
+  answer: string;
+  options: string; // JSON string of {A, B, C, D}
+  explanation?: string;
+  grammarCategory?: string;
+  signalKeywords?: string;
+  formula?: string;
+  hint?: string; // contextClue for Part 6
+  questionAtGap?: string; // Part 6 specific
+  complexSentence?: string; // Part 7 specific - stored in prompt
+  sentenceStructure?: string; // Part 7 - JSON string of {subject, relativeClause, mainVerb}
+}) {
+  const user = await getAuthenticatedUser();
+  if (!user) return { error: "Bạn cần đăng nhập! 🐝" };
+
+  const typeMap: Record<number, string> = { 5: "TOEIC_P5", 6: "TOEIC_P6", 7: "TOEIC_P7" };
+  const cardType = typeMap[data.toeicPart] || "TOEIC_P5";
+
+  // For Part 6: combine contextPassage + questionAtGap in prompt
+  let promptContent = data.prompt;
+  if (data.toeicPart === 6 && data.questionAtGap) {
+    promptContent = data.prompt + "\n---GAP---\n" + data.questionAtGap;
+  }
+  // For Part 7: store sentenceStructure in goldenRule field for reuse
+  const goldenRule = data.sentenceStructure || null;
+
+  try {
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO GrammarCard (id, userId, type, prompt, answer, options, hint, explanation, tags, toeicPart, grammarCategory, signalKeywords, formula, goldenRule, interval, repetition, efactor, nextReview, createdAt, updatedAt, isDeferred, source, importanceScore)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 2.0, ?, ?, ?, 0, 'TOEIC', 0)`,
+      crypto.randomUUID(),
+      user.id,
+      cardType,
+      promptContent,
+      data.answer,
+      data.options,
+      data.hint || data.signalKeywords || null,
+      data.explanation || null,
+      `toeic, part${data.toeicPart}`,
+      data.toeicPart,
+      data.grammarCategory || null,
+      data.signalKeywords || null,
+      data.formula || null,
+      goldenRule,
+      new Date().toISOString(),
+      new Date().toISOString(),
+      new Date().toISOString()
+    );
+
+    revalidatePath('/');
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving TOEIC question:", error);
+    return { error: "Lỗi khi lưu câu hỏi TOEIC." };
+  }
+}
+
+export async function getWeakCategoriesAction() {
+  const user = await getAuthenticatedUser();
+  if (!user) return { error: "Cần đăng nhập" };
+
+  try {
+    const results: any[] = await prisma.$queryRawUnsafe(`
+      WITH CategoryStats AS (
+        SELECT 
+          grammarCategory,
+          toeicPart,
+          COUNT(CASE WHEN repetition = 0 AND interval > 0 THEN 1 END) AS failureCount,
+          COUNT(*) AS totalCards,
+          AVG(efactor) AS avgEF,
+          MAX(updatedAt) AS lastActive
+        FROM GrammarCard
+        WHERE userId = ? 
+          AND toeicPart IS NOT NULL 
+          AND grammarCategory IS NOT NULL
+          AND grammarCategory != ''
+        GROUP BY grammarCategory
+        HAVING totalCards >= 2
+      )
+      SELECT 
+        grammarCategory,
+        toeicPart,
+        failureCount,
+        totalCards,
+        ROUND(avgEF, 2) AS avgEF,
+        lastActive,
+        ROUND(
+          (CAST(failureCount AS REAL) / (failureCount + (totalCards - failureCount) + 1))
+          * (1.0 / (1.0 + (julianday('now') - julianday(lastActive)) * 0.1))
+          * (1.0 / avgEF),
+          4
+        ) AS weaknessScore
+      FROM CategoryStats
+      ORDER BY weaknessScore DESC
+      LIMIT 3
+    `, user.id);
+
+    return {
+      success: true,
+      categories: results.map(r => ({
+        category: r.grammarCategory,
+        part: r.toeicPart,
+        weaknessScore: r.weaknessScore,
+        failureCount: r.failureCount,
+        totalCards: r.totalCards,
+        avgEF: r.avgEF,
+      }))
+    };
+  } catch (error) {
+    console.error("Error fetching weak categories:", error);
+    return { error: "Lỗi khi phân tích điểm yếu." };
   }
 }
