@@ -255,7 +255,10 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                             {/* New Hint Button Placement */}
                             {!showHint && (
                                 <button
-                                    onClick={() => setShowHint(true)}
+                                    onClick={() => {
+                                        setShowHint(true);
+                                        setInputValue("");
+                                    }}
                                     className="group flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-primary/5 hover:bg-primary/20 border border-primary/20 hover:border-primary/40 text-primary transition-all duration-500 animate-bounce-subtle"
                                 >
                                     <span className="material-symbols-outlined text-[18px] filled">lightbulb</span>

@@ -126,16 +126,17 @@ export default async function ReviewPage({
         take: VOCAB_SESSION_LIMIT
     });
 
-    // 1.5. Lấy các câu NGỮ PHÁP đến hạn (Priority 1)
-    const dueGrammar: any[] = (type === 'vocab') ? [] : await prisma.$queryRawUnsafe(`
-        SELECT * FROM GrammarCard 
-        WHERE userId = ? 
-          AND interval > 0 
-          AND nextReview <= ? 
-          AND isDeferred = 0
-        ORDER BY nextReview ASC 
-        LIMIT ?
-    `, user.id, now.toISOString(), GRAMMAR_SESSION_LIMIT);
+        // 1.5. Lấy các câu NGỮ PHÁP đến hạn (Priority 1), loại grammar mới học hôm qua
+        const dueGrammar: any[] = (type === 'vocab') ? [] : await prisma.$queryRawUnsafe(`
+                SELECT * FROM GrammarCard 
+                WHERE userId = ? 
+                    AND interval > 0 
+                    AND nextReview <= ? 
+                    AND isDeferred = 0
+                    AND NOT (repetition = 1 AND updatedAt >= ? AND updatedAt < ?)
+                ORDER BY nextReview ASC 
+                LIMIT ?
+        `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString(), GRAMMAR_SESSION_LIMIT);
 
     // Calculate remaining slots for new items in this session
     const vocabSlotsLeft = Math.max(0, VOCAB_SESSION_LIMIT - dueWords.length);

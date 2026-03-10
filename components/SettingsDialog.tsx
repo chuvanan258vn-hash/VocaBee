@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Target, Save, CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Save, X } from "lucide-react";
 import { updateUserSettingsAction } from "@/app/actions";
 import { useToast } from "./ToastProvider";
 
@@ -15,7 +15,17 @@ interface SettingsDialogProps {
 export default function SettingsDialog({ isOpen, onClose, currentGoal }: SettingsDialogProps) {
     const [goal, setGoal] = useState(currentGoal);
     const [isSaving, setIsSaving] = useState(false);
+    const [autoPlayEnabled, setAutoPlayEnabled] = useState(true);
     const { showToast } = useToast();
+
+    useEffect(() => {
+        const autoPlaySetting = localStorage.getItem("vocabee-autoplay");
+        setAutoPlayEnabled(autoPlaySetting === null || autoPlaySetting === "true");
+    }, []);
+
+    useEffect(() => {
+        setGoal(currentGoal);
+    }, [currentGoal]);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -25,16 +35,23 @@ export default function SettingsDialog({ isOpen, onClose, currentGoal }: Setting
         if (result.success) {
             showToast("Đã lưu cài đặt mục tiêu mới! 🐝✨", "success");
             onClose();
-        } else {
-            showToast(result.error || "Lỗi khi lưu cài đặt.", "error");
+            return;
         }
+
+        showToast(result.error || "Lỗi khi lưu cài đặt.", "error");
+    };
+
+    const handleToggleAutoPlay = () => {
+        const next = !autoPlayEnabled;
+        localStorage.setItem("vocabee-autoplay", next.toString());
+        setAutoPlayEnabled(next);
+        showToast(next ? "Đã bật tự động phát âm! 🔊" : "Đã tắt tự động phát âm.", "success");
     };
 
     return (
         <AnimatePresence>
             {isOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -43,14 +60,12 @@ export default function SettingsDialog({ isOpen, onClose, currentGoal }: Setting
                         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
                     />
 
-                    {/* Dialog Content */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] border border-white/20 dark:border-white/5 shadow-2xl overflow-hidden"
                     >
-                        {/* Header */}
                         <div className="p-8 pb-4 flex justify-between items-center">
                             <h3 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-2">
                                 Cài đặt <span className="text-yellow-500">🐝</span>
@@ -74,10 +89,11 @@ export default function SettingsDialog({ isOpen, onClose, currentGoal }: Setting
                                         <button
                                             key={val}
                                             onClick={() => setGoal(val)}
-                                            className={`py-4 rounded-2xl font-black transition-all border-2 ${goal === val
-                                                ? "bg-yellow-400 border-yellow-400 text-slate-900 shadow-lg shadow-yellow-500/20"
-                                                : "bg-slate-50 dark:bg-white/5 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-white/10"
-                                                }`}
+                                            className={`py-4 rounded-2xl font-black transition-all border-2 ${
+                                                goal === val
+                                                    ? "bg-yellow-400 border-yellow-400 text-slate-900 shadow-lg shadow-yellow-500/20"
+                                                    : "bg-slate-50 dark:bg-white/5 border-transparent text-slate-500 hover:border-slate-200 dark:hover:border-white/10"
+                                            }`}
                                         >
                                             {val}
                                         </button>
@@ -101,23 +117,15 @@ export default function SettingsDialog({ isOpen, onClose, currentGoal }: Setting
                                             <span className="text-[10px] font-bold text-slate-400 leading-tight">Phát âm ngay khi lật thẻ</span>
                                         </div>
                                         <button
-                                            onClick={() => {
-                                                const autoPlaySetting = localStorage.getItem("vocabee-autoplay");
-                                                const current = autoPlaySetting === null || autoPlaySetting === "true";
-                                                localStorage.setItem("vocabee-autoplay", (!current).toString());
-                                                showToast(!current ? "Đã bật tự động phát âm! 🔊" : "Đã tắt tự động phát âm.", "success");
-                                                setGoal(g => g); // Force re-render
-                                            }}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${(typeof window !== 'undefined' && (localStorage.getItem("vocabee-autoplay") === null || localStorage.getItem("vocabee-autoplay") === "true"))
-                                                    ? 'bg-yellow-400'
-                                                    : 'bg-slate-300 dark:bg-slate-700'
-                                                }`}
+                                            onClick={handleToggleAutoPlay}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                                                autoPlayEnabled ? "bg-yellow-400" : "bg-slate-300 dark:bg-slate-700"
+                                            }`}
                                         >
                                             <span
-                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${(typeof window !== 'undefined' && (localStorage.getItem("vocabee-autoplay") === null || localStorage.getItem("vocabee-autoplay") === "true"))
-                                                        ? 'translate-x-6'
-                                                        : 'translate-x-1'
-                                                    }`}
+                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                    autoPlayEnabled ? "translate-x-6" : "translate-x-1"
+                                                }`}
                                             />
                                         </button>
                                     </div>
