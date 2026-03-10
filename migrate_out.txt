@@ -1,0 +1,53 @@
+Migration: GrammarCard date format fix
+
+  FIXED: ID 93290eaf
+    nextReview: "Mon Jul 06 2026 04:00:00 GMT+0700 (GMT+07:00)" => "2026-07-05T21:00:00.000Z"
+  FIXED: ID 0cc80237
+    nextReview: "Sun May 10 2026 04:00:00 GMT+0700 (GMT+07:00)" => "2026-05-09T21:00:00.000Z"
+  FIXED: ID 7f4090fe
+    nextReview: "Fri Apr 03 2026 04:00:00 GMT+0700 (GMT+07:00)" => "2026-04-02T21:00:00.000Z"
+  FIXED: ID da01a654
+    nextReview: "Thu Mar 19 2026 04:00:00 GMT+0700 (GMT+07:00)" => "2026-03-18T21:00:00.000Z"
+  FIXED: ID b93f4bba
+    nextReview: "Sun Mar 29 2026 04:00:00 GMT+0700 (GMT+07:00)" => "2026-03-28T21:00:00.000Z"
+  FIXED: ID 78773ede
+    nextReview: "Sun Mar 15 2026 04:00:00 GMT+0700 (GMT+07:00)" => "2026-03-14T21:00:00.000Z"
+  FIXED: ID 522aed50
+    nextReview: "Sun Mar 08 2026 21:19:59 GMT+0700 (GMT+07:00)" => "2026-03-08T14:19:59.000Z"
+  FIXED: ID ca86d4f6
+    nextReview: "Mon Mar 09 2026 20:04:36 GMT+0700 (GMT+07:00)" => "2026-03-09T13:04:36.000Z"
+  FIXED: ID 60c1d829
+    nextReview: "Mon Mar 09 2026 20:10:32 GMT+0700 (GMT+07:00)" => "2026-03-09T13:10:32.000Z"
+  FIXED: ID 941c0dde
+    nextReview: "Mon Mar 09 2026 20:13:30 GMT+0700 (GMT+07:00)" => "2026-03-09T13:13:30.000Z"
+  FIXED: ID 65072ae4
+    nextReview: "Mon Mar 09 2026 20:15:45 GMT+0700 (GMT+07:00)" => "2026-03-09T13:15:45.000Z"
+  FIXED: ID f8fa023c
+    nextReview: "Mon Mar 09 2026 20:20:06 GMT+0700 (GMT+07:00)" => "2026-03-09T13:20:06.000Z"
+  FIXED: ID bb0f79e5
+    nextReview: "Mon Mar 09 2026 20:22:48 GMT+0700 (GMT+07:00)" => "2026-03-09T13:22:48.000Z"
+  FIXED: ID 15fb36a1
+    nextReview: "Mon Mar 09 2026 20:32:58 GMT+0700 (GMT+07:00)" => "2026-03-09T13:32:58.000Z"
+  FIXED: ID 0f38c2fa
+    nextReview: "Mon Mar 09 2026 20:40:44 GMT+0700 (GMT+07:00)" => "2026-03-09T13:40:44.000Z"
+  FIXED: ID c97b2443
+    nextReview: "Mon Mar 09 2026 20:43:01 GMT+0700 (GMT+07:00)" => "2026-03-09T13:43:01.000Z"
+  FIXED: ID 7c36506c
+    nextReview: "Mon Mar 09 2026 20:46:23 GMT+0700 (GMT+07:00)" => "2026-03-09T13:46:23.000Z"
+  FIXED: ID d004ba8a
+    nextReview: "Mon Mar 09 2026 20:48:44 GMT+0700 (GMT+07:00)" => "2026-03-09T13:48:44.000Z"
+  FIXED: ID 58d241b7
+    nextReview: "Mon Mar 09 2026 21:20:42 GMT+0700 (GMT+07:00)" => "2026-03-09T14:20:42.000Z"
+  FIXED: ID 5bd68cf9
+    nextReview: "Mon Mar 09 2026 21:22:02 GMT+0700 (GMT+07:00)" => "2026-03-09T14:22:02.000Z"
+  FIXED: ID 9bbf4956
+    nextReview: "Mon Mar 09 2026 21:26:49 GMT+0700 (GMT+07:00)" => "2026-03-09T14:26:49.000Z"
+  FIXED: ID 189c9af7
+    nextReview: "Tue Mar 10 2026 20:41:26 GMT+0700 (GMT+07:00)" => "2026-03-10T13:41:26.000Z"
+
+=== Migration Complete ===
+  Already OK:  0
+  Fixed:       22
+  Errors:      0
+
+Verification: Cards legitimately due now (nextReview <= 2026-03-10T13:50:46.388Z): 0

@@ -584,15 +584,19 @@ export async function reviewGrammarCardAction(id: string, grade: number) {
       quality: quality
     });
 
-    await (prisma as any).grammarCard.update({
-      where: { id },
-      data: {
-        interval: nextInterval,
-        repetition: nextRepetition,
-        efactor: nextEfactor,
-        nextReview: nextReviewDate
-      }
-    });
+    // NOTE: Use raw SQL with .toISOString() to ensure consistent date format in SQLite.
+    // Using Prisma ORM with `(prisma as any)` causes Date objects to be stored as
+    // locale strings (e.g. "Mon Jul 06 2026 04:00:00 GMT+0700") which breaks
+    // SQLite date comparisons (they become lexicographic string comparisons).
+    await prisma.$executeRawUnsafe(
+      `UPDATE GrammarCard SET interval = ?, repetition = ?, efactor = ?, nextReview = ?, updatedAt = ? WHERE id = ?`,
+      nextInterval,
+      nextRepetition,
+      nextEfactor,
+      nextReviewDate.toISOString(),
+      new Date().toISOString(),
+      id
+    );
 
     revalidatePath('/review');
     return { success: true };

@@ -77,6 +77,14 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
         try { sentenceStructure = JSON.parse(card.goldenRule); } catch { /* ignore */ }
     }
 
+    // Split English prompt from Vietnamese translation ("Dịch: ...")
+    const splitDich = (text: string): { en: string; vi: string | null } => {
+        const idx = text.search(/\n?Dịch:\s*/i);
+        if (idx === -1) return { en: text.trim(), vi: null };
+        return { en: text.slice(0, idx).trim(), vi: text.slice(idx).replace(/^\n?Dịch:\s*/i, '').trim() };
+    };
+    const { en: promptEn, vi: promptVi } = splitDich(card.prompt);
+
     useEffect(() => {
         // Focus input on mount
         if (inputRef.current) inputRef.current.focus();
@@ -154,44 +162,47 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-surface p-6 sm:p-10 rounded-2xl md:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800/80 relative overflow-hidden"
             >
-                {/* Card Type Tag */}
-                <div className="absolute top-4 right-4 sm:top-6 sm:right-8 flex items-center gap-2">
-                    {card.repetition === 0 && card.interval === 0 ? (
-                        <span className="flex items-center gap-1.5 px-3 py-1 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-cyan-500/20">
-                            <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
-                            CẤU TRÚC MỚI
-                        </span>
-                    ) : card.repetition === 0 && card.interval > 0 ? (
-                        <span className="flex items-center gap-1.5 px-3 py-1 bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-violet-500/20">
-                            <span className="material-symbols-outlined text-[12px]">replay</span>
-                            HỌC LẠI
-                        </span>
-                    ) : (
-                        <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-amber-500/20">
-                            <span className="material-symbols-outlined text-[12px]">history</span>
-                            ÔN TẬP
-                        </span>
-                    )}
-                    <span className={`px-3 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full border ${isToeic ? (card.type === "TOEIC_P5" ? "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20"
-                        : card.type === "TOEIC_P6" ? "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20"
-                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20")
-                        : "bg-primary/10 text-primary border-primary/20"
-                        }`}>
-                        {isToeic ? `TOEIC Part ${card.toeicPart}` : card.type === "NOTEBOOK" ? "MISTAKE NOTEBOOK" : card.type.replace("_", " ")}
-                    </span>
-                    {isToeic && card.grammarCategory && (
-                        <span className="px-3 py-1 bg-indigo-500/10 text-indigo-500 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-indigo-500/20 hidden sm:inline-flex">
-                            {card.grammarCategory}
-                        </span>
-                    )}
-                </div>
-
                 <div className="space-y-6 sm:space-y-8">
-                    {/* Prompt section */}
-                    <div className="space-y-3 sm:space-y-4 pt-2">
-                        <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-tighter">
-                            <span className="material-symbols-outlined text-sm">help</span>
-                            <span>Question / Task</span>
+                    {/* Header and Prompt section */}
+                    <div className="space-y-3 sm:space-y-4">
+                        {/* Header: Question/Task + Card Tags perfectly aligned */}
+                        <div className="flex justify-between items-start sm:items-center gap-4 flex-col sm:flex-row pb-2">
+                            <div className="flex items-center gap-2 text-slate-400 font-bold text-xs uppercase tracking-tighter shrink-0">
+                                <span className="material-symbols-outlined text-sm">help</span>
+                                <span>Question / Task</span>
+                            </div>
+                            
+                            {/* Card Type Tags */}
+                            <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+                                {card.repetition === 0 && card.interval === 0 ? (
+                                    <span className="flex items-center gap-1.5 px-3 py-1 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-cyan-500/20">
+                                        <span className="material-symbols-outlined text-[12px]">auto_awesome</span>
+                                        CẤU TRÚC MỚI
+                                    </span>
+                                ) : card.repetition === 0 && card.interval > 0 ? (
+                                    <span className="flex items-center gap-1.5 px-3 py-1 bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-violet-500/20">
+                                        <span className="material-symbols-outlined text-[12px]">replay</span>
+                                        HỌC LẠI
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider rounded-full border border-amber-500/20">
+                                        <span className="material-symbols-outlined text-[12px]">history</span>
+                                        ÔN TẬP
+                                    </span>
+                                )}
+                                <span className={`px-3 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full border ${isToeic ? (card.type === "TOEIC_P5" ? "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20"
+                                    : card.type === "TOEIC_P6" ? "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20"
+                                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20")
+                                    : "bg-primary/10 text-primary border-primary/20"
+                                    }`}>
+                                    {isToeic ? `TOEIC Part ${card.toeicPart}` : card.type === "NOTEBOOK" ? "MISTAKE NOTEBOOK" : card.type.replace("_", " ")}
+                                </span>
+                                {isToeic && card.grammarCategory && (
+                                    <span className="px-3 py-1 bg-indigo-500/10 text-indigo-500 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-indigo-500/20">
+                                        {card.grammarCategory}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         {/* TOEIC-specific prompt rendering */}
                         {isToeic && card.type === "TOEIC_P6" && toeicPromptParts ? (
@@ -225,14 +236,21 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                                 </h2>
                             </div>
                         ) : (
-                            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                                {card.prompt}
-                            </h2>
+                            <div className="space-y-2">
+                                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                                    {promptEn}
+                                </h2>
+                                {promptVi && (
+                                    <p className="text-sm sm:text-base font-medium text-slate-500 dark:text-slate-400 leading-relaxed border-l-2 border-primary/40 pl-3 italic">
+                                        🇻🇳 {promptVi}
+                                    </p>
+                                )}
+                            </div>
                         )}
                         <div className="flex items-center gap-2">
                             <button
                                 title="Phát âm"
-                                onClick={() => handleSpeak(card.prompt)}
+                                onClick={() => handleSpeak(promptEn)}
                                 className="size-10 rounded-full bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center transition-all duration-300"
                             >
                                 <span className="material-symbols-outlined text-[20px]">volume_up</span>

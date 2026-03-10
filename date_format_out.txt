@@ -1,0 +1,53 @@
+=== RAW nextReview values from SQLite ===
+ID: 78773ede | nextReview: [object] "Sun Mar 15 2026 04:00:00 GMT+0700 (GMT+07:00)" | int:5
+ID: da01a654 | nextReview: [object] "Thu Mar 19 2026 04:00:00 GMT+0700 (GMT+07:00)" | int:9
+ID: b93f4bba | nextReview: [object] "Sun Mar 29 2026 04:00:00 GMT+0700 (GMT+07:00)" | int:19
+ID: 7f4090fe | nextReview: [object] "Fri Apr 03 2026 04:00:00 GMT+0700 (GMT+07:00)" | int:24
+ID: 0cc80237 | nextReview: [object] "Sun May 10 2026 04:00:00 GMT+0700 (GMT+07:00)" | int:61
+ID: 93290eaf | nextReview: [object] "Mon Jul 06 2026 04:00:00 GMT+0700 (GMT+07:00)" | int:118
+ID: 522aed50 | nextReview: [object] "Sun Mar 08 2026 21:19:59 GMT+0700 (GMT+07:00)" | int:0
+ID: ca86d4f6 | nextReview: [object] "Mon Mar 09 2026 20:04:36 GMT+0700 (GMT+07:00)" | int:0
+ID: 60c1d829 | nextReview: [object] "Mon Mar 09 2026 20:10:32 GMT+0700 (GMT+07:00)" | int:0
+ID: 941c0dde | nextReview: [object] "Mon Mar 09 2026 20:13:30 GMT+0700 (GMT+07:00)" | int:0
+ID: 65072ae4 | nextReview: [object] "Mon Mar 09 2026 20:15:45 GMT+0700 (GMT+07:00)" | int:0
+ID: f8fa023c | nextReview: [object] "Mon Mar 09 2026 20:20:06 GMT+0700 (GMT+07:00)" | int:0
+ID: bb0f79e5 | nextReview: [object] "Mon Mar 09 2026 20:22:48 GMT+0700 (GMT+07:00)" | int:0
+ID: 15fb36a1 | nextReview: [object] "Mon Mar 09 2026 20:32:58 GMT+0700 (GMT+07:00)" | int:0
+ID: 0f38c2fa | nextReview: [object] "Mon Mar 09 2026 20:40:44 GMT+0700 (GMT+07:00)" | int:0
+ID: c97b2443 | nextReview: [object] "Mon Mar 09 2026 20:43:01 GMT+0700 (GMT+07:00)" | int:0
+ID: 7c36506c | nextReview: [object] "Mon Mar 09 2026 20:46:23 GMT+0700 (GMT+07:00)" | int:0
+ID: d004ba8a | nextReview: [object] "Mon Mar 09 2026 20:48:44 GMT+0700 (GMT+07:00)" | int:0
+ID: 58d241b7 | nextReview: [object] "Mon Mar 09 2026 21:20:42 GMT+0700 (GMT+07:00)" | int:0
+ID: 5bd68cf9 | nextReview: [object] "Mon Mar 09 2026 21:22:02 GMT+0700 (GMT+07:00)" | int:0
+
+=== Prisma-parsed values ===
+ID: 78773ede | nextReview type: object | value: Sun Mar 15 2026 04:00:00 GMT+0700 (GMT+07:00) | iso: 2026-03-14T21:00:00.000Z
+ID: da01a654 | nextReview type: object | value: Thu Mar 19 2026 04:00:00 GMT+0700 (GMT+07:00) | iso: 2026-03-18T21:00:00.000Z
+ID: b93f4bba | nextReview type: object | value: Sun Mar 29 2026 04:00:00 GMT+0700 (GMT+07:00) | iso: 2026-03-28T21:00:00.000Z
+ID: 7f4090fe | nextReview type: object | value: Fri Apr 03 2026 04:00:00 GMT+0700 (GMT+07:00) | iso: 2026-04-02T21:00:00.000Z
+ID: 0cc80237 | nextReview type: object | value: Sun May 10 2026 04:00:00 GMT+0700 (GMT+07:00) | iso: 2026-05-09T21:00:00.000Z
+ID: 93290eaf | nextReview type: object | value: Mon Jul 06 2026 04:00:00 GMT+0700 (GMT+07:00) | iso: 2026-07-05T21:00:00.000Z
+ID: 522aed50 | nextReview type: object | value: Sun Mar 08 2026 21:19:59 GMT+0700 (GMT+07:00) | iso: 2026-03-08T14:19:59.418Z
+ID: ca86d4f6 | nextReview type: object | value: Mon Mar 09 2026 20:04:36 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:04:36.808Z
+ID: 60c1d829 | nextReview type: object | value: Mon Mar 09 2026 20:10:32 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:10:32.313Z
+ID: 941c0dde | nextReview type: object | value: Mon Mar 09 2026 20:13:30 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:13:30.861Z
+ID: 65072ae4 | nextReview type: object | value: Mon Mar 09 2026 20:15:45 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:15:45.441Z
+ID: f8fa023c | nextReview type: object | value: Mon Mar 09 2026 20:20:06 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:20:06.004Z
+ID: bb0f79e5 | nextReview type: object | value: Mon Mar 09 2026 20:22:48 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:22:48.857Z
+ID: 15fb36a1 | nextReview type: object | value: Mon Mar 09 2026 20:32:58 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:32:58.627Z
+ID: 0f38c2fa | nextReview type: object | value: Mon Mar 09 2026 20:40:44 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:40:44.859Z
+ID: c97b2443 | nextReview type: object | value: Mon Mar 09 2026 20:43:01 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:43:01.423Z
+ID: 7c36506c | nextReview type: object | value: Mon Mar 09 2026 20:46:23 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:46:23.612Z
+ID: d004ba8a | nextReview type: object | value: Mon Mar 09 2026 20:48:44 GMT+0700 (GMT+07:00) | iso: 2026-03-09T13:48:44.225Z
+ID: 58d241b7 | nextReview type: object | value: Mon Mar 09 2026 21:20:42 GMT+0700 (GMT+07:00) | iso: 2026-03-09T14:20:42.126Z
+ID: 5bd68cf9 | nextReview type: object | value: Mon Mar 09 2026 21:22:02 GMT+0700 (GMT+07:00) | iso: 2026-03-09T14:22:02.717Z
+
+now ISO: 2026-03-10T13:49:02.682Z
+Comparing with raw query...
+Due with ISO string comparison: 6
+  nextReview: "Mon Jul 06 2026 04:00:00 GMT+0700 (GMT+07:00)"
+  nextReview: "Sun May 10 2026 04:00:00 GMT+0700 (GMT+07:00)"
+  nextReview: "Fri Apr 03 2026 04:00:00 GMT+0700 (GMT+07:00)"
+  nextReview: "Thu Mar 19 2026 04:00:00 GMT+0700 (GMT+07:00)"
+  nextReview: "Sun Mar 29 2026 04:00:00 GMT+0700 (GMT+07:00)"
+  nextReview: "Sun Mar 15 2026 04:00:00 GMT+0700 (GMT+07:00)"

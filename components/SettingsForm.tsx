@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Save, Plus, Minus, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Save, Plus, Minus } from "lucide-react";
 import { updateUserSettingsAction } from "@/app/actions";
 import { useToast } from "./ToastProvider";
 import { motion } from "framer-motion";
@@ -12,6 +13,7 @@ interface SettingsFormProps {
 
 export default function SettingsForm({ initialDailyGoal }: SettingsFormProps) {
     const { showToast } = useToast();
+    const router = useRouter();
     const [dailyGoal, setDailyGoal] = useState(initialDailyGoal || 20);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -20,7 +22,10 @@ export default function SettingsForm({ initialDailyGoal }: SettingsFormProps) {
         try {
             const res = await updateUserSettingsAction({ dailyGoal });
             if (res.success) {
-                showToast("Đã lưu cài đặt thành công! 🐝✨", "success");
+                showToast("Đã lưu cài đặt thành công! Đang về Dashboard... 🐝✨", "success");
+                // Refresh current page data, then auto-navigate to dashboard
+                router.refresh();
+                setTimeout(() => router.push('/'), 1500);
             } else {
                 showToast(res.error || "Lỗi khi lưu cài đặt.", "error");
             }

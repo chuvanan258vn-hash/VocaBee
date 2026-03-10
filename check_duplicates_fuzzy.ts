@@ -1,32 +1,53 @@
+
 import { PrismaClient } from '@prisma/client';
-import * as fs from 'fs';
 
 const prisma = new PrismaClient();
 
-async function main() {
-    console.log("Fetching cards similar to 'This tool (131)'...");
-
-    // Search for cards that contain "This tool" or "assist you in identifying"
-    const cards: any[] = await prisma.$queryRawUnsafe(`
-        SELECT id, prompt, answer, interval, repetition, nextReview, createdAt 
-        FROM GrammarCard 
-        WHERE prompt LIKE '%This tool%' OR prompt LIKE '%assist you in identifying%'
-    `);
-
-    let output = `Found ${cards.length} cards.\n`;
-    cards.forEach(c => {
-        output += `\nID: ${c.id}\n`;
-        output += `Prompt: ${c.prompt.substring(0, 100)}...\n`;
-        output += `Answer: ${c.answer}\n`;
-        output += `Interval: ${c.interval}, Repetition: ${c.repetition}\n`;
-        output += `NextReview: ${c.nextReview}\n`;
-        output += `CreatedAt: ${c.createdAt}\n`;
-    });
-
-    fs.writeFileSync('this_tool_log_fuzzy.txt', output);
-    console.log("Wrote to this_tool_log_fuzzy.txt");
+function normalize(text: string): string {
+    return text.toLowerCase().replace(/[.,!?;]/g, '').replace(/\s+/g, ' ').trim();
 }
 
-main()
-    .catch(e => console.error(e))
-    .finally(() => prisma.$disconnect());
+async function main() {
+    try {
+        console.log('--- CHECKING FOR FUZZY DUPLICATE GRAMMAR PROMPTS ---');
+
+        const cards = await prisma.grammarCard.findMany({
+            select: { id: true, prompt: true, userId: true, answer: true, type: true }
+        });
+
+        const seen: Map<string, any[]> = new Map();
+
+        for (const card of cards) {
+            const key = normalize(card.prompt) + '|' + card.userId;
+            if (!seen.has(key)) {
+                seen.set(key, []);
+            }
+            seen.get(key)!.push(card);
+        }
+
+        let found = false;
+        for (const [key, cardList] of seen.entries()) {
+            if (cardList.length > 1) {
+                found = true;
+                const [promptPart, userId] = key.split('|');
+                console.log(`\nNormalized Prompt: "${promptPart}"`);
+                console.log(`User: ${userId}`);
+                console.log(`Count: ${cardList.length}`);
+                cardList.forEach(c => {
+                    console.log(`  - ID: ${c.id} | Type: ${c.type} | Original Prompt: "${c.prompt}" | Answer: "${c.answer}"`);
+                });
+            }
+        }
+
+        if (!found) {
+            console.log('No fuzzy duplicate grammar prompts found.');
+        }
+
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await prisma.$disconnect();
+    }
+}
+
+main();

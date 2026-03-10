@@ -1,0 +1,46 @@
+Now: 2026-03-10T13:51:18.812Z
+todayStart (4AM): 2026-03-09T21:00:00.000Z
+yesterdayStart:   2026-03-08T21:00:00.000Z
+
+Total grammar cards: 23
+
+[NEW cards (interval=0)]: 17
+  ID:522aed50 rep:0 next:Sun Mar 08 2026 21:19:59 GMT+0700 (GMT+07:00) upd:Sun Mar 08 2026 21:19:59 GMT+0700 (GMT+07:00) => "Fortunately, we have recently made upgrades to the trails. In addition to improv"
+  ID:ca86d4f6 rep:0 next:Mon Mar 09 2026 20:04:36 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:04:36 GMT+0700 (GMT+07:00) => "------- you want to receive additional information regarding the services we off"
+  ID:60c1d829 rep:0 next:Mon Mar 09 2026 20:10:32 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:10:32 GMT+0700 (GMT+07:00) => "Sandy Duncan was handpicked by the general manager to head the next project beca"
+  ID:941c0dde rep:0 next:Mon Mar 09 2026 20:13:30 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:13:30 GMT+0700 (GMT+07:00) => "The changes made in the working conditions at our company resulted in remarkable"
+  ID:65072ae4 rep:0 next:Mon Mar 09 2026 20:15:45 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:15:45 GMT+0700 (GMT+07:00) => "All commuters ------- the main highway to get to the center of the city will fac"
+  ID:f8fa023c rep:0 next:Mon Mar 09 2026 20:20:06 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:20:06 GMT+0700 (GMT+07:00) => "In order to become a member of the country club, applicants have to meet the str"
+  ID:bb0f79e5 rep:0 next:Mon Mar 09 2026 20:22:48 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:22:48 GMT+0700 (GMT+07:00) => "The outcome of our meeting today with the board of directors will ------- the co"
+  ID:15fb36a1 rep:0 next:Mon Mar 09 2026 20:32:58 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:32:58 GMT+0700 (GMT+07:00) => "Câu hỏi: The announcement of John Stanton's retirement was not well received by "
+  ID:0f38c2fa rep:0 next:Mon Mar 09 2026 20:40:44 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:40:44 GMT+0700 (GMT+07:00) => "The majority of the contract .............. that took place during the year were"
+  ID:c97b2443 rep:0 next:Mon Mar 09 2026 20:43:01 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:43:01 GMT+0700 (GMT+07:00) => "The presentation of this evening’s winners will commence ..........  at seven fo"
+  ID:7c36506c rep:0 next:Mon Mar 09 2026 20:46:23 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:46:23 GMT+0700 (GMT+07:00) => "Mr. Chan’s main role in the company for the next two weeks is to look (B) for th"
+  ID:d004ba8a rep:0 next:Mon Mar 09 2026 20:48:44 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 20:48:44 GMT+0700 (GMT+07:00) => "People unanimously agreed that John would have performed a great deal better und"
+  ID:58d241b7 rep:0 next:Mon Mar 09 2026 21:20:42 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 21:20:42 GMT+0700 (GMT+07:00) => "Scarborough General Hospital has two ------- for certified x-ray technicians to "
+  ID:5bd68cf9 rep:0 next:Mon Mar 09 2026 21:22:02 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 21:22:02 GMT+0700 (GMT+07:00) => "Mark’s Warehouse Clearance Store is having a sale with savings of up to 40 perce"
+  ID:9bbf4956 rep:0 next:Mon Mar 09 2026 21:26:49 GMT+0700 (GMT+07:00) upd:Mon Mar 09 2026 21:26:49 GMT+0700 (GMT+07:00) => "Should there be any requests for schedule changes, please notify us -------.
+(Nế"
+  ID:189c9af7 rep:0 next:Tue Mar 10 2026 20:41:26 GMT+0700 (GMT+07:00) upd:Tue Mar 10 2026 20:41:26 GMT+0700 (GMT+07:00) => "If the task is too complicated to figure out on ------- own, please don’t hesita"
+  ID:1d5f63e2 rep:0 next:Tue Mar 10 2026 20:50:56 GMT+0700 (GMT+07:00) upd:Tue Mar 10 2026 20:50:56 GMT+0700 (GMT+07:00) => "The hard work put in during his younger years made him become ------- sound in h"
+
+[DUE cards (interval>0, nextReview<=now)]: 0
+
+[DUE but BLOCKED by "yesterday" filter]: 0
+
+[WILL APPEAR as dueGrammar]: 0
+
+[Reviewed TODAY (updatedAt >= todayStart)]: 4
+  ID:1d5f63e2 int:0 rep:0 upd:Tue Mar 10 2026 20:50:56 GMT+0700 (GMT+07:00) => "The hard work put in during his younger years made him become ------- sound in h"
+  ID:189c9af7 int:0 rep:0 upd:Tue Mar 10 2026 20:41:26 GMT+0700 (GMT+07:00) => "If the task is too complicated to figure out on ------- own, please don’t hesita"
+  ID:b93f4bba int:19 rep:3 upd:Tue Mar 10 2026 14:28:23 GMT+0700 (GMT+07:00) => "Your guide will lead you on an intermediate-level hike that lasts for approximat"
+  ID:78773ede int:5 rep:2 upd:Tue Mar 10 2026 14:27:47 GMT+0700 (GMT+07:00) => "Good weather is expected, but there is always the possibility that there will be"
+
+[UPCOMING (interval>0, nextReview in future)]: 6
+  ID:78773ede int:5 rep:2 next:Sun Mar 15 2026 04:00:00 GMT+0700 (GMT+07:00) => "Good weather is expected, but there is always the possibility that there will be"
+  ID:da01a654 int:9 rep:2 next:Thu Mar 19 2026 04:00:00 GMT+0700 (GMT+07:00) => "When it comes to takeout packaging, we understand that each restaurant requires "
+  ID:b93f4bba int:19 rep:3 next:Sun Mar 29 2026 04:00:00 GMT+0700 (GMT+07:00) => "Your guide will lead you on an intermediate-level hike that lasts for approximat"
+  ID:7f4090fe int:24 rep:3 next:Fri Apr 03 2026 04:00:00 GMT+0700 (GMT+07:00) => "This is not only a chance to impress our visitors but also an opportunity to pot"
+  ID:0cc80237 int:61 rep:4 next:Sun May 10 2026 04:00:00 GMT+0700 (GMT+07:00) => "Around nine o'clock, Isabella Bartlett will lead our guests on a tour of the off"
+  ID:93290eaf int:118 rep:5 next:Mon Jul 06 2026 04:00:00 GMT+0700 (GMT+07:00) => "This tool (131) ____ to assist you in identifying your strengths and interests, "
+Output saved to grammar_diagnose.txt
