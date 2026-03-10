@@ -60,6 +60,13 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
     const toeicPromptParts = isToeic && card.type === "TOEIC_P6"
         ? card.prompt.split("\n---GAP---\n")
         : null;
+
+    // Check if the context passage is roughly the exact same length as the question sentence
+    // This prevents hiding full paragraphs that contain the question sentence
+    const isPassageRedundant = toeicPromptParts && toeicPromptParts.length > 1 && (
+        Math.abs(toeicPromptParts[0].trim().length - toeicPromptParts[1].trim().length) < 30
+    );
+
     // Parse TOEIC Part 7: split by ---Q--- separator
     const toeicP7Parts = isToeic && card.type === "TOEIC_P7"
         ? card.prompt.split("\n---Q---\n")
@@ -121,7 +128,8 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
             interval: card.interval,
             repetition: card.repetition,
             efactor: card.efactor,
-            quality: quality
+            quality: quality,
+            hideFuzz: true
         });
 
         const days = result.interval;
@@ -165,9 +173,9 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                         </span>
                     )}
                     <span className={`px-3 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-full border ${isToeic ? (card.type === "TOEIC_P5" ? "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20"
-                            : card.type === "TOEIC_P6" ? "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20"
-                                : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20")
-                            : "bg-primary/10 text-primary border-primary/20"
+                        : card.type === "TOEIC_P6" ? "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20"
+                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20")
+                        : "bg-primary/10 text-primary border-primary/20"
                         }`}>
                         {isToeic ? `TOEIC Part ${card.toeicPart}` : card.type === "NOTEBOOK" ? "MISTAKE NOTEBOOK" : card.type.replace("_", " ")}
                     </span>
@@ -188,15 +196,21 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                         {/* TOEIC-specific prompt rendering */}
                         {isToeic && card.type === "TOEIC_P6" && toeicPromptParts ? (
                             <div className="space-y-3">
-                                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                                    <p className="text-sm sm:text-base font-medium text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
-                                        {toeicPromptParts[0]}
-                                    </p>
-                                </div>
-                                {toeicPromptParts[1] && (
+                                {!isPassageRedundant && toeicPromptParts[0] && (
+                                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                                        <p className="text-sm sm:text-base font-medium text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                                            {toeicPromptParts[0]}
+                                        </p>
+                                    </div>
+                                )}
+                                {toeicPromptParts[1] ? (
                                     <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
                                         📌 {toeicPromptParts[1]}
                                     </p>
+                                ) : (
+                                    <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                                        {toeicPromptParts[0]}
+                                    </h2>
                                 )}
                             </div>
                         ) : isToeic && card.type === "TOEIC_P7" && toeicP7Parts ? (
@@ -342,7 +356,14 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                                 </div>
                                 <div className="space-y-4">
                                     <p className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                                        {card.answer}
+                                        {(() => {
+                                            const correctOption = mcqOptions.find(opt => opt.key === card.answer || opt.value === card.answer);
+                                            // Ensure we only prefix with the letter if it's an MCQ with options, and it wasn't already prefixed
+                                            if (correctOption) {
+                                                return `${correctOption.key}. ${correctOption.value}`;
+                                            }
+                                            return card.answer;
+                                        })()}
                                     </p>
                                     <div className="flex gap-2">
                                         <button

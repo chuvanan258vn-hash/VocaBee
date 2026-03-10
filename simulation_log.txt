@@ -1,0 +1,19 @@
+INTERLEAVED ARRAY:
+0: [78773ede-2e4b-4077-b30c-57653124e4e0] (interval: 4) Good weather is expected, but there is always the 
+1: [b93f4bba-e4d6-4cec-aadd-db18c4f60c72] (interval: 8) Your guide will lead you on an intermediate-level 
+2: [da01a654-00ad-45a4-9517-da687a7f8089] (interval: 9) When it comes to takeout packaging, we understand 
+3: [522aed50-e515-4efe-b78e-a925868133d2] (interval: 0) Fortunately, we have recently made upgrades to the
+4: [7f4090fe-f34f-4b41-aaa4-26b5b73c9440] (interval: 24) This is not only a chance to impress our visitors 
+5: [0cc80237-43dc-4545-bfe4-f9b17205af88] (interval: 61) Around nine o'clock, Isabella Bartlett will lead o
+6: [93290eaf-222a-471d-b607-14c7229ff6e4] (interval: 118) This tool (131) ____ to assist you in identifying 
+7: [ca86d4f6-2aea-48a1-b102-2ae013908937] (interval: 0) ------- you want to receive additional information
+8: [60c1d829-0509-44a6-8791-697cfba98224] (interval: 0) Sandy Duncan was handpicked by the general manager
+9: [941c0dde-16c7-4991-84e4-e668c1bb906f] (interval: 0) The changes made in the working conditions at our 
+10: [65072ae4-321a-4497-a8c6-c9dc8998034a] (interval: 0) All commuters ------- the main highway to get to t
+11: [f8fa023c-ced6-4690-b4f4-82176ac5d46d] (interval: 0) In order to become a member of the country club, a
+12: [bb0f79e5-d501-4137-ad78-fe7250a17394] (interval: 0) The outcome of our meeting today with the board of
+13: [15fb36a1-ee09-48e6-8003-adb00e5c5156] (interval: 0) Câu hỏi: The announcement of John Stanton's retire
+14: [0f38c2fa-8be5-4602-9cc7-8e10bc3ab0b2] (interval: 0) The majority of the contract .............. that t
+15: [c97b2443-d104-41cc-b27b-278a9507ca8e] (interval: 0) The presentation of this evening’s winners will co
+
+NO DUPLICATES IN INTERLEAVED.

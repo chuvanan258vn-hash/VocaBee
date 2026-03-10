@@ -18,10 +18,11 @@ VocaBee là một ứng dụng học từ vựng thông minh dựa trên phươn
 Flashcard là cốt lõi của trải nghiệm học tập trên VocaBee. Khi đến phiên ôn tập (Review Session), hệ thống sẽ đưa ra các thẻ từ vựng với các tính năng sau:
 - **Lật thẻ 3D (3D Flip Animation):** Mặt trước hiển thị từ, mặt sau hiển thị phiên âm, nghĩa tiếng Việt và ví dụ minh họa bằng hiệu ứng lật mượt mà.
 - **Phát âm tự động (Text-to-Speech):** Hỗ trợ đọc từ vựng ngay khi lật thẻ và đính kèm nút phát âm lại ở mặt sau để rèn luyện kỹ năng nghe.
-- **Đánh giá mức độ nhớ (Self-Assessment):** Sau khi lật thẻ, người dùng tự đánh giá mức độ ghi nhớ qua 3 mức độ (SM-2):
-  - **Dễ (Easy):** Từ đã thuộc lòng, khoảng thời gian lặp lại (interval) sẽ tăng lên rất nhiều và đẩy lùi ngày ôn tập tiếp theo ra xa.
-  - **Trung bình (Good):** Mức độ bình thường, khoảng thời gian lặp lại sẽ tăng lên ở mức vừa phải.
-  - **Khó / Quên (Hard / Again):** Từ chưa thuộc, thẻ sẽ bị phạt reset lịch học và sẽ tự động xuất hiện lặp lại để học lại ngay trong thời gian ngắn.
+- **Đánh giá mức độ nhớ (4 Levels - Anki-style):** Sau khi lật thẻ, bạn chọn 1 trong 4 mức độ để hệ thống lên lịch:
+  - **Quên mất (Again):** Không nhớ từ, thẻ sẽ quay lại hàng đợi học lại ngay lập tức (< 1 phút).
+  - **Khó nhớ (Hard):** Nhớ một chút, khoảng cách tăng chậm (1.2x).
+  - **Nhớ được (Good):** Mức độ ổn định, khoảng cách tăng theo hệ số Ease Factor chuẩn.
+  - **Nhớ ngay (Easy):** Từ quá quen thuộc, nhận thêm Bonus khoảng cách (nhảy vọt ngay lập tức) để đẩy lùi lịch ôn tập ra xa.
 - **Thanh Tiến độ (Progress tracking):** Hệ thống review session sẽ hiển thị thanh biểu diễn (Progress bar) cho bạn biết mình đã hoàn thành bao nhiêu thẻ và còn lại bao nhiêu thẻ.
 - **Chế độ Nhập liệu (Typing / Active Recall Mode):** Hệ thống sẽ hiển thị ngẫu nhiên các thẻ yêu cầu người dùng tự gõ lại từ vựng dựa trên định nghĩa (thay vì lật thẻ).
   - **Gợi ý Thông minh (Smart Hint):** Hỗ trợ hiển thị pattern chữ cái thông minh (ví dụ: `H _ _ _ _ d   o _ _` cho "Headed out"). Hệ thống tự động nhận diện cụm từ, hiển thị chữ cái đầu của mỗi từ và thêm các điểm gợi ý dựa trên độ dài từ, giúp kích thích gợi nhớ tối đa.
@@ -195,16 +196,26 @@ Một từ được tính là "Cần ôn tập" khi:
 
 ---
 
-## 🧠 Thuật toán Spaced Repetition (SM-2)
+Chúng ta sử dụng thuật toán **SM-2** đã được cải tiến (giống Anki) để tối ưu hóa việc ghi nhớ:
+- **Lần đầu tiên ($n=1$):**
+  - **Hard / Good:** 1 ngày.
+  - **Easy:** 4 ngày.
+- **Lần thứ hai ($n=2$):**
+  - **Hard:** 3 ngày.
+  - **Good:** 6 ngày.
+  - **Easy:** 8 ngày.
+- **Các lần sau ($n>2$):** $I(n) = I(n-1) \times Multiplier$.
+  - **Hard:** Multiplier = 1.2.
+  - **Good:** Multiplier = EF.
+  - **Easy:** Multiplier = EF × 1.3 (Easy Bonus).
 
-Chúng ta sử dụng thuật toán **SM-2** để tối ưu hóa việc ghi nhớ:
-- Lần đầu tiên ($n=1$): $I(1) = 1$ ngày.
-- Lần thứ hai ($n=2$): $I(2) = 6$ ngày.
-- Các lần sau ($n>2$): $I(n) = I(n-1) \times EF$.
-
-**EF (Ease Factor)**: Độ dễ của từ sẽ được điều chỉnh linh hoạt. Công thức:  
+**Các cải tiến bổ sung:**
+- **Diferentiated Intervals:** Các mức độ đánh giá khác nhau sẽ tạo ra khoảng thời gian ôn tập khác nhau ngay lập tức, giúp việc phân loại thẻ chính xác hơn.
+- **Fuzz Logic:** Tự động cộng/trừ ngẫu nhiên một lượng nhỏ thời gian (±5%) cho các thẻ có interval > 4 ngày để tránh việc quá nhiều thẻ dồn vào cùng một ngày học (Card Clumping).
+- **Interval Stabilization:** Trên giao diện nút bấm, yếu tố "Fuzz" sẽ được ẩn đi để đảm bảo số ngày hiển thị luôn nhất quán và dễ hiểu.
+- **EF (Ease Factor)**: Độ dễ của từ sẽ được điều chỉnh linh hoạt. Công thức:  
 `EF' = EF + 0.1 − (5−q)×(0.08 + (5−q)×0.02)`  
-Trong đó `q` là chất lượng trả lời (0-5). VocaBee hiện ánh xạ: **Dễ** → q=5, **Trung bình** → q=3, **Khó** → q=1. Ngưỡng tối thiểu của EF là 1.3.
+Trong đó `q` là chất lượng trả lời (0-5). VocaBee hiện ánh xạ: **Nhớ ngay** → q=5, **Nhớ được** → q=4, **Khó nhớ** → q=3, **Quên mất** → q=0. Ngưỡng tối thiểu của EF là 1.3.
 
 ---
 

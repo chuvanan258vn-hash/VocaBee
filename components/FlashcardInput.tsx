@@ -122,7 +122,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
 
     const getNextReviewLabel = (quality: number) => {
         if (quality === 0) return "< 1 phút";
-        const result = calculateSm2({ interval: word.interval, repetition: word.repetition, efactor: word.efactor, quality });
+        const result = calculateSm2({ interval: word.interval, repetition: word.repetition, efactor: word.efactor, quality, hideFuzz: true });
         const days = result.interval;
         if (days === 0) return "< 1 ngày";
         if (days === 1) return "1 ngày";
@@ -142,7 +142,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
         <div className="w-full max-w-4xl mx-auto px-4 py-4 md:py-6 flex flex-col items-center">
 
             {/* Flashcard Container */}
-            <div className={`w-full aspect-[4/3] sm:aspect-[16/10] max-w-2xl bg-white dark:bg-slate-900/50 rounded-3xl border ${isCorrect === false ? 'border-rose-500/50 shadow-rose-500/20' : isCorrect === true ? 'border-teal-500/50 shadow-teal-500/20' : 'border-slate-200 dark:border-slate-800'} shadow-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-colors duration-300`}>
+            <div className={`w-full min-h-[350px] sm:min-h-[450px] py-10 max-w-2xl bg-white dark:bg-slate-900/50 rounded-3xl border ${isCorrect === false ? 'border-rose-500/50 shadow-rose-500/20' : isCorrect === true ? 'border-teal-500/50 shadow-teal-500/20' : 'border-slate-200 dark:border-slate-800'} shadow-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-colors duration-300`}>
 
                 {/* Decorative background elements */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
@@ -169,7 +169,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
 
                     <div className="flex flex-col items-center gap-4 md:gap-6 w-full text-center">
                         <div className="flex items-center gap-4">
-                            <h2 className="font-plus text-xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight">
+                            <h2 className={`font-plus font-black text-slate-900 dark:text-white leading-tight ${word.meaning?.length > 40 ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'}`}>
                                 {word.meaning}
                             </h2>
                             {/* Manual Audio Button (Visible before answer) */}
@@ -204,7 +204,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                                     className="pt-6 w-full flex flex-col items-center border-t border-slate-200 dark:border-slate-700 mt-4"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <h3 className="text-3xl md:text-5xl font-black text-teal-500 dark:text-teal-400 tracking-tighter shadow-teal-500/20 drop-shadow-lg">
+                                        <h3 className={`font-black text-teal-500 dark:text-teal-400 tracking-tighter shadow-teal-500/20 drop-shadow-lg ${word.word?.length > 20 ? 'text-2xl md:text-3xl' : 'text-3xl md:text-5xl'}`}>
                                             {word.word}
                                         </h3>
                                         <div className="flex items-center gap-2">

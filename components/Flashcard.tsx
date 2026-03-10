@@ -90,7 +90,7 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
 
     const getNextReviewLabel = (quality: number) => {
         if (quality === 0) return "< 1 phút";
-        const result = calculateSm2({ interval: word.interval, repetition: word.repetition, efactor: word.efactor, quality });
+        const result = calculateSm2({ interval: word.interval, repetition: word.repetition, efactor: word.efactor, quality, hideFuzz: true });
         const days = result.interval;
         if (days === 0) return "< 1 ngày";
         if (days === 1) return "1 ngày";
@@ -148,7 +148,7 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
                         </div>
 
                         {/* Word */}
-                        <h1 className="text-5xl md:text-7xl font-black text-center text-slate-900 dark:text-white tracking-tighter leading-none mb-6">
+                        <h1 className={`font-black text-center text-slate-900 dark:text-white tracking-tighter leading-none mb-6 ${word.word?.length > 20 ? 'text-4xl md:text-5xl' : 'text-5xl md:text-7xl'}`}>
                             {word.word}
                         </h1>
 
@@ -216,7 +216,7 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
 
                         {/* Meaning — the BIG reveal */}
                         <div className="flex-1 flex items-center justify-center py-4">
-                            <p className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white text-center leading-snug tracking-tight">
+                            <p className={`font-black text-slate-900 dark:text-white text-center leading-snug tracking-tight ${word.meaning?.length > 40 ? 'text-xl md:text-2xl' : 'text-3xl md:text-4xl'}`}>
                                 {word.meaning}
                             </p>
                         </div>
