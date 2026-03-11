@@ -25,7 +25,7 @@ export default async function VocabularyPage({
     const stats = await getDashboardStats();
 
     // Get all unique word types for filtering
-    const allWordTypes = stats?.allWordTypes || [];
+    const allWordTypes = stats?.wordTypes || [];
 
     // Lấy 20 từ đầu tiên để SSR ban đầu
     const allWords = await prisma.vocabulary.findMany({

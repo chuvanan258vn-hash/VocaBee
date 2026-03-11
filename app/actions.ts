@@ -410,7 +410,12 @@ export async function getDashboardStats() {
     }
   });
   const grammarDueToStudy = Math.min(grammarDueCount, 30);
-  const totalDueGrammar = grammarDueToStudy + canLearnMoreGrammarCount;
+  // If user has no due grammar but there are available new grammar items, show at least 1
+  let totalDueGrammar = grammarDueToStudy + canLearnMoreGrammarCount;
+  if (totalDueGrammar === 0 && availableNewGrammarCount > 0) {
+    // show a small indicator so banner appears; actual counts elsewhere remain accurate
+    totalDueGrammar = 1;
+  }
 
   let currentStreak = vUser.streakCount || 0;
   const lastGoalMetDate = vUser.lastGoalMetDate ? new Date(vUser.lastGoalMetDate) : null;
@@ -479,20 +484,21 @@ export async function getDashboardStats() {
 }
 
 
-export async function updateUserSettingsAction(data: { dailyGoal: number }) {
+export async function updateUserSettingsAction(data: { dailyGoal: number; dailyGrammarGoal?: number }) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Bạn cần đăng nhập." };
 
   try {
+    const updateData: any = { dailyNewWordGoal: data.dailyGoal };
+    if (typeof data.dailyGrammarGoal === 'number') updateData.dailyNewGrammarGoal = data.dailyGrammarGoal;
+
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
-      data: {
-        dailyNewWordGoal: data.dailyGoal
-      }
+      data: updateData
     });
 
     revalidatePath('/');
-    return { success: true, dailyGoal: (updatedUser as unknown as VocaBeeUser).dailyNewWordGoal };
+    return { success: true, dailyGoal: (updatedUser as unknown as VocaBeeUser).dailyNewWordGoal, dailyGrammarGoal: (updatedUser as unknown as VocaBeeUser).dailyNewGrammarGoal };
   } catch (error) {
     console.error("Error updating settings:", error);
     return { error: "Lỗi kỹ thuật khi lưu cài đặt." };

@@ -9,18 +9,22 @@ import { motion } from "framer-motion";
 
 interface SettingsFormProps {
     initialDailyGoal: number;
+    initialDailyGrammarGoal?: number;
 }
 
-export default function SettingsForm({ initialDailyGoal }: SettingsFormProps) {
+export default function SettingsForm({ initialDailyGoal, initialDailyGrammarGoal }: SettingsFormProps) {
     const { showToast } = useToast();
     const router = useRouter();
     const [dailyGoal, setDailyGoal] = useState(initialDailyGoal || 20);
+    const [dailyGrammarGoal, setDailyGrammarGoal] = useState<number>(
+        (typeof (initialDailyGrammarGoal as number) === 'number' ? (initialDailyGrammarGoal as number) : 5)
+    );
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSave = async () => {
         setIsLoading(true);
         try {
-            const res = await updateUserSettingsAction({ dailyGoal });
+            const res = await updateUserSettingsAction({ dailyGoal, dailyGrammarGoal });
             if (res.success) {
                 showToast("Đã lưu cài đặt thành công! Đang về Dashboard... 🐝✨", "success");
                 // Refresh current page data, then auto-navigate to dashboard
@@ -38,6 +42,10 @@ export default function SettingsForm({ initialDailyGoal }: SettingsFormProps) {
 
     const adjustGoal = (amount: number) => {
         setDailyGoal(prev => Math.max(5, Math.min(200, prev + amount)));
+    };
+
+    const adjustGrammarGoal = (amount: number) => {
+        setDailyGrammarGoal(prev => Math.max(1, Math.min(50, prev + amount)));
     };
 
     return (
@@ -156,6 +164,48 @@ export default function SettingsForm({ initialDailyGoal }: SettingsFormProps) {
                     </div>
                 </div>
             </section>
+
+                {/* Section: Grammar Goal */}
+                <section className="glass-panel rounded-[32px] p-8 border border-glass-border shadow-soft bg-surface/20">
+                    <h3 className="text-foreground tracking-tight text-xl font-black leading-tight pb-8 flex items-center gap-3">
+                        <span className="material-symbols-outlined text-primary text-[28px]">menu_book</span>
+                        Mục tiêu ngữ pháp
+                    </h3>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <p className="font-bold text-foreground">Mục tiêu ngữ pháp hàng ngày</p>
+                            <p className="text-xs text-slate-500">Số lượng bài ngữ pháp mới hệ thống sẽ gợi ý cho bạn mỗi ngày.</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center bg-surface border border-glass-border rounded-2xl overflow-hidden p-1 shadow-inner">
+                                <button
+                                    onClick={() => adjustGrammarGoal(-1)}
+                                    type="button"
+                                    className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors rounded-xl"
+                                    title="Giảm 1"
+                                >
+                                    <Minus size={20} />
+                                </button>
+                                <input
+                                    type="number"
+                                    value={dailyGrammarGoal}
+                                    onChange={(e) => setDailyGrammarGoal(Number(e.target.value))}
+                                    title="Số lượng ngữ pháp mới hàng ngày"
+                                    className="w-20 bg-transparent border-none text-center font-black text-primary focus:ring-0 outline-none text-2xl"
+                                />
+                                <button
+                                    onClick={() => adjustGrammarGoal(1)}
+                                    type="button"
+                                    className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors rounded-xl"
+                                    title="Thêm 1"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            </div>
+                            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">PHẦN NGỮ PHÁP / NGÀY</span>
+                        </div>
+                    </div>
+                </section>
 
             {/* Customization (Display only) */}
             <section className="glass-panel rounded-[32px] p-8 border border-glass-border shadow-soft bg-surface/20 opacity-70">

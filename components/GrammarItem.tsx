@@ -227,6 +227,34 @@ export default function GrammarItem({ item }: { item: any }) {
                     ))}
                 </div>
 
+                {/* Dates: created and next review */}
+                <div className="mt-2 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                    {(() => {
+                        const fmt = (d: string | Date) => {
+                            try {
+                                const dt = typeof d === 'string' ? new Date(d) : d;
+                                return dt.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+                            } catch (e) {
+                                return '-';
+                            }
+                        };
+
+                        const createdStr = item.createdAt ? fmt(item.createdAt) : '-';
+                        const nextStr = item.nextReview ? fmt(item.nextReview) : (item.interval === 0 ? 'Sẵn sàng học' : 'Chưa lên lịch');
+
+                        return (
+                            <>
+                                <span className="px-2 py-1 bg-slate-100/40 dark:bg-white/5 rounded-md border border-slate-200 dark:border-white/5">
+                                    Thêm: <strong className="ml-1 text-slate-700 dark:text-white">{createdStr}</strong>
+                                </span>
+                                <span className="px-2 py-1 bg-slate-100/40 dark:bg-white/5 rounded-md border border-slate-200 dark:border-white/5">
+                                    Lần ôn tiếp: <strong className="ml-1 text-slate-700 dark:text-white">{nextStr}</strong>
+                                </span>
+                            </>
+                        );
+                    })()}
+                </div>
+
                 <div className="space-y-2">
                     <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight leading-snug group-hover:text-purple-500 transition-colors">
                         {item.prompt}

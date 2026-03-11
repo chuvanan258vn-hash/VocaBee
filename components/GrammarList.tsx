@@ -11,11 +11,30 @@ export default function GrammarList({ initialCards, totalCards }: { initialCards
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [activeFilter, setActiveFilter] = useState<string | null>(null);
+    const [dateField, setDateField] = useState<'created' | 'nextReview'>('created');
+    const [dateFrom, setDateFrom] = useState<string | null>(null);
+    const [dateTo, setDateTo] = useState<string | null>(null);
+    // Pending inputs — only applied when user clicks Apply
+    const [pendingDateField, setPendingDateField] = useState<'created' | 'nextReview'>(dateField);
+    const [pendingDateFrom, setPendingDateFrom] = useState<string | null>(dateFrom);
+    const [pendingDateTo, setPendingDateTo] = useState<string | null>(dateTo);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const [serverTotal, setServerTotal] = useState(totalCards);
     const { showToast } = useToast();
+    
+    const fromInputRef = useRef<HTMLInputElement | null>(null);
+    const toInputRef = useRef<HTMLInputElement | null>(null);
 
+    const fmtDate = (d?: string | null) => {
+        if (!d) return '';
+        try {
+            const dt = new Date(d);
+            return dt.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        } catch (e) {
+            return '';
+        }
+    };
     const grammarTypes = ["CLOZE", "MCQ", "NOTEBOOK", "TRANS"];
 
     // Debounce search input
@@ -63,9 +82,27 @@ export default function GrammarList({ initialCards, totalCards }: { initialCards
     const filteredCards = useMemo(() => {
         return cards.filter((item) => {
             const matchesFilter = !activeFilter || item.type === activeFilter;
-            return matchesFilter;
+            // Date filtering
+            let matchesDate = true;
+            const fieldValue = dateField === 'created' ? item.createdAt : item.nextReview;
+
+            if (dateFrom) {
+                const fromDt = new Date(dateFrom);
+                const fv = fieldValue ? new Date(fieldValue) : null;
+                if (!fv || fv < fromDt) matchesDate = false;
+            }
+
+            if (dateTo) {
+                // include the whole day for `dateTo`
+                const toDt = new Date(dateTo);
+                toDt.setHours(23, 59, 59, 999);
+                const fv = fieldValue ? new Date(fieldValue) : null;
+                if (!fv || fv > toDt) matchesDate = false;
+            }
+
+            return matchesFilter && matchesDate;
         });
-    }, [cards, activeFilter]);
+    }, [cards, activeFilter, dateField, dateFrom, dateTo]);
 
     const handleLoadMore = async () => {
         if (isLoadingMore) return;
@@ -142,6 +179,111 @@ export default function GrammarList({ initialCards, totalCards }: { initialCards
                             {type}
                         </button>
                     ))}
+                </div>
+                
+                {/* Date Filters */}
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Lọc theo ngày</label>
+                    <select
+                        value={pendingDateField}
+                        onChange={(e) => setPendingDateField(e.target.value as any)}
+                        className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold"
+                    >
+                        <option value="created">Ngày thêm</option>
+                        <option value="nextReview">Lần ôn tiếp</option>
+                    </select>
+
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (fromInputRef.current && typeof (fromInputRef.current as any).showPicker === 'function') {
+                                    (fromInputRef.current as any).showPicker();
+                                } else if (fromInputRef.current) {
+                                    fromInputRef.current.focus();
+                                }
+                            }}
+                            className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-left min-w-[140px]"
+                            title="Từ ngày"
+                        >
+                            {pendingDateFrom ? fmtDate(pendingDateFrom) : 'Chọn ngày'}
+                        </button>
+                        <input
+                            ref={fromInputRef}
+                            type="date"
+                            value={pendingDateFrom || ''}
+                            onChange={(e) => {
+                                const v = e.target.value || null;
+                                if (v && pendingDateTo && new Date(v) > new Date(pendingDateTo)) {
+                                    setPendingDateTo(v);
+                                }
+                                setPendingDateFrom(v);
+                            }}
+                            max={pendingDateTo || undefined}
+                            className="absolute left-0 top-0 opacity-0 w-0 h-0 pointer-events-none"
+                        />
+                    </div>
+
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (toInputRef.current && typeof (toInputRef.current as any).showPicker === 'function') {
+                                    (toInputRef.current as any).showPicker();
+                                } else if (toInputRef.current) {
+                                    toInputRef.current.focus();
+                                }
+                            }}
+                            className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-left min-w-[140px]"
+                            title="Đến ngày"
+                        >
+                            {pendingDateTo ? fmtDate(pendingDateTo) : 'Chọn ngày'}
+                        </button>
+                        <input
+                            ref={toInputRef}
+                            type="date"
+                            value={pendingDateTo || ''}
+                            onChange={(e) => {
+                                const v = e.target.value || null;
+                                if (v && pendingDateFrom && new Date(v) < new Date(pendingDateFrom)) {
+                                    setPendingDateFrom(v);
+                                }
+                                setPendingDateTo(v);
+                            }}
+                            min={pendingDateFrom || undefined}
+                            className="absolute left-0 top-0 opacity-0 w-0 h-0 pointer-events-none"
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => {
+                                // Apply pending filters
+                                setDateField(pendingDateField);
+                                setDateFrom(pendingDateFrom);
+                                setDateTo(pendingDateTo);
+                            }}
+                            className="px-4 py-2 rounded-full bg-purple-600 text-white text-sm font-bold hover:brightness-105"
+                        >
+                            Áp dụng
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                // Clear both pending and committed
+                                setPendingDateFrom(null);
+                                setPendingDateTo(null);
+                                setPendingDateField('created');
+                                setDateFrom(null);
+                                setDateTo(null);
+                                setDateField('created');
+                            }}
+                            title="Xóa bộ lọc"
+                            className="px-3 py-2 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold hover:bg-slate-50"
+                        >
+                            <FilterX size={16} />
+                        </button>
+                    </div>
                 </div>
             </div>
 

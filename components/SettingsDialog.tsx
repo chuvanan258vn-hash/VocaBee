@@ -10,10 +10,12 @@ interface SettingsDialogProps {
     isOpen: boolean;
     onClose: () => void;
     currentGoal: number;
+    currentGrammarGoal?: number;
 }
 
-export default function SettingsDialog({ isOpen, onClose, currentGoal }: SettingsDialogProps) {
+export default function SettingsDialog({ isOpen, onClose, currentGoal, currentGrammarGoal }: SettingsDialogProps) {
     const [goal, setGoal] = useState(currentGoal);
+    const [grammarGoal, setGrammarGoal] = useState<number>(typeof currentGrammarGoal === 'number' ? currentGrammarGoal : 5);
     const [isSaving, setIsSaving] = useState(false);
     const [autoPlayEnabled, setAutoPlayEnabled] = useState(true);
     const { showToast } = useToast();
@@ -27,9 +29,13 @@ export default function SettingsDialog({ isOpen, onClose, currentGoal }: Setting
         setGoal(currentGoal);
     }, [currentGoal]);
 
+    useEffect(() => {
+        setGrammarGoal(typeof currentGrammarGoal === 'number' ? currentGrammarGoal : 5);
+    }, [currentGrammarGoal]);
+
     const handleSave = async () => {
         setIsSaving(true);
-        const result = await updateUserSettingsAction({ dailyGoal: goal });
+        const result = await updateUserSettingsAction({ dailyGoal: goal, dailyGrammarGoal: grammarGoal });
         setIsSaving(false);
 
         if (result.success) {
@@ -104,6 +110,41 @@ export default function SettingsDialog({ isOpen, onClose, currentGoal }: Setting
                                     Mẹo: Nếu bạn bận rộn, hãy chọn 5 hoặc 10 từ để duy trì thói quen học tập.
                                 </p>
                             </div>
+
+                                <div className="pt-6">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 block">
+                                        Mục tiêu ngữ pháp mỗi ngày
+                                    </label>
+
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center bg-surface border border-glass-border rounded-2xl overflow-hidden p-1 shadow-inner">
+                                            <button
+                                                onClick={() => setGrammarGoal(Math.max(1, grammarGoal - 1))}
+                                                type="button"
+                                                className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors rounded-xl"
+                                                title="Giảm 1"
+                                            >
+                                                -
+                                            </button>
+                                            <input
+                                                type="number"
+                                                value={grammarGoal}
+                                                onChange={(e) => setGrammarGoal(Number(e.target.value))}
+                                                title="Số lượng ngữ pháp mới hàng ngày"
+                                                className="w-20 bg-transparent border-none text-center font-black text-primary focus:ring-0 outline-none text-2xl"
+                                            />
+                                            <button
+                                                onClick={() => setGrammarGoal(grammarGoal + 1)}
+                                                type="button"
+                                                className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors rounded-xl"
+                                                title="Thêm 1"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+                                        <span className="text-xs font-black text-slate-500 uppercase tracking-widest">PHẦN NGỮ PHÁP / NGÀY</span>
+                                    </div>
+                                </div>
 
                             <div className="pt-6 border-t border-slate-100 dark:border-white/5">
                                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 block">
