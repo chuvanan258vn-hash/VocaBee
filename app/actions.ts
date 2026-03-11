@@ -364,7 +364,7 @@ export async function getDashboardStats() {
   // 3. Calculate Goals
   const vUser = user as unknown as VocaBeeUser;
   const baseVocabGoal = vUser.dailyNewWordGoal || 30;
-  const totalVocabGoal = Math.min(baseVocabGoal + unlearnedYesterdayVocab, 30);
+  const totalVocabGoal = baseVocabGoal + unlearnedYesterdayVocab;
 
   const baseGrammarGoal = vUser.dailyNewGrammarGoal || 30;
   const totalGrammarGoal = baseGrammarGoal + unlearnedYesterdayGrammar;
@@ -397,25 +397,23 @@ export async function getDashboardStats() {
       isDeferred: false
     } as any
   });
-  const vocabDueToStudy = Math.min(vocabDueCount, 30);
+  const vocabDueToStudy = Math.min(vocabDueCount, 100);
   const totalDueVocab = vocabDueToStudy + canLearnMoreCount;
 
   // B. Grammar
-  const grammarDueCount = await (prisma as any).grammarCard.count({
-    where: {
-      userId: user.id,
-      interval: { gt: 0 },
-      nextReview: { lte: now },
-      isDeferred: false
-    }
-  });
+  const grammarDue: any[] = await prisma.$queryRawUnsafe(`
+    SELECT COUNT(*) as count FROM GrammarCard 
+    WHERE userId = ? 
+      AND interval > 0 
+      AND nextReview <= ? 
+      AND isDeferred = 0
+      AND NOT (repetition = 1 AND updatedAt >= ? AND updatedAt < ?)
+  `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString());
+  
+  const grammarDueCount = Number(grammarDue[0]?.count || 0);
   const grammarDueToStudy = Math.min(grammarDueCount, 30);
-  // If user has no due grammar but there are available new grammar items, show at least 1
-  let totalDueGrammar = grammarDueToStudy + canLearnMoreGrammarCount;
-  if (totalDueGrammar === 0 && availableNewGrammarCount > 0) {
-    // show a small indicator so banner appears; actual counts elsewhere remain accurate
-    totalDueGrammar = 1;
-  }
+  
+  const totalDueGrammar = grammarDueToStudy + canLearnMoreGrammarCount;
 
   let currentStreak = vUser.streakCount || 0;
   const lastGoalMetDate = vUser.lastGoalMetDate ? new Date(vUser.lastGoalMetDate) : null;

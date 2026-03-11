@@ -68,7 +68,7 @@ export default async function ReviewPage({
 
     const baseVocabGoal = (user as any).dailyNewWordGoal || 30;
     // Total goal = unlearned from yesterday + normal daily goal (Capped at 30)
-    const totalVocabGoal = Math.min(baseVocabGoal + unlearnedYesterdayVocab, 30);
+    const totalVocabGoal = baseVocabGoal + unlearnedYesterdayVocab;
     const canLearnMoreCount = Math.max(0, totalVocabGoal - learnedTodayCount);
 
     // Count grammar learned for the FIRST TIME today
