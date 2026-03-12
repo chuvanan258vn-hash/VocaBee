@@ -6,6 +6,8 @@ import { Search, FilterX, Download, Upload, Loader2, RefreshCw } from "lucide-re
 import { getWordTypeColor, exportToCSV, parseCSV, normalizeWordType } from "@/lib/utils";
 import { importWordsAction, getWordsPaginatedAction } from "@/app/actions";
 import { useToast } from "./ToastProvider";
+import BatchImportModal from "./BatchImportModal";
+import { PlusCircle } from "lucide-react";
 
 export default function WordList({ initialWords, totalWords, availableWordTypes }: { initialWords: any[], totalWords: number, availableWordTypes: string[] }) {
   const [words, setWords] = useState(initialWords);
@@ -13,6 +15,7 @@ export default function WordList({ initialWords, totalWords, availableWordTypes 
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [serverTotal, setServerTotal] = useState(totalWords);
@@ -146,6 +149,16 @@ export default function WordList({ initialWords, totalWords, availableWordTypes 
     setIsLoadingMore(false);
   };
 
+  const onBatchSuccess = async () => {
+    // Refresh the list after batch import
+    setIsSearching(true);
+    const res = await getWordsPaginatedAction(0, 40, searchQuery);
+    if (res.success && res.words) {
+      setWords(res.words);
+    }
+    setIsSearching(false);
+  };
+
   const hasMore = searchQuery === "" ? (words.length < serverTotal) : (words.length >= 20 && words.length % 20 === 0);
 
   return (
@@ -172,7 +185,14 @@ export default function WordList({ initialWords, totalWords, availableWordTypes 
               className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
             >
               {isImporting ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-              Nhập
+              Nhập CSV
+            </button>
+            <button
+              onClick={() => setIsBatchModalOpen(true)}
+              className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-lg text-sm font-bold transition-all"
+            >
+              <PlusCircle size={18} />
+              Nhập văn bản (Batch)
             </button>
             <input
               type="file"
@@ -284,6 +304,12 @@ export default function WordList({ initialWords, totalWords, availableWordTypes 
           </div>
         )}
       </div>
+
+      <BatchImportModal 
+        isOpen={isBatchModalOpen}
+        onClose={() => setIsBatchModalOpen(false)}
+        onSuccess={onBatchSuccess}
+      />
     </div>
   );
 }

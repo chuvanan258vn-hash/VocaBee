@@ -99,8 +99,37 @@ export default async function ReviewPage({
     const canLearnMoreGrammarCount = Math.max(0, totalGrammarGoal - learnedGrammarToday);
 
     // --- SESSION LIMITS ---
-    const VOCAB_SESSION_LIMIT = isReviewAll ? 200 : 15;
-    const GRAMMAR_SESSION_LIMIT = isReviewAll ? 100 : 10;
+    // --- DYNAMIC SESSION LIMITS ---
+    // Count exact items available to decide if we should merge sessions
+    const vocabDueCount = await prisma.vocabulary.count({
+        where: {
+            userId: user.id,
+            interval: { gt: 0 },
+            nextReview: { lte: now },
+            isDeferred: false
+        } as any
+    });
+    const totalPotentialVocab = vocabDueCount + canLearnMoreCount;
+
+    // Similarly for grammar
+    const grammarDueRaw: any[] = await prisma.$queryRawUnsafe(`
+        SELECT COUNT(*) as count FROM GrammarCard 
+        WHERE userId = ? AND interval > 0 AND nextReview <= ? AND isDeferred = 0
+        AND NOT (repetition = 1 AND updatedAt >= ? AND updatedAt < ?)
+    `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString());
+    const totalPotentialGrammar = Number(grammarDueRaw[0]?.count || 0) + canLearnMoreGrammarCount;
+
+    // Thresholds: if items are below these, take them all in one session
+    const VOCAB_THRESHOLD = 25;
+    const GRAMMAR_THRESHOLD = 15;
+
+    const VOCAB_SESSION_LIMIT = isReviewAll 
+        ? 200 
+        : (totalPotentialVocab <= VOCAB_THRESHOLD ? VOCAB_THRESHOLD : 15);
+        
+    const GRAMMAR_SESSION_LIMIT = isReviewAll 
+        ? 100 
+        : (totalPotentialGrammar <= GRAMMAR_THRESHOLD ? GRAMMAR_THRESHOLD : 10);
 
     // 1. Lấy các từ ĐANG ÔN TẬP nhưng đến hạn (Priority 1)
     const dueWords = (type === 'grammar') ? [] : await prisma.vocabulary.findMany({

@@ -333,7 +333,7 @@ export default function WordItem({ item }: { item: any }) {
                         {item.word}
                     </h3>
                     {item.wordType && (
-                        <span className={`bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide`}>
+                        <span className={`${getWordTypeStyles(item.wordType).bg.replace('bg-', 'text-').replace('-600', '-500')} ${getWordTypeStyles(item.wordType).bg.replace('bg-', 'bg-').replace('-600', '-500')}/10 border ${getWordTypeStyles(item.wordType).border.replace('border-', 'border-').replace('-600', '-500')}/20 text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-[0.1em] shadow-sm`}>
                             {normalizeWordType(item.wordType)}
                         </span>
                     )}
