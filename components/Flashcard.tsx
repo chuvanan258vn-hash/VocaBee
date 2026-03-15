@@ -16,6 +16,7 @@ interface FlashcardProps {
         wordType?: string | null;
         example?: string | null;
         synonyms?: string | null;
+        context?: string | null;
         repetition: number;
         interval: number;
         efactor: number;
@@ -68,22 +69,25 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleFlip]);
 
-    // Auto-pronunciation on Appear (Front)
+    // Reset flip when word changes
     useEffect(() => {
-        if (!word.word) return;
-        setIsFlipped(false);
+        if (isFlipped) setIsFlipped(false);
         const autoPlaySetting = localStorage.getItem("vocabee-autoplay");
         const autoPlay = autoPlaySetting === null || autoPlaySetting === "true";
-        if (autoPlay) {
-            speak(word.word);
+        if (autoPlay && word.word) {
+            // Tiny delay to ensure transition animation has started
+            const timer = setTimeout(() => speak(word.word), 150);
+            return () => clearTimeout(timer);
         }
     }, [word.id]);
 
     const handleReview = async (quality: number) => {
+        // Optimistic update: move to next card immediately
+        onNext();
+        
+        // Handle server update in background
         const result = await reviewWordAction(word.id, quality);
-        if (result.success) {
-            onNext();
-        } else {
+        if (!result.success) {
             showToast(result.error || "Lỗi khi cập nhật", "error");
         }
     };
@@ -148,15 +152,26 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
                         </div>
 
                         {/* Word */}
-                        <h1 className={`font-black text-center text-slate-900 dark:text-white tracking-tighter leading-none mb-6 ${word.word?.length > 20 ? 'text-4xl md:text-5xl' : 'text-5xl md:text-7xl'}`}>
-                            {word.word}
-                        </h1>
+                        <div className="flex flex-col items-center gap-1 mb-6">
+                             <h1 className={`font-black text-center text-slate-900 dark:text-white tracking-tighter leading-none ${word.word?.length > 20 ? 'text-4xl md:text-5xl' : 'text-5xl md:text-7xl'}`}>
+                                {word.word}
+                            </h1>
+                            {/* Phonetic */}
+                            {word.pronunciation && (
+                                <p className="text-base text-slate-400 dark:text-slate-500 font-mono italic tracking-wider mt-2">
+                                    /{word.pronunciation.replace(/^\/|\/$/g, '')}/
+                                </p>
+                            )}
+                        </div>
 
-                        {/* Phonetic */}
-                        {word.pronunciation && (
-                            <p className="text-base text-slate-400 dark:text-slate-500 font-mono italic mb-6 tracking-wider">
-                                /{word.pronunciation.replace(/^\/|\/$/g, '')}/
-                            </p>
+                        {/* Context */}
+                        {word.context && (
+                             <div className="mb-6 px-4 py-2 bg-amber-50/50 dark:bg-amber-900/10 rounded-2xl border border-amber-200/50 dark:border-amber-700/30">
+                                <p className="text-sm text-slate-600 dark:text-slate-300 font-medium text-center">
+                                    <span className="material-symbols-outlined text-[14px] text-amber-500 align-text-bottom mr-1">lightbulb</span>
+                                    {word.context}
+                                </p>
+                             </div>
                         )}
 
                         {/* Audio button */}
@@ -226,6 +241,16 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
                             <div className="mt-4 bg-slate-50/60 dark:bg-white/4 rounded-2xl px-6 py-4 border border-slate-100 dark:border-slate-800/50 shrink-0">
                                 <p className="text-sm text-slate-600 dark:text-slate-300 italic font-medium leading-relaxed text-center">
                                     "{word.example}"
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Context */}
+                        {word.context && (
+                            <div className="mt-3 bg-amber-50/50 dark:bg-amber-900/10 rounded-2xl px-4 py-3 border border-amber-200/50 dark:border-amber-700/30 flex items-start gap-3 shrink-0">
+                                <span className="text-amber-500 mt-0.5 shrink-0"><span className="material-symbols-outlined text-[18px]">lightbulb</span></span>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed opacity-90">
+                                    {word.context}
                                 </p>
                             </div>
                         )}

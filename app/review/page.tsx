@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { getAuthenticatedUser } from '@/lib/user';
+import { getAuthenticatedUser, VocaBeeUser } from '@/lib/user';
+import { GrammarCard, Vocabulary } from '@/types';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import ReviewSession from '@/components/ReviewSession';
@@ -40,8 +41,8 @@ export default async function ReviewPage({
             todayStart.toISOString()
         );
         testVocabToday = Number(vTest[0]?.count || 0);
-    } catch (e) {
-        console.error("Error fetching test vocab count:", e);
+    } catch (_e) {
+        console.error("Error fetching test vocab count:", _e);
     }
 
     // Count words learned for the FIRST TIME today
@@ -50,7 +51,7 @@ export default async function ReviewPage({
             userId: user.id,
             updatedAt: { gte: todayStart },
             repetition: 1
-        } as any
+        }
     });
 
     // Count words added YESTERDAY that haven't been studied yet (interval: 0)
@@ -63,16 +64,16 @@ export default async function ReviewPage({
                 gte: yesterdayStart,
                 lt: todayStart
             }
-        } as any
+        }
     });
 
-    const baseVocabGoal = (user as any).dailyNewWordGoal || 30;
+    const baseVocabGoal = (user as unknown as VocaBeeUser).dailyNewWordGoal || 30;
     // Total goal = unlearned from yesterday + normal daily goal (Capped at 30)
     const totalVocabGoal = baseVocabGoal + unlearnedYesterdayVocab;
     const canLearnMoreCount = Math.max(0, totalVocabGoal - learnedTodayCount);
 
     // Count grammar learned for the FIRST TIME today
-    const learnedGrammarToday = await (prisma as any).grammarCard.count({
+    const learnedGrammarToday = await prisma.grammarCard.count({
         where: {
             userId: user.id,
             updatedAt: { gte: todayStart },
@@ -81,7 +82,7 @@ export default async function ReviewPage({
     });
 
     // Count grammar added YESTERDAY that haven't been studied yet (interval: 0)
-    const unlearnedYesterdayGrammar = await (prisma as any).grammarCard.count({
+    const unlearnedYesterdayGrammar = await prisma.grammarCard.count({
         where: {
             userId: user.id,
             interval: 0,
@@ -93,7 +94,7 @@ export default async function ReviewPage({
         }
     });
 
-    const baseGrammarGoal = (user as any).dailyNewGrammarGoal || 30;
+    const baseGrammarGoal = (user as unknown as VocaBeeUser).dailyNewGrammarGoal || 30;
     // Total goal = unlearned from yesterday + normal daily goal
     const totalGrammarGoal = baseGrammarGoal + unlearnedYesterdayGrammar;
     const canLearnMoreGrammarCount = Math.max(0, totalGrammarGoal - learnedGrammarToday);
@@ -107,12 +108,12 @@ export default async function ReviewPage({
             interval: { gt: 0 },
             nextReview: { lte: now },
             isDeferred: false
-        } as any
+        }
     });
     const totalPotentialVocab = vocabDueCount + canLearnMoreCount;
 
     // Similarly for grammar
-    const grammarDueRaw: any[] = await prisma.$queryRawUnsafe(`
+    const grammarDueRaw: { count: bigint }[] = await prisma.$queryRawUnsafe(`
         SELECT COUNT(*) as count FROM GrammarCard 
         WHERE userId = ? AND interval > 0 AND nextReview <= ? AND isDeferred = 0
         AND NOT (repetition = 1 AND updatedAt >= ? AND updatedAt < ?)
@@ -138,25 +139,13 @@ export default async function ReviewPage({
             interval: { gt: 0 },
             nextReview: { lte: now },
             isDeferred: false
-        } as any,
-        select: {
-            id: true,
-            word: true,
-            wordType: true,
-            meaning: true,
-            pronunciation: true,
-            example: true,
-            synonyms: true,
-            interval: true,
-            repetition: true,
-            efactor: true,
         },
         orderBy: { nextReview: 'asc' },
         take: VOCAB_SESSION_LIMIT
     });
 
         // 1.5. Lấy các câu NGỮ PHÁP đến hạn (Priority 1), loại grammar mới học hôm qua
-        const dueGrammar: any[] = (type === 'vocab') ? [] : await prisma.$queryRawUnsafe(`
+        const dueGrammar: GrammarCard[] = (type === 'vocab') ? [] : await prisma.$queryRawUnsafe(`
                 SELECT * FROM GrammarCard 
                 WHERE userId = ? 
                     AND interval > 0 
@@ -172,36 +161,22 @@ export default async function ReviewPage({
     const grammarSlotsLeft = Math.max(0, GRAMMAR_SESSION_LIMIT - dueGrammar.length);
 
     // 2. Lấy thêm một số từ MỚI (repetition = 0)
-    let newWords: any[] = [];
+    let newWords: Vocabulary[] = [];
     if (vocabSlotsLeft > 0 && canLearnMoreCount > 0 && type !== 'grammar') {
         const fetchNewCount = Math.min(vocabSlotsLeft, canLearnMoreCount);
-
-        const testNewWords = await prisma.vocabulary.findMany({
+        const testNewWords: Vocabulary[] = await prisma.vocabulary.findMany({
             where: {
                 userId: user.id,
                 interval: 0,
                 source: "TEST",
                 importanceScore: { gte: 3 },
-            } as any,
-            select: {
-                id: true,
-                word: true,
-                wordType: true,
-                meaning: true,
-                pronunciation: true,
-                example: true,
-                synonyms: true,
-                interval: true,
-                repetition: true,
-                efactor: true,
             },
             take: fetchNewCount,
             orderBy: { createdAt: 'asc' }
         });
 
         const remainingNewCount = fetchNewCount - testNewWords.length;
-
-        let scheduledNewWords: any[] = [];
+        let scheduledNewWords: Vocabulary[] = [];
         if (remainingNewCount > 0) {
             scheduledNewWords = await prisma.vocabulary.findMany({
                 where: {
@@ -209,18 +184,6 @@ export default async function ReviewPage({
                     interval: 0,
                     source: "COLLECTION",
                     isDeferred: false,
-                } as any,
-                select: {
-                    id: true,
-                    word: true,
-                    wordType: true,
-                    meaning: true,
-                    pronunciation: true,
-                    example: true,
-                    synonyms: true,
-                    interval: true,
-                    repetition: true,
-                    efactor: true,
                 },
                 take: remainingNewCount,
                 orderBy: { createdAt: 'asc' }
@@ -231,7 +194,7 @@ export default async function ReviewPage({
     }
 
     // 3. Lấy thêm một số câu NGỮ PHÁP MỚI (interval = 0)
-    let newGrammar: any[] = [];
+    let newGrammar: GrammarCard[] = [];
     if (grammarSlotsLeft > 0 && canLearnMoreGrammarCount > 0 && type !== 'vocab') {
         const fetchGrammarCount = Math.min(grammarSlotsLeft, canLearnMoreGrammarCount);
 
@@ -249,7 +212,7 @@ export default async function ReviewPage({
     const combinedDue = [...dueWords, ...dueGrammar];
     const combinedNew = [...newWords, ...newGrammar];
 
-    const interleaved: any[] = [];
+    const interleaved: (Vocabulary | GrammarCard)[] = [];
     let reviewIdx = 0;
     let newIdx = 0;
 
@@ -271,7 +234,7 @@ export default async function ReviewPage({
 
     return (
         <main className="min-h-screen bg-background font-sans">
-            <ReviewSession dueWords={interleaved as any} />
+            <ReviewSession dueWords={interleaved} />
         </main>
     );
 }

@@ -18,8 +18,10 @@ export function normalizeWordType(wordType: string | null | undefined): string {
     const isPrep = ["prep", "giới từ", "pre"].some(t => type.includes(t));
     const isPron = ["pron", "pronoun", "đại từ", "pro"].some(t => type.includes(t));
     const isConj = ["conj", "conjunction", "liên từ", "con"].some(t => type.includes(t));
+    const isCollocation = ["collocation", "cụm từ cố định", "col", "coll"].some(t => type.includes(t));
 
     // Order matters: More specific types first
+    if (isCollocation) return "Collocation";
     if (isNounPhrase) return "Cụm danh từ";
     if (isVerbPhrase) return "Cụm động từ";
     if (isAdjPhrase) return "Cụm tính từ";
@@ -62,6 +64,7 @@ export function getWordTypeStyles(wordType: string | null | undefined) {
         case "Giới từ": return { bg: "bg-cyan-600", border: "border-cyan-600", text: "text-cyan-600", ring: "ring-cyan-600" };
         case "Đại từ": return { bg: "bg-teal-600", border: "border-teal-600", text: "text-teal-600", ring: "ring-teal-600" };
         case "Liên từ": return { bg: "bg-pink-600", border: "border-pink-600", text: "text-pink-600", ring: "ring-pink-600" };
+        case "Collocation": return { bg: "bg-orange-600", border: "border-orange-600", text: "text-orange-600", ring: "ring-orange-600" };
         default: return { bg: "bg-slate-600", border: "border-slate-600", text: "text-slate-600", ring: "ring-slate-600" };
     }
 }
@@ -93,7 +96,7 @@ export function speak(text: string) {
 /**
  * Exports data to a CSV file and triggers download.
  */
-export function exportToCSV(data: any[], filename: string) {
+export function exportToCSV(data: Record<string, unknown>[], filename: string) {
     if (data.length === 0) return;
 
     const headers = Object.keys(data[0]).filter(k => k !== 'id' && k !== 'userId' && k !== 'createdAt' && k !== 'updatedAt' && k !== 'nextReview' && k !== 'interval' && k !== 'repetition' && k !== 'efactor');
@@ -121,7 +124,7 @@ export function exportToCSV(data: any[], filename: string) {
 /**
  * Enhanced CSV parser with support for Vietnamese headers and different locales.
  */
-export function parseCSV(text: string): any[] {
+export function parseCSV(text: string): Record<string, string>[] {
     const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
     if (lines.length < 2) return [];
 
@@ -157,7 +160,7 @@ export function parseCSV(text: string): any[] {
         const regex = new RegExp(`${delimiter}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
         const values = line.split(regex);
 
-        const obj: any = {};
+        const obj: Record<string, string> = {};
         rawHeaders.forEach((rawHeader, index) => {
             const internalKey = headerMap[rawHeader];
             if (internalKey) {
@@ -181,7 +184,7 @@ export function parseCSV(text: string): any[] {
 /**
  * Specialized CSV parser for Grammar Cards
  */
-export function parseGrammarCSV(text: string): any[] {
+export function parseGrammarCSV(text: string): Record<string, string | null>[] {
     // Remove BOM if present (happens often with Excel CSV)
     const cleanText = text.replace(/^\uFEFF/, '');
     const lines = cleanText.split(/\r?\n/).filter(line => line.trim().length > 0);
@@ -234,7 +237,7 @@ export function parseGrammarCSV(text: string): any[] {
         const regex = new RegExp(`${delimiter}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
         const values = line.split(regex);
 
-        const obj: any = {};
+        const obj: Record<string, string> = {};
         rawHeaders.forEach((rawHeader, index) => {
             const internalKey = headerMap[rawHeader];
             if (internalKey) {
@@ -247,7 +250,7 @@ export function parseGrammarCSV(text: string): any[] {
         });
 
         // Smart Mapping & Defaults
-        const finalObj: any = {
+        const finalObj: Record<string, string | null> = {
             type: obj.type || "PRODUCTION",
             prompt: obj.prompt || "",
             answer: obj.answer || "",
@@ -269,6 +272,6 @@ export function parseGrammarCSV(text: string): any[] {
     return result;
 }
 
-export function cn(...inputs: any[]) {
+export function cn(...inputs: (string | boolean | undefined | null | {[key: string]: boolean})[]) {
     return inputs.flat().filter(Boolean).join(" ");
 }

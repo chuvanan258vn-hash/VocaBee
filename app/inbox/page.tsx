@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function InboxPage() {
     const { showToast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
-    const [vocab, setVocab] = useState<any[]>([]);
+    const [vocab, setVocab] = useState<any[]>([]); // Using any here temporarily as it comes from a dynamic server action, but will fix the component usage
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -107,7 +107,16 @@ export default function InboxPage() {
     );
 }
 
-function InboxCard({ title, subtitle, score, type, onAdd, onDelete }: any) {
+interface InboxCardProps {
+    title: string;
+    subtitle: string | null;
+    score: number;
+    type: "VOCAB" | "GRAMMAR";
+    onAdd: () => void;
+    onDelete: () => void;
+}
+
+function InboxCard({ title, subtitle, score, type, onAdd, onDelete }: InboxCardProps) {
     return (
         <motion.div
             layout

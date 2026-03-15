@@ -17,6 +17,7 @@ export default function WordItem({ item }: { item: any }) {
         pronunciation: item.pronunciation || "",
         synonyms: item.synonyms || "",
         example: item.example || "",
+        context: item.context || "",
     });
     const [loading, setLoading] = useState(false);
     const [isSuggesting, setIsSuggesting] = useState(false);
@@ -29,6 +30,7 @@ export default function WordItem({ item }: { item: any }) {
             pronunciation: item.pronunciation || "",
             synonyms: item.synonyms || "",
             example: item.example || "",
+            context: item.context || "",
         });
     };
 
@@ -111,6 +113,10 @@ export default function WordItem({ item }: { item: any }) {
     };
 
     const handleUpdate = async () => {
+        if (!editData.word.trim() || !editData.wordType || !editData.meaning.trim() || !editData.context.trim()) {
+            showToast("Vui lòng điền đầy đủ các thông tin bắt buộc! 🐝", "error");
+            return;
+        }
         setLoading(true);
         const res = await updateWordAction(item.id, editData);
         if (res.error) {
@@ -181,6 +187,7 @@ export default function WordItem({ item }: { item: any }) {
                                 { short: "PRON", full: "Pronoun" },
                                 { short: "CONJ", full: "Conjunction" },
                                 { short: "IDM", full: "Idiom" },
+                                { short: "COL", full: "Collocation" },
                                 { short: "NP", full: "Noun Phrase" },
                                 { short: "VP", full: "Verb Phrase" },
                                 { short: "AP", full: "Adjective Phrase" },
@@ -239,32 +246,45 @@ export default function WordItem({ item }: { item: any }) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Nghĩa tiếng Việt</label>
+                        <textarea
+                            className="input-premium w-full p-3 text-foreground font-medium h-14 resize-none"
+                            placeholder="Nghĩa tiếng Việt"
+                            value={editData.meaning}
+                            onChange={(e) => setEditData({ ...editData, meaning: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Phiên âm</label>
                         <input
-                            className="input-premium w-full p-3 text-foreground"
+                            className="input-premium w-full p-3 text-foreground h-14"
                             placeholder="Phiên âm (/.../)"
                             value={editData.pronunciation}
                             onChange={(e) => setEditData({ ...editData, pronunciation: e.target.value })}
                         />
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Từ đồng nghĩa</label>
-                        <input
-                            className="input-premium w-full p-3 text-foreground"
-                            placeholder="Từ đồng nghĩa"
-                            value={editData.synonyms}
-                            onChange={(e) => setEditData({ ...editData, synonyms: e.target.value })}
-                        />
-                    </div>
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Nghĩa tiếng Việt</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">
+                        Ngữ cảnh sử dụng <span className="text-rose-500">*</span>
+                    </label>
+                    <textarea
+                        className="input-premium w-full p-3 text-foreground h-16 resize-none text-sm"
+                        placeholder="v.d: Dành cho giao tiếp công việc, thuật ngữ y khoa..."
+                        value={editData.context}
+                        onChange={(e) => setEditData({ ...editData, context: e.target.value })}
+                        required
+                    />
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Từ đồng nghĩa</label>
                     <input
-                        className="input-premium w-full p-3 text-foreground font-medium"
-                        placeholder="Nghĩa tiếng Việt"
-                        value={editData.meaning}
-                        onChange={(e) => setEditData({ ...editData, meaning: e.target.value })}
+                        className="input-premium w-full p-3 text-foreground"
+                        placeholder="Từ đồng nghĩa"
+                        value={editData.synonyms}
+                        onChange={(e) => setEditData({ ...editData, synonyms: e.target.value })}
                     />
                 </div>
 
@@ -351,9 +371,20 @@ export default function WordItem({ item }: { item: any }) {
                     <h4 className="text-xl font-bold text-slate-700 dark:text-slate-200">
                         {item.meaning}
                     </h4>
+                    {item.context && (
+                        <div className="flex items-start gap-2 text-slate-500 text-sm mt-1 bg-slate-100 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 relative overflow-hidden group/ctx">
+                            <span className="shrink-0 mt-0.5 text-amber-500/80">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            </span>
+                            <p className="font-medium relative z-10">{item.context}</p>
+                            <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none group-hover/ctx:scale-110 transition-transform">
+                                <span className="text-4xl">💭</span>
+                            </div>
+                        </div>
+                    )}
                     {item.example && (
-                        <div className="flex items-start gap-2 text-slate-400 italic">
-                            <span className="w-1 h-full min-h-[1.2rem] bg-orange-500/50 rounded-full block mt-1"></span>
+                        <div className="flex items-start gap-2 text-slate-400 italic mt-2">
+                            <span className="w-1 h-full min-h-[1.2rem] bg-orange-500/50 rounded-full block mt-1 shrink-0"></span>
                             <p>"{item.example}"</p>
                         </div>
                     )}

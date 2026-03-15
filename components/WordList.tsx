@@ -9,7 +9,9 @@ import { useToast } from "./ToastProvider";
 import BatchImportModal from "./BatchImportModal";
 import { PlusCircle } from "lucide-react";
 
-export default function WordList({ initialWords, totalWords, availableWordTypes }: { initialWords: any[], totalWords: number, availableWordTypes: string[] }) {
+import { Vocabulary } from "@/types";
+
+export default function WordList({ initialWords, totalWords, availableWordTypes }: { initialWords: Vocabulary[], totalWords: number, availableWordTypes: string[] }) {
   const [words, setWords] = useState(initialWords);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -63,7 +65,7 @@ export default function WordList({ initialWords, totalWords, availableWordTypes 
         } else if (res.error) {
           showToast(res.error, "error");
         }
-      } catch (err) {
+      } catch (_err) {
         showToast("Lỗi khi kết nối đến máy chủ để tìm kiếm.", "error");
       } finally {
         setIsSearching(false);

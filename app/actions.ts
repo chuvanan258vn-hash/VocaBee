@@ -43,6 +43,7 @@ export async function addWordAction(formData: Record<string, any>) {
         pronunciation: formData.pronunciation,
         example: formData.example,
         synonyms: formData.synonyms,
+        context: formData.context,
         userId: user.id,
         // Các trường SRS sẽ tự động lấy giá trị default (0, 2.5, now)
       }
@@ -52,8 +53,8 @@ export async function addWordAction(formData: Record<string, any>) {
     revalidatePath('/')
     return { success: true }
 
-  } catch (error) {
-    console.error("Error creating word:", error)
+  } catch (_error) {
+    console.error("Error creating word:", _error)
     return { error: "Lỗi kỹ thuật, không thể lưu từ." }
   }
 }
@@ -80,13 +81,14 @@ export async function updateWordAction(id: string, formData: any) {
         pronunciation: formData.pronunciation,
         example: formData.example,
         synonyms: formData.synonyms,
+        context: formData.context,
       }
     });
 
     revalidatePath('/');
     return { success: true };
-  } catch (error) {
-    console.error("Error updating word:", error);
+  } catch (_error) {
+    console.error("Error updating word:", _error);
     return { error: "Lỗi kỹ thuật, không thể cập nhật từ." };
   }
 }
@@ -110,8 +112,8 @@ export async function deleteWordAction(id: string) {
 
     revalidatePath('/');
     return { success: true };
-  } catch (error) {
-    console.error("Error deleting word:", error);
+  } catch (_error) {
+    console.error("Error deleting word:", _error);
     return { error: "Lỗi kỹ thuật, không thể xóa từ." };
   }
 }
@@ -233,12 +235,11 @@ export async function reviewWordAction(id: string, quality: number, isTypingBonu
       }
     }
 
-    revalidatePath('/');
-    revalidatePath('/review');
+    // REMOVED: revalidatePath revalidation for performance during session
     return { success: true, nextReview: nextReviewDate };
 
-  } catch (error) {
-    console.error("Error reviewing word:", error);
+  } catch (_error) {
+    console.error("Error reviewing word:", _error);
     return { error: "Lỗi khi cập nhật tiến độ học tập." };
   }
 }
@@ -272,6 +273,7 @@ export async function importWordsAction(words: any[]) {
             pronunciation: item.pronunciation || undefined,
             example: item.example || undefined,
             synonyms: item.synonyms || undefined,
+            context: item.context || undefined,
           },
           create: {
             word: item.word.trim(),
@@ -280,6 +282,7 @@ export async function importWordsAction(words: any[]) {
             pronunciation: item.pronunciation || undefined,
             example: item.example || undefined,
             synonyms: item.synonyms || undefined,
+            context: item.context || undefined,
             userId: user.id,
           }
         });
@@ -292,8 +295,8 @@ export async function importWordsAction(words: any[]) {
 
     revalidatePath('/');
     return { success: true, successCount, failCount };
-  } catch (error) {
-    console.error("Error in bulk import:", error);
+  } catch (_error) {
+    console.error("Error in bulk import:", _error);
     return { error: "Lỗi kỹ thuật khi nhập dữ liệu." };
   }
 }
@@ -397,8 +400,7 @@ export async function getDashboardStats() {
       isDeferred: false
     } as any
   });
-  const vocabDueToStudy = Math.min(vocabDueCount, 100);
-  const totalDueVocab = vocabDueToStudy + canLearnMoreCount;
+  const totalDueVocab = vocabDueCount + canLearnMoreCount;
 
   // B. Grammar
   const grammarDue: any[] = await prisma.$queryRawUnsafe(`
@@ -411,9 +413,7 @@ export async function getDashboardStats() {
   `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString());
   
   const grammarDueCount = Number(grammarDue[0]?.count || 0);
-  const grammarDueToStudy = Math.min(grammarDueCount, 30);
-  
-  const totalDueGrammar = grammarDueToStudy + canLearnMoreGrammarCount;
+  const totalDueGrammar = grammarDueCount + canLearnMoreGrammarCount;
 
   let currentStreak = vUser.streakCount || 0;
   const lastGoalMetDate = vUser.lastGoalMetDate ? new Date(vUser.lastGoalMetDate) : null;
@@ -481,6 +481,34 @@ export async function getDashboardStats() {
   };
 }
 
+export async function checkWordsExistenceAction(words: string[]) {
+  const user = await getAuthenticatedUser();
+  if (!user) return { error: "Bạn cần đăng nhập." };
+
+  const trimmedWords = words.map(w => w.trim().replace(/\s+/g, ' ')).filter(w => w.length > 0);
+  console.log(`[ExistenceCheck] Checking ${trimmedWords.length} words for user ${user.id}:`, trimmedWords);
+
+  try {
+    // Use raw query for case-insensitive matching across different DB environments (SQLite/Postgres)
+    // For SQLite, we use LOWER(word) and LOWER(?)
+    const placeholders = trimmedWords.map(() => 'LOWER(?)').join(',');
+    const query = `SELECT * FROM Vocabulary WHERE userId = ? AND LOWER(word) IN (${placeholders})`;
+    
+    const existingWords: any[] = await prisma.$queryRawUnsafe(
+      query,
+      user.id,
+      ...trimmedWords.map(w => w.toLowerCase())
+    );
+
+    console.log(`[ExistenceCheck] Found ${existingWords.length} existing items.`);
+    return { success: true, existingWords };
+  } catch (_error) {
+    console.error("Error checking words existence:", _error);
+    return { error: "Lỗi kỹ thuật khi kiểm tra dữ liệu." };
+  }
+}
+
+
 
 export async function updateUserSettingsAction(data: { dailyGoal: number; dailyGrammarGoal?: number }) {
   const user = await getAuthenticatedUser();
@@ -497,8 +525,8 @@ export async function updateUserSettingsAction(data: { dailyGoal: number; dailyG
 
     revalidatePath('/');
     return { success: true, dailyGoal: (updatedUser as unknown as VocaBeeUser).dailyNewWordGoal, dailyGrammarGoal: (updatedUser as unknown as VocaBeeUser).dailyNewGrammarGoal };
-  } catch (error) {
-    console.error("Error updating settings:", error);
+  } catch (_error) {
+    console.error("Error updating settings:", _error);
     return { error: "Lỗi kỹ thuật khi lưu cài đặt." };
   }
 }
@@ -546,8 +574,8 @@ export async function addGrammarCardAction(data: {
 
     revalidatePath('/');
     return { success: true };
-  } catch (error) {
-    console.error("Error adding grammar card:", error);
+  } catch (_error) {
+    console.error("Error adding grammar card:", _error);
     return { error: "Lỗi khi thêm thẻ ngữ pháp." };
   }
 }
@@ -602,10 +630,10 @@ export async function reviewGrammarCardAction(id: string, grade: number) {
       id
     );
 
-    revalidatePath('/review');
+    // REMOVED: revalidatePath('/review') for performance
     return { success: true };
-  } catch (error) {
-    console.error("Error reviewing grammar card:", error);
+  } catch (_error) {
+    console.error("Error reviewing grammar card:", _error);
     return { error: "Lỗi khi lưu kết quả." };
   }
 }
@@ -634,8 +662,8 @@ export async function getGrammarPaginatedAction(skip: number, take: number, sear
     });
 
     return { success: true, cards };
-  } catch (error) {
-    console.error("Error fetching paginated grammar:", error);
+  } catch (_error) {
+    console.error("Error fetching paginated grammar:", _error);
     return { error: "Lỗi khi lấy dữ liệu ngữ pháp." };
   }
 }
@@ -664,8 +692,8 @@ export async function updateGrammarCardAction(id: string, data: any) {
 
     revalidatePath('/grammar');
     return { success: true };
-  } catch (error) {
-    console.error("Error updating grammar card:", error);
+  } catch (_error) {
+    console.error("Error updating grammar card:", _error);
     return { error: "Lỗi khi cập nhật thẻ ngữ pháp." };
   }
 }
@@ -681,8 +709,8 @@ export async function deleteGrammarCardAction(id: string) {
 
     revalidatePath('/grammar');
     return { success: true };
-  } catch (error) {
-    console.error("Error deleting grammar card:", error);
+  } catch (_error) {
+    console.error("Error deleting grammar card:", _error);
     return { error: "Lỗi khi xóa thẻ ngữ pháp." };
   }
 }

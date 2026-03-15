@@ -6,7 +6,9 @@ import { Edit2, Trash2, Check, X, Volume2, Star, Brain, HelpCircle, AlertCircle,
 import { useToast } from "./ToastProvider";
 import { speak } from "@/lib/utils";
 
-export default function GrammarItem({ item }: { item: any }) {
+import { GrammarCard } from "@/types";
+
+export default function GrammarItem({ item }: { item: GrammarCard }) {
     const { showToast } = useToast();
     const [isStarred, setIsStarred] = useState(false);
     const [isEditing, setIsEditing] = useState(false);

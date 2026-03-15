@@ -34,6 +34,7 @@ model Vocabulary {
   pronunciation String?
   example       String?
   synonyms      String?
+  context       String?  // Ngữ cảnh sử dụng từ vựng
   
   // Rule-based fields
   importanceScore Int      @default(0) // 0-4 points
@@ -64,9 +65,13 @@ model GrammarCard {
   type          String   // CLOZE, PRODUCTION, ERROR_CORRECTION, MCQ, TRANSFORMATION, EXPLANATION
   prompt        String   
   answer        String   
+  meaning       String?  
   options       String?  
   hint          String?  
   explanation   String?  
+  myError       String?  
+  trap          String?  
+  goldenRule    String?  
   tags          String?  
 
   // Rule-based fields

@@ -14,6 +14,7 @@ export default function AddWordForm() {
   const [phonetic, setPhonetic] = useState('');
   const [synonyms, setSynonyms] = useState('');
   const [example, setExample] = useState('');
+  const [context, setContext] = useState('');
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -127,7 +128,7 @@ export default function AddWordForm() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!term.trim() || !wordType || !definition.trim()) {
+    if (!term.trim() || !wordType || !definition.trim() || !context.trim()) {
       showToast("Vui lòng điền đầy đủ các thông tin bắt buộc! 🐝", "error");
       return;
     }
@@ -136,12 +137,12 @@ export default function AddWordForm() {
       return;
     }
     setLoading(true);
-    const result = await addWordAction({ word: term, meaning: definition, wordType, pronunciation: phonetic, synonyms, example });
+    const result = await addWordAction({ word: term, meaning: definition, wordType, pronunciation: phonetic, synonyms, example, context });
     if (result?.error) {
       showToast(result.error, "error");
     } else {
       showToast("Đã cất từ vào tổ ong thành công! 🐝", "success");
-      setTerm(''); setDefinition(''); setWordType(''); setPhonetic(''); setSynonyms(''); setExample(''); setIsDuplicate(false);
+      setTerm(''); setDefinition(''); setWordType(''); setPhonetic(''); setSynonyms(''); setExample(''); setContext(''); setIsDuplicate(false);
     }
     setLoading(false);
   };
@@ -224,6 +225,7 @@ export default function AddWordForm() {
               { short: 'PRON', full: 'Pronoun' },
               { short: 'CONJ', full: 'Conjunction' },
               { short: 'IDM', full: 'Idiom' },
+              { short: 'COL', full: 'Collocation' },
               { short: 'NP', full: 'Noun Phrase' },
               { short: 'VP', full: 'Verb Phrase' },
               { short: 'AP', full: 'Adjective Phrase' }
@@ -273,7 +275,7 @@ export default function AddWordForm() {
         </div>
       </div>
 
-      {/* Hàng 2: Nghĩa & Ví dụ (side by side) */}
+      {/* Hàng 2: Nghĩa tiếng Việt & Phiên âm */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-1">
@@ -281,56 +283,70 @@ export default function AddWordForm() {
           </label>
           <textarea
             placeholder="Dịch nghĩa chi tiết của từ này..."
-            className="input-premium w-full px-3 py-2 text-foreground placeholder:text-slate-400 min-h-[80px] max-h-[110px] resize-none text-sm font-medium"
+            className="input-premium w-full px-3 py-2 text-foreground placeholder:text-slate-400 min-h-[50px] max-h-[110px] resize-none text-sm font-medium"
             value={definition}
             onChange={(e) => setDefinition(e.target.value)}
             required
           />
         </div>
         <div className="space-y-1">
-          <div className="flex items-center justify-between ml-1">
-            <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Ví dụ minh họa</label>
-            <button
-              type="button"
-              onClick={handleSuggestExample}
-              disabled={isSuggesting || !term.trim()}
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-              title="Tự động gợi ý ví dụ từ điển"
-            >
-              {isSuggesting ? (
-                <Loader2 size={10} className="animate-spin" />
-              ) : (
-                <span className="material-symbols-outlined text-[14px] leading-none group-hover:rotate-12 transition-transform">auto_awesome</span>
-              )}
-              <span className="text-[10px] font-black uppercase tracking-wider">Gợi ý</span>
-            </button>
-          </div>
-          <textarea
-            placeholder="Cách dùng từ trong câu thực tế..."
-            className="input-premium w-full px-3 py-2 text-foreground placeholder:text-slate-400 min-h-[80px] max-h-[110px] resize-none text-sm italic"
-            value={example}
-            onChange={(e) => setExample(e.target.value)}
-          />
-          <p className="text-[9px] text-slate-400 dark:text-slate-500 italic ml-1 font-medium">
-            💡 Câu ví dụ sẽ được dùng làm bài tập "điền vào chỗ trống" trong chế độ Typing Bonus.
-          </p>
+          <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-1">Phiên âm</label>
+          <input type="text" placeholder="/pəˈsɪstəns/"
+            className="input-premium w-full px-3 py-2 text-foreground placeholder:text-slate-400 text-sm font-mono mt-0 sm:mt-0 h-[50px]"
+            value={phonetic} onChange={(e) => setPhonetic(e.target.value)} />
         </div>
       </div>
 
-      {/* Hàng 3: Phiên âm & Từ đồng nghĩa */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-1">Phiên âm</label>
-          <input type="text" placeholder="/pəˈsɪstəns/"
-            className="input-premium w-full px-3 py-2 text-foreground placeholder:text-slate-400 text-sm font-mono"
-            value={phonetic} onChange={(e) => setPhonetic(e.target.value)} />
+      {/* Hàng 3: Ngữ cảnh sử dụng */}
+      <div className="space-y-1">
+        <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-1">
+          Ngữ cảnh sử dụng <span className="text-rose-500">*</span>
+        </label>
+        <textarea
+          placeholder="v.d: Dùng trong kinh doanh, giao tiếp thường ngày, hoặc chuyên ngành..."
+          className="input-premium w-full px-3 py-2 text-foreground placeholder:text-slate-400 min-h-[50px] max-h-[90px] resize-none text-sm"
+          value={context}
+          onChange={(e) => setContext(e.target.value)}
+          required
+        />
+      </div>
+
+      {/* Hàng 4: Từ đồng nghĩa */}
+      <div className="space-y-1">
+        <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-1">Từ đồng nghĩa</label>
+        <input type="text" placeholder="v.d: endurance"
+          className="input-premium w-full px-3 py-2 text-foreground placeholder:text-slate-400 text-sm"
+          value={synonyms} onChange={(e) => setSynonyms(e.target.value)} />
+      </div>
+
+      {/* Hàng 5: Ví dụ minh họa */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between ml-1">
+          <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Ví dụ minh họa</label>
+          <button
+            type="button"
+            onClick={handleSuggestExample}
+            disabled={isSuggesting || !term.trim()}
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+            title="Tự động gợi ý ví dụ từ điển"
+          >
+            {isSuggesting ? (
+              <Loader2 size={10} className="animate-spin" />
+            ) : (
+              <span className="material-symbols-outlined text-[14px] leading-none group-hover:rotate-12 transition-transform">auto_awesome</span>
+            )}
+            <span className="text-[10px] font-black uppercase tracking-wider">Gợi ý</span>
+          </button>
         </div>
-        <div className="space-y-1">
-          <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-1">Từ đồng nghĩa</label>
-          <input type="text" placeholder="v.d: endurance"
-            className="input-premium w-full px-3 py-2 text-foreground placeholder:text-slate-400 text-sm"
-            value={synonyms} onChange={(e) => setSynonyms(e.target.value)} />
-        </div>
+        <textarea
+          placeholder="Cách dùng từ trong câu thực tế..."
+          className="input-premium w-full px-3 py-2 text-foreground placeholder:text-slate-400 min-h-[50px] max-h-[110px] resize-none text-sm italic"
+          value={example}
+          onChange={(e) => setExample(e.target.value)}
+        />
+        <p className="text-[9px] text-slate-400 dark:text-slate-500 italic ml-1 font-medium">
+          💡 Câu ví dụ sẽ được dùng làm bài tập "điền vào chỗ trống" trong chế độ Typing Bonus.
+        </p>
       </div>
 
       {/* Nút lưu */}

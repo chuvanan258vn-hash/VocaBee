@@ -4,15 +4,21 @@ import { useState, useEffect } from 'react';
 import Flashcard from './Flashcard';
 import FlashcardInput from './FlashcardInput';
 import GrammarFlashcard from './GrammarFlashcard';
+import { GrammarCard, Vocabulary } from '@/types';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
 interface ReviewSessionProps {
-    dueWords: any[];
+    dueWords: (Vocabulary | GrammarCard)[];
 }
 
-export default function ReviewSession({ dueWords }: ReviewSessionProps) {
+const isGrammarCard = (item: Vocabulary | GrammarCard): item is GrammarCard => {
+    return 'prompt' in item;
+};
+
+export default function ReviewSession({ dueWords: initialDueWords }: ReviewSessionProps) {
+    const [dueWords, setDueWords] = useState(initialDueWords);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isDone, setIsDone] = useState(false);
     // Track if current card should be presented as Input or Flip
@@ -23,7 +29,7 @@ export default function ReviewSession({ dueWords }: ReviewSessionProps) {
         if (!isDone && dueWords[currentIndex]) {
             // Grammar cards always use standard mode for now, 
             // Vocabulary cards have a 50% chance to be Input mode
-            const isGrammar = !!dueWords[currentIndex].prompt;
+            const isGrammar = isGrammarCard(dueWords[currentIndex]);
             setUseInputMode(!isGrammar && Math.random() > 0.5);
         }
     }, [currentIndex, isDone, dueWords]);
@@ -38,6 +44,10 @@ export default function ReviewSession({ dueWords }: ReviewSessionProps) {
                 <Link
                     href="/"
                     className="btn-amber px-8 py-3 rounded-2xl"
+                    onClick={() => {
+                        // Force a refresh when going home to see updated stats
+                        window.location.href = "/";
+                    }}
                 >
                     QUAY VỀ TRANG CHỦ
                 </Link>
@@ -108,6 +118,9 @@ export default function ReviewSession({ dueWords }: ReviewSessionProps) {
                     <Link
                         href="/"
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm font-medium"
+                        onClick={() => {
+                            window.location.href = "/";
+                        }}
                     >
                         <span className="material-symbols-outlined text-[20px]">close</span>
                         <span className="hidden sm:inline">Quit Session</span>
@@ -141,21 +154,24 @@ export default function ReviewSession({ dueWords }: ReviewSessionProps) {
                         </div>
                     </div>
 
-                    <AnimatePresence mode="wait">
+                    <AnimatePresence mode="popLayout" initial={false}>
                         <motion.div
                             key={currentWord.id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 1.05 }}
-                            transition={{ duration: 0.3 }}
+                            initial={{ opacity: 0, scale: 0.96, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 1.02, y: -10 }}
+                            transition={{ 
+                                duration: 0.2,
+                                ease: [0.23, 1, 0.32, 1] // Custom cubic-bezier for snappy feel
+                            }}
                             className="w-full"
                         >
-                            {currentWord.prompt ? (
+                            {isGrammarCard(currentWord) ? (
                                 <GrammarFlashcard card={currentWord} onNext={handleNext} />
                             ) : useInputMode ? (
-                                <FlashcardInput word={currentWord} onNext={handleNext} />
+                                <FlashcardInput word={currentWord as Vocabulary} onNext={handleNext} />
                             ) : (
-                                <Flashcard word={currentWord} onNext={handleNext} />
+                                <Flashcard word={currentWord as Vocabulary} onNext={handleNext} />
                             )}
 
                         </motion.div>

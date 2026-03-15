@@ -86,9 +86,17 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
     const { en: promptEn, vi: promptVi } = splitDich(card.prompt);
 
     useEffect(() => {
-        // Focus input on mount
-        if (inputRef.current) inputRef.current.focus();
-        setShowHint(false);
+        // Reset state for new card only if needed
+        if (userInput !== "") setUserInput("");
+        if (isSubmitted) setIsSubmitted(false);
+        if (showExplanation) setShowExplanation(false);
+        if (showHint) setShowHint(false);
+
+        // Focus delay for smoother animation transition
+        const timer = setTimeout(() => {
+            if (inputRef.current) inputRef.current.focus();
+        }, 100);
+        return () => clearTimeout(timer);
     }, [card.id]);
 
     const handleSubmit = () => {
@@ -116,12 +124,19 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
     };
 
     const handleGrade = async (grade: number) => {
-        await reviewGrammarCardAction(card.id, grade);
-        // Reset state for next card
+        // Optimistic Update
+        onNext();
+
+        // Reset state for next card locally
         setUserInput("");
         setIsSubmitted(false);
         setShowExplanation(false);
-        onNext();
+
+        const result = await reviewGrammarCardAction(card.id, grade);
+        if (result && !result.success) {
+            // Error handling if needed, but we already moved on
+            console.error(result.error);
+        }
     };
 
     const getNextReviewLabel = (grade: number) => {

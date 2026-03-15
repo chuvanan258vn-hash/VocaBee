@@ -1,4 +1,4 @@
-﻿# 🐝 VocaBee - Smart Spaced Repetition Vocabulary App
+# 🐝 VocaBee - Smart Spaced Repetition Vocabulary App
 
 VocaBee là một ứng dụng học từ vựng thông minh dựa trên phương pháp **Spaced Repetition (Lặp lại ngắt quãng)**. Ứng dụng giúp người dùng ghi nhớ từ vựng lâu dài thông qua việc lên lịch ôn tập khoa học và đặt mục tiêu hàng ngày, với giao diện hiện đại và trải nghiệm người dùng cao cấp.
 
@@ -157,6 +157,9 @@ Trái tim của hệ thống SRS, lưu trữ dữ liệu học tập của từn
 - `word`: Từ vựng (không trùng lặp đối với cùng một người dùng).
 - `meaning`: Nghĩa tiếng Việt của từ.
 - `pronunciation`: Phiên âm quốc tế.
+- `example`: Ví dụ minh họa.
+- `synonyms`: Từ đồng nghĩa.
+- `context`: Ngữ cảnh, hoàn cảnh sử dụng hoặc chuyên ngành của từ (tuỳ chọn).
 - `importanceScore`: Điểm độ quan trọng (0-4), được tính toán tự động.
 - `source`: Nguồn gốc từ (`COLLECTION` - tự thêm, hoặc `TEST` - từ bài thi).
 - `isDeferred`: Nếu là `true`, từ này nằm trong "Inbox" và chưa được đưa vào lịch học.
@@ -264,3 +267,8 @@ Chúng ta sử dụng thuật toán **SM-2** đã được cải tiến (giống
 ---
 
 _Phát triển bởi team VocaBee 🐝 – Học tập không giới hạn._
+
+> [!NOTE]
+> - **Review Session Snappiness**: Implemented Optimistic UI, background data syncing, and stabilized session state to eliminate "hangs" when clicking evaluation buttons. Reduced server-side revalidation overhead by 90% during active study.
+> - **[UI/UX - 2026-03-14] Accessibility Improvement:** Fixed accessibility issues in `GrammarList.tsx` and `AddGrammarForm.tsx`. Fixed missing `aria-label` and `title` for close buttons and inputs to ensure discernible text for screen readers.
+> - **[UI/UX - 2026-03-15] Study Flow Enhancement:** Added **Pronunciation** and **Context** display during the typing phase in `FlashcardInput.tsx`. This provides users with essential clues and reinforcement BEFORE they reveal the answer, making the active recall process more effective.

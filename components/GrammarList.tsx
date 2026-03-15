@@ -6,7 +6,9 @@ import { Search, FilterX, Download, Upload, Loader2, RefreshCw, Brain } from "lu
 import { getGrammarPaginatedAction } from "@/app/actions";
 import { useToast } from "./ToastProvider";
 
-export default function GrammarList({ initialCards, totalCards }: { initialCards: any[], totalCards: number }) {
+import { GrammarCard } from "@/types";
+
+export default function GrammarList({ initialCards, totalCards }: { initialCards: GrammarCard[], totalCards: number }) {
     const [cards, setCards] = useState(initialCards);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -56,7 +58,7 @@ export default function GrammarList({ initialCards, totalCards }: { initialCards
                 } else if (res.error) {
                     showToast(res.error, "error");
                 }
-            } catch (err) {
+            } catch (_err) {
                 showToast("Lỗi khi kết nối đến máy chủ để tìm kiếm.", "error");
             } finally {
                 setIsSearching(false);
@@ -139,6 +141,8 @@ export default function GrammarList({ initialCards, totalCards }: { initialCards
                     <input
                         type="text"
                         placeholder="Tìm kiếm ngữ pháp, lỗi sai..."
+                        aria-label="Tìm kiếm ngữ pháp"
+                        title="Tìm kiếm ngữ pháp"
                         className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 text-slate-900 dark:text-white rounded-xl pl-12 pr-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent placeholder-slate-500 transition-all"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -183,10 +187,11 @@ export default function GrammarList({ initialCards, totalCards }: { initialCards
                 
                 {/* Date Filters */}
                 <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Lọc theo ngày</label>
+                    <label htmlFor="dateFieldSelect" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Lọc theo ngày</label>
                     <select
+                        id="dateFieldSelect"
                         value={pendingDateField}
-                        onChange={(e) => setPendingDateField(e.target.value as any)}
+                        onChange={(e) => setPendingDateField(e.target.value as 'created' | 'nextReview')}
                         className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold"
                     >
                         <option value="created">Ngày thêm</option>
@@ -197,10 +202,13 @@ export default function GrammarList({ initialCards, totalCards }: { initialCards
                         <button
                             type="button"
                             onClick={() => {
-                                if (fromInputRef.current && typeof (fromInputRef.current as any).showPicker === 'function') {
-                                    (fromInputRef.current as any).showPicker();
-                                } else if (fromInputRef.current) {
-                                    fromInputRef.current.focus();
+                                const el = fromInputRef.current;
+                                if (el) {
+                                  if ('showPicker' in el) {
+                                      (el as any).showPicker();
+                                  } else {
+                                      (el as any).focus();
+                                  }
                                 }
                             }}
                             className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-left min-w-[140px]"
@@ -211,6 +219,8 @@ export default function GrammarList({ initialCards, totalCards }: { initialCards
                         <input
                             ref={fromInputRef}
                             type="date"
+                            aria-label="Chọn ngày bắt đầu"
+                            title="Chọn ngày bắt đầu"
                             value={pendingDateFrom || ''}
                             onChange={(e) => {
                                 const v = e.target.value || null;
@@ -228,10 +238,13 @@ export default function GrammarList({ initialCards, totalCards }: { initialCards
                         <button
                             type="button"
                             onClick={() => {
-                                if (toInputRef.current && typeof (toInputRef.current as any).showPicker === 'function') {
-                                    (toInputRef.current as any).showPicker();
-                                } else if (toInputRef.current) {
-                                    toInputRef.current.focus();
+                                const el = toInputRef.current;
+                                if (el) {
+                                  if ('showPicker' in el) {
+                                      (el as any).showPicker();
+                                  } else {
+                                      (el as any).focus();
+                                  }
                                 }
                             }}
                             className="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-left min-w-[140px]"
@@ -242,6 +255,8 @@ export default function GrammarList({ initialCards, totalCards }: { initialCards
                         <input
                             ref={toInputRef}
                             type="date"
+                            aria-label="Chọn ngày kết thúc"
+                            title="Chọn ngày kết thúc"
                             value={pendingDateTo || ''}
                             onChange={(e) => {
                                 const v = e.target.value || null;

@@ -135,6 +135,8 @@ export default function AddGrammarForm() {
                                 <button
                                     onClick={() => setIsOpen(false)}
                                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                                    aria-label="Đóng"
+                                    title="Đóng"
                                 >
                                     <X size={24} className="text-slate-400" />
                                 </button>
