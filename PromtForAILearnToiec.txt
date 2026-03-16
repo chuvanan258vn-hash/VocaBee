@@ -53,18 +53,32 @@ Part 7: xem hình tôi gửi đây đừng quan tâm những trước đó và l
 - liệt kê ý chính trọng điểm giúp tìm ra đáp án khi làm phần reading
 - liệt kê các từ vựng nghĩa tiếng việt từ, phiên âm, loại từ
 
-hãy liệt kê từ vựng theo format Json như sau cho từng từ:
+Trong bài thi TOIEC, hãy liệt kê từ vựng theo format Json như sau cho từng từ:
 [
     {
         "word": "Từ vựng",
         "wordType": "Loại từ",
         "pronunciation": "Phiên âm",
         "context": "Ngữ cảnh nào và ghi rõ ngữ cảnh đó là gì bằng tiếng việt, dùng cho vào việc gì",
-        "meaning": "Nghĩa tiếng việt",
+        "meaning": "Nghĩa tiếng việt (Nếu là N thì nghĩa là ....)",
         "synonyms": "từ đồng nghĩa sẽ hay bị pharaphase",
         "example": "Ví dụ minh họa(tiếng anh -> tiếng việt)"
     },
     ...
 ]
 
-cho những từ sau: stand, cross, sweeping, guiding, Pavement, Wheel, concentrating on, Be seated, An assortment of, Stacked
+example:
+[
+  {
+    "word": "sweeping",
+    "wordType": "verb/adj",
+    "pronunciation": "/ˈswiːpɪŋ/",
+    "context": "Ngữ cảnh Part 1 TOEIC khi mô tả hành động trong hình ảnh hoặc Part 7 khi nói về thay đổi lớn",
+    "meaning": "quét dọn (V: hành động dùng chổi quét) hoặc toàn diện (Adj: ảnh hưởng rộng)",
+    "synonyms": "cleaning, extensive",
+    "example": "The worker is sweeping the floor. -> Người công nhân đang quét sàn."
+  },
+  ........
+]
+
+cho những từ sau: special fertilizer, secondly, interact directly with buyers, debris, kitchen sink, stand,variety, Fossils,Sedimentary rock, Vision/Dental coverage, Slightly delayed, cross,that cause,ranged, residence,  sweeping,tailor lessons,  guiding,neutral,  widely, Pavement, Wheel, concentrating on, Be seated, An assortment of, Stacked, extensive, initiator,accordance, explore,
