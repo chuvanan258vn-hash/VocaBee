@@ -43,3 +43,7 @@ next-env.d.ts
 /lib/generated/prisma
 
 /lib/generated/prisma
+
+# SQLite database (moi may tu tao rieng)
+prisma/dev.db
+prisma/dev.db-journal

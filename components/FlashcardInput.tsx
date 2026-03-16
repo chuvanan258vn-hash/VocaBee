@@ -27,7 +27,7 @@ interface FlashcardInputProps {
 
 export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
     const { showToast } = useToast();
-    const [inputValue, setInputValue] = useState("");
+    const [inputValue, setInputValue] = useState('');
     const [isChecking, setIsChecking] = useState(false);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
     const [showAnswer, setShowAnswer] = useState(false);
@@ -35,121 +35,101 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
     const [showHint, setShowHint] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Reset state when word changes
+    // Reset when word changes
     useEffect(() => {
-        if (inputValue !== "") setInputValue("");
-        if (isCorrect !== null) setIsCorrect(null);
-        if (showAnswer) setShowAnswer(false);
-        if (showHint) setShowHint(false);
-        
-        // Use requestAnimationFrame for smoother focus
-        const timer = setTimeout(() => {
-            if (inputRef.current) inputRef.current.focus();
-        }, 50);
-        return () => clearTimeout(timer);
+        setInputValue('');
+        setIsCorrect(null);
+        setShowAnswer(false);
+        setShowHint(false);
+        const t = setTimeout(() => inputRef.current?.focus(), 80);
+        return () => clearTimeout(t);
     }, [word.id]);
 
-    const getHintCharacter = (char: string, idx: number) => {
-        if (!word.word) return "";
-        
-        const answer = word.word;
-        const words = answer.split(' ');
-        
-        if (char === " ") return " ";
-
-        let charInWordIdx = idx;
-        let wordIdx = 0;
-        
-        for (let i = 0; i < words.length; i++) {
-            if (charInWordIdx < words[i].length) {
-                wordIdx = i;
-                break;
-            }
-            charInWordIdx -= (words[i].length + 1);
-        }
-        
-        const currentWord = words[wordIdx];
-        if (!currentWord) return '_';
-
-        const isPermanentHint = charInWordIdx === 0 || 
-                               (currentWord.length > 5 && charInWordIdx === currentWord.length - 1) ||
-                               (currentWord.length > 9 && charInWordIdx === Math.floor(currentWord.length / 2));
-
-        return isPermanentHint ? char : '_';
-    };
-
-    // Effect to auto-focus the input
+    // Keep input focused
     useEffect(() => {
         if (!showAnswer) {
-            // Check if user is clicking text to allow selection
             const handleFocus = () => {
-                const selection = window.getSelection();
-                if (!selection || selection.toString().length === 0) {
-                    inputRef.current?.focus();
-                }
+                const sel = window.getSelection();
+                if (!sel || sel.toString().length === 0) inputRef.current?.focus();
             };
-            
-            handleFocus(); // Initial focus
-            
-            // Re-focus on window focus to ensure keyboard stays active
+            handleFocus();
             window.addEventListener('focus', handleFocus);
             return () => window.removeEventListener('focus', handleFocus);
         }
     }, [showAnswer, inputValue]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Auto-redirect typing to input: if user types a printable char anywhere, refocus input
+    useEffect(() => {
         if (showAnswer) return;
-        const val = e.target.value;
-        if (val.length <= word.word.length) {
-            setInputValue(val.toLowerCase());
+        const handleGlobalKey = (e: KeyboardEvent) => {
+            // Ignore modifier-only, special keys, and keys already in the input
+            if (document.activeElement === inputRef.current) return;
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+            if (e.key.length !== 1) return; // only printable characters
+            inputRef.current?.focus();
+        };
+        window.addEventListener('keydown', handleGlobalKey);
+        return () => window.removeEventListener('keydown', handleGlobalKey);
+    }, [showAnswer]);
+
+    // Seeded pseudo-random: deterministic per word string
+    const buildHintSet = (answer: string): Set<number> => {
+        // Simple hash from the answer string → seed
+        let seed = 0;
+        for (let i = 0; i < answer.length; i++) seed = (seed * 31 + answer.charCodeAt(i)) >>> 0;
+
+        // LCG random using seed
+        const lcg = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 0xFFFFFFFF; };
+
+        const revealed = new Set<number>();
+        const words = answer.split(' ');
+        let offset = 0;
+
+        for (const w of words) {
+            if (w.length === 0) { offset++; continue; }
+
+            // Always reveal the first letter of each sub-word
+            revealed.add(offset);
+
+            // Add ~20% more random chars from remaining positions (min 0 extra for short words)
+            const remaining = Array.from({ length: w.length - 1 }, (_, i) => i + 1)
+                .sort(() => lcg() - 0.5);
+            const extraCount = Math.floor(w.length * 0.20); // max 20% total random
+            for (let i = 0; i < extraCount; i++) revealed.add(offset + remaining[i]);
+
+            offset += w.length + 1;
         }
+        return revealed;
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleCheckAnswer();
-        }
+    // Memoize the hint set per word so it doesn't change on re-render
+    const hintSetRef = useRef<Set<number>>(new Set());
+    useEffect(() => { hintSetRef.current = buildHintSet(word.word); }, [word.id]);
+
+    const getHintCharacter = (char: string, idx: number) => {
+        if (char === ' ') return ' ';
+        return hintSetRef.current.has(idx) ? char : '_';
     };
 
     const triggerConfetti = () => {
-        const duration = 2000;
-        const end = Date.now() + duration;
-
+        const end = Date.now() + 2000;
         const frame = () => {
-            confetti({
-                particleCount: 5,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 },
-                colors: ['#FACC15', '#2DD4BF', '#F472B6'] 
-            });
-            confetti({
-                particleCount: 5,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 },
-                colors: ['#FACC15', '#2DD4BF', '#F472B6']
-            });
-
-            if (Date.now() < end) {
-                requestAnimationFrame(frame);
-            }
+            confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FACC15', '#2DD4BF', '#F472B6'] });
+            confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FACC15', '#2DD4BF', '#F472B6'] });
+            if (Date.now() < end) requestAnimationFrame(frame);
         };
         frame();
     };
 
     const handleCheckAnswer = () => {
         if (!inputValue.trim()) return;
-
         const cleanInput = inputValue.trim().toLowerCase();
         const cleanAnswer = word.word.trim().toLowerCase();
-
         if (cleanInput === cleanAnswer) {
             setIsCorrect(true);
             setShowAnswer(true);
             speak(word.word);
-            if (!showHint) triggerConfetti(); // Trigger confetti only if no hint was used
+            if (!showHint) triggerConfetti();
         } else {
             setIsCorrect(false);
             setShake(true);
@@ -157,330 +137,364 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
         }
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') { e.preventDefault(); handleCheckAnswer(); }
+    };
+
     const handleReview = async (quality: number) => {
         setIsChecking(true);
         const isTypingBonus = isCorrect === true && !showHint && quality >= 4;
         onNext();
         const result = await reviewWordAction(word.id, quality, isTypingBonus);
-        if (!result.success) {
-            showToast(result.error || "Lỗi khi cập nhật", "error");
-        }
+        if (!result.success) showToast(result.error || 'Lỗi khi cập nhật', 'error');
         setIsChecking(false);
     };
 
     const getNextReviewLabel = (quality: number) => {
-        if (quality === 0) return "< 1 phút";
+        if (quality === 0) return '< 1 phút';
         const result = calculateSm2({ interval: word.interval, repetition: word.repetition, efactor: word.efactor, quality, hideFuzz: true });
         const days = result.interval;
-        if (days === 0) return "< 1 ngày";
-        if (days === 1) return "1 ngày";
+        if (days === 0) return '< 1 ngày';
+        if (days === 1) return '1 ngày';
         return `${days} ngày`;
     };
 
     const ratingButtons = [
-        { quality: 0, label: "Quên mất", sublabel: getNextReviewLabel(0), color: "text-rose-500", border: "hover:border-rose-500/70 hover:bg-rose-500/5 hover:shadow-rose-500/10" },
-        { quality: 3, label: "Khó nhớ", sublabel: getNextReviewLabel(3), color: "text-orange-500", border: "hover:border-orange-500/70 hover:bg-orange-500/5 hover:shadow-orange-500/10" },
-        { quality: 4, label: "Nhớ được", sublabel: getNextReviewLabel(4), color: "text-emerald-500", border: "hover:border-emerald-500/70 hover:bg-emerald-500/5 hover:shadow-emerald-500/10" },
-        { quality: 5, label: "Nhớ ngay", sublabel: getNextReviewLabel(5), color: "text-teal-400", border: "hover:border-teal-400/70 hover:bg-teal-400/5 hover:shadow-teal-400/10" },
+        { quality: 0, label: 'Quên mất', sublabel: getNextReviewLabel(0), color: 'text-rose-500', border: 'hover:border-rose-500/70 hover:bg-rose-500/5 hover:shadow-rose-500/10' },
+        { quality: 3, label: 'Khó nhớ', sublabel: getNextReviewLabel(3), color: 'text-orange-500', border: 'hover:border-orange-500/70 hover:bg-orange-500/5 hover:shadow-orange-500/10' },
+        { quality: 4, label: 'Nhớ được', sublabel: getNextReviewLabel(4), color: 'text-emerald-500', border: 'hover:border-emerald-500/70 hover:bg-emerald-500/5 hover:shadow-emerald-500/10' },
+        { quality: 5, label: 'Nhớ ngay', sublabel: getNextReviewLabel(5), color: 'text-teal-400', border: 'hover:border-teal-400/70 hover:bg-teal-400/5 hover:shadow-teal-400/10' },
     ];
 
     const typeStyles = getWordTypeStyles(word.wordType);
+    const borderColor = isCorrect === null
+        ? 'border-slate-800/80'
+        : isCorrect
+            ? 'border-teal-500/60 shadow-teal-500/10'
+            : 'border-rose-500/60 shadow-rose-500/10';
 
     return (
-        <div 
-            className="w-full max-w-4xl mx-auto px-4 py-4 md:py-6 flex flex-col items-center cursor-text"
+        <div
+            className="w-full max-w-2xl mx-auto px-4 py-4 md:py-6 flex flex-col gap-4 cursor-text"
             onClick={() => {
-                const selection = window.getSelection();
-                if (!selection || selection.toString().length === 0) {
-                    inputRef.current?.focus();
-                }
+                const sel = window.getSelection();
+                if (!sel || sel.toString().length === 0) inputRef.current?.focus();
             }}
         >
-            <div className={`w-full min-h-[350px] sm:min-h-[450px] py-10 max-w-2xl bg-white dark:bg-slate-900/50 rounded-[2rem] border ${isCorrect === false ? 'border-rose-500/50 shadow-rose-500/20' : isCorrect === true ? 'border-teal-500/50 shadow-teal-500/20' : 'border-slate-800/80'} shadow-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-colors duration-300`}>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/5 rounded-full -ml-16 -mb-16 blur-3xl"></div>
+            {/* ═══════════ CARD ═══════════ */}
+            <div className={`w-full rounded-[2rem] bg-slate-900/60 backdrop-blur border-2 ${borderColor} shadow-2xl transition-all duration-500 overflow-hidden`}>
 
-                <AnimatePresence>
-                    {isCorrect === true && !showHint && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            className="absolute top-4 right-4 md:top-6 md:right-6 z-20 flex items-center gap-2 bg-amber-500 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-lg border-2 border-amber-400/50"
-                        >
-                            <span className="material-symbols-outlined text-[16px] md:text-[18px] filled">stars</span>
-                            <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Typing Bonus +1</span>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {/* ── Top bar ── */}
+                <div className="flex items-center justify-between px-6 pt-5 pb-0">
+                    <span className={`px-3 py-1 rounded-lg border-2 text-[10px] font-black uppercase tracking-[0.2em] ${typeStyles.text} ${typeStyles.border}`}>
+                        {normalizeWordType(word.wordType)}
+                    </span>
 
-                <div className="z-10 flex flex-col items-center w-full px-6 md:px-10 py-10 h-full relative">
-                    {/* Header Badges: Badge (Left) and Speaker (Right) */}
-                    <div className="absolute top-6 left-6 right-6 flex justify-between items-start pointer-events-none z-20">
-                        <span className={`px-4 py-1.5 rounded-full border-2 text-[10px] md:text-xs font-bold uppercase tracking-widest ${typeStyles.text} ${typeStyles.border} bg-[#131722]/80 backdrop-blur-sm pointer-events-auto`}>
-                            {normalizeWordType(word.wordType)}
-                        </span>
-                        
+                    <div className="flex items-center gap-2">
+                        {/* Typing Bonus badge */}
+                        <AnimatePresence>
+                            {isCorrect === true && !showHint && (
+                                <motion.span
+                                    initial={{ opacity: 0, scale: 0.7, x: 10 }}
+                                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    className="flex items-center gap-1.5 bg-amber-500 text-slate-900 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg border-2 border-amber-400/60"
+                                >
+                                    <span className="material-symbols-outlined text-[14px] filled">stars</span>
+                                    Typing Bonus +1
+                                </motion.span>
+                            )}
+                        </AnimatePresence>
+
                         <button
-                            onClick={() => speak(word.word)}
-                            className="size-10 md:size-12 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 flex items-center justify-center transition-all duration-300 shadow-sm active:scale-90 pointer-events-auto"
+                            onClick={(e) => { e.stopPropagation(); speak(word.word); }}
+                            className="size-10 rounded-full bg-amber-500/10 hover:bg-amber-500/25 text-amber-500 flex items-center justify-center transition-all duration-300 active:scale-90"
                             title="Nghe phát âm"
                         >
-                            <span className="material-symbols-outlined text-xl md:text-2xl filled">volume_up</span>
+                            <span className="material-symbols-outlined text-xl filled">volume_up</span>
                         </button>
                     </div>
+                </div>
 
-                    {/* Main Content Area */}
-                    <div className="flex flex-col items-center text-center w-full flex-1 justify-center mt-6">
+                {/* ── Main content ── */}
+                <div className="px-6 pt-6 pb-8 flex flex-col items-center gap-5">
+                    <AnimatePresence mode="wait">
                         {!showAnswer ? (
-                            /* --- PHẢI NGHĨ Phase --- */
-                            <div className="flex flex-col items-center w-full gap-6">
-                                <span className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-[0.3em] mb-4">
-                                    ĐỊNH NGHĨA
+                            /* ─── Phase: Guess ─── */
+                            <motion.div
+                                key="guess"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="flex flex-col items-center gap-5 w-full"
+                            >
+                                {/* Label */}
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.35em]">
+                                    Định nghĩa
                                 </span>
-                                <h2 className="font-plus font-black text-slate-200 leading-tight text-3xl md:text-5xl opacity-90">
+
+                                {/* Meaning — big */}
+                                <h2 className="font-black text-white text-center leading-tight text-3xl md:text-4xl">
                                     {word.meaning}
                                 </h2>
 
+                                {/* Context hint */}
                                 {word.context && (
-                                    <div className="bg-[#1A1F2D] dark:bg-amber-900/5 rounded-2xl px-5 py-3.5 border border-amber-200/30 dark:border-amber-700/20 max-w-md w-full shadow-sm mt-8">
-                                        <p className="text-[12px] md:text-[15px] text-slate-400 font-medium leading-relaxed italic">
+                                    <div className="w-full max-w-md bg-amber-500/5 border border-amber-500/20 rounded-2xl px-4 py-3">
+                                        <p className="text-xs md:text-sm text-slate-400 italic text-center leading-relaxed">
+                                            <span className="material-symbols-outlined text-[13px] text-amber-500 align-middle mr-1">lightbulb</span>
                                             {word.context}
                                         </p>
                                     </div>
                                 )}
-                            </div>
+
+                                {/* Meta row */}
+                                <div className="flex items-center gap-3 mt-1">
+                                    <span className="px-3 py-1 rounded-full border border-slate-700 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+                                        Lần học: {word.repetition + 1}
+                                    </span>
+                                    {!showHint && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setShowHint(true); setInputValue(''); }}
+                                            className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/15 text-primary text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300"
+                                        >
+                                            <span className="material-symbols-outlined text-[14px] filled">lightbulb</span>
+                                            Gợi ý
+                                        </button>
+                                    )}
+                                </div>
+                            </motion.div>
                         ) : (
-                            /* --- KẾT QUẢ Phase --- */
-                            <div className="flex flex-col items-center w-full gap-8 animate-in fade-in zoom-in-95 duration-500">
-                                {/* Word & Pronunciation */}
-                                <div className="flex flex-col items-center gap-3">
-                                    <h3 className={`font-black text-white tracking-tight leading-none drop-shadow-sm ${word.word?.length > 15 ? 'text-4xl md:text-5xl' : 'text-5xl md:text-6xl'}`}>
+                            /* ─── Phase: Result ─── */
+                            <motion.div
+                                key="result"
+                                initial={{ opacity: 0, scale: 0.97 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="flex flex-col items-center gap-4 w-full"
+                            >
+                                {/* Correct / Wrong icon */}
+                                <div className={`size-14 rounded-2xl flex items-center justify-center border-2 ${isCorrect ? 'bg-teal-500/10 border-teal-500/30 text-teal-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
+                                    <span className="material-symbols-outlined text-3xl filled">
+                                        {isCorrect ? 'check_circle' : 'cancel'}
+                                    </span>
+                                </div>
+
+                                {/* Word + phonetic */}
+                                <div className="flex flex-col items-center gap-1">
+                                    <h3 className={`font-black text-white tracking-tight text-4xl md:text-5xl leading-none`}>
                                         {word.word}
                                     </h3>
                                     {word.pronunciation && (
-                                        <p className="text-sm md:text-lg text-slate-400 font-mono tracking-[0.2em] opacity-80">
+                                        <span className="text-sm font-mono text-slate-400 tracking-[0.1em]">
                                             /{word.pronunciation.replace(/^\/|\/$/g, '')}/
-                                        </p>
+                                        </span>
                                     )}
                                 </div>
 
-                                {/* Divider */}
-                                <div className="w-16 h-px bg-slate-700/50 my-2"></div>
+                                <div className="w-12 h-px bg-slate-700/60 my-1" />
 
                                 {/* Meaning */}
-                                <h2 className={`font-plus font-black text-slate-200 leading-tight ${word.meaning?.length > 40 ? 'text-2xl md:text-3xl' : 'text-3xl md:text-4xl'}`}>
+                                <p className={`font-black text-slate-200 text-center leading-tight ${word.meaning?.length > 40 ? 'text-xl md:text-2xl' : 'text-2xl md:text-3xl'}`}>
                                     {word.meaning}
-                                </h2>
+                                </p>
 
-                                {/* Examples & Context */}
-                                <div className="flex flex-col w-full max-w-2xl gap-3 mt-6">
-                                    {word.example && (
-                                        <div className="bg-slate-800/40 rounded-2xl px-6 py-4 md:px-8 md:py-5 border border-slate-700/50 w-full">
-                                            <p className="text-[13px] md:text-[15px] text-slate-300 italic font-medium leading-relaxed text-center">
-                                                "{word.example.replace(new RegExp(word.word, "gi"), "_____")}"
-                                            </p>
-                                        </div>
-                                    )}
+                                {/* Example */}
+                                {word.example && (
+                                    <div className="w-full bg-slate-800/50 rounded-2xl px-5 py-3.5 border border-slate-700/50">
+                                        <p className="text-sm text-slate-300 italic leading-relaxed text-center">
+                                            &ldquo;{word.example.replace(new RegExp(word.word, 'gi'), '_____')}&rdquo;
+                                        </p>
+                                    </div>
+                                )}
 
-                                    {word.context && (
-                                        <div className="bg-slate-800/40 rounded-2xl px-6 py-4 md:px-8 md:py-5 border border-amber-500/20 w-full flex items-center gap-4">
-                                            <span className="material-symbols-outlined text-amber-500 text-xl md:text-2xl shrink-0">lightbulb</span>
-                                            <p className="text-[13px] md:text-[15px] text-slate-300 font-medium leading-relaxed text-left">
-                                                {word.context}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                                {/* Context */}
+                                {word.context && (
+                                    <div className="w-full bg-amber-500/5 rounded-2xl px-5 py-3.5 border border-amber-500/20 flex items-start gap-3">
+                                        <span className="material-symbols-outlined text-amber-500 text-lg shrink-0 mt-0.5">lightbulb</span>
+                                        <p className="text-sm text-slate-300 leading-relaxed">{word.context}</p>
+                                    </div>
+                                )}
+                            </motion.div>
                         )}
-                    </div>
-
-                    {!showAnswer && (
-                        <div className="mt-auto pt-8 flex flex-col items-center gap-4">
-                            <span className="px-3 py-1 rounded-full border border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] opacity-60">
-                                Lần học: {word.repetition + 1}
-                            </span>
-
-                            {!showHint && (
-                                <button
-                                    onClick={() => {
-                                        setShowHint(true);
-                                        setInputValue("");
-                                    }}
-                                    className="group flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-primary/5 hover:bg-primary/20 border border-primary/20 hover:border-primary/40 text-primary transition-all duration-500 animate-bounce-subtle"
-                                >
-                                    <span className="material-symbols-outlined text-[18px] filled">lightbulb</span>
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Xem gợi ý (Hint)</span>
-                                </button>
-                            )}
-                        </div>
-                    )}
+                    </AnimatePresence>
                 </div>
             </div>
 
-            <div className="mt-8 flex flex-col items-center gap-6 w-full relative z-20">
-                <AnimatePresence mode="wait">
-                    {!showAnswer ? (
+            {/* ═══════════ INPUT + ACTIONS ═══════════ */}
+            <AnimatePresence mode="wait">
+                {!showAnswer ? (
+                    <motion.div
+                        key="input-section"
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex flex-col items-center gap-4 w-full"
+                    >
+                        {/* ── Letter display + hidden input ── */}
                         <motion.div
-                            key="input-form"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            className="w-full flex flex-col items-center gap-6"
+                            className="w-full relative"
+                            animate={shake ? { x: [-8, 8, -8, 8, 0] } : {}}
+                            transition={{ duration: 0.35 }}
                         >
-                            <motion.div
-                                className="w-full max-w-md relative group/input"
-                                animate={shake ? { x: [-10, 10, -10, 10, 0] } : {}}
-                                transition={{ duration: 0.4 }}
-                            >
-                                <div className={`relative w-full max-w-2xl mx-auto bg-white dark:bg-slate-900 border-2 ${isCorrect === false ? 'border-rose-500 focus-within:border-rose-500 focus-within:ring-rose-500/20' : 'border-slate-200 dark:border-slate-800 focus-within:border-primary focus-within:ring-primary/20'} rounded-2xl transition-all duration-300 shadow-lg overflow-hidden`}>
-                                    <div 
-                                        className="w-full flex justify-center flex-wrap gap-y-2 py-4 px-6 select-none pointer-events-none"
-                                        aria-hidden="true"
-                                    >
-                                        {word.word.split('').map((char, idx) => {
-                                            const isTyped = idx < inputValue.length;
-                                            const isCurrent = idx === inputValue.length;
-                                            const typedChar = isTyped ? inputValue[idx] : null;
-                                            const hintChar = getHintCharacter(char, idx);
-                                            
-                                            return (
-                                                <div 
-                                                    key={idx}
-                                                    className={`relative flex items-center justify-center text-xl md:text-2xl font-black font-mono transition-all duration-200 w-[1.2em] h-[1.5em] ${
-                                                        isTyped 
-                                                            ? (isCorrect === false ? 'text-rose-500' : 'text-slate-900 dark:text-white') 
-                                                            : (showHint ? 'text-slate-300 dark:text-slate-700' : 'text-transparent')
-                                                    }`}
-                                                >
-                                                    <span>{isTyped ? typedChar : (showHint ? hintChar : (char === " " ? "\u00A0" : ""))}</span>
-                                                    
-                                                    {isCurrent && !isCorrect && (
-                                                        <motion.div 
-                                                            className="absolute bottom-0 w-full h-1 bg-primary"
-                                                            animate={{ opacity: [1, 0] }}
-                                                            transition={{ duration: 0.8, repeat: Infinity }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                            <div className={`relative w-full bg-slate-900 border-2 ${isCorrect === false ? 'border-rose-500' : 'border-slate-700 focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(250,204,21,0.15)]'} rounded-2xl transition-all duration-300 overflow-hidden`}>
+                                {/* Letter boxes */}
+                                <div className="flex justify-center flex-wrap gap-y-2 gap-x-0.5 py-5 px-6 select-none pointer-events-none" aria-hidden="true">
+                                    {word.word.split('').map((char, idx) => {
+                                        const isTyped = idx < inputValue.length;
+                                        const isCurrent = idx === inputValue.length;
+                                        const typedChar = isTyped ? inputValue[idx] : null;
+                                        const hintChar = getHintCharacter(char, idx);
+                                        const isSpace = char === ' ';
 
-                                    <input
-                                        ref={inputRef}
-                                        type="text"
-                                        title="Flashcard answer input"
-                                        aria-label="Flashcard answer input"
-                                        value={inputValue}
-                                        onChange={(e) => setInputValue(e.target.value)}
-                                        onKeyDown={handleKeyDown}
-                                        maxLength={word.word.length}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
-                                        autoComplete="off"
-                                        spellCheck="false"
-                                        autoFocus
-                                    />
-
-                                    {!showHint && inputValue.length === 0 && (
-                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-400 text-sm md:text-base italic">
-                                            Nhấn để gõ...
-                                        </div>
-                                    )}
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className={`relative flex items-end justify-center transition-all duration-150 ${isSpace ? 'w-4' : 'w-[1.35rem] md:w-[1.6rem]'} h-9`}
+                                            >
+                                                {!isSpace && (
+                                                    <span className={`text-xl md:text-2xl font-black font-mono leading-none pb-1 transition-colors duration-150 ${
+                                                        isTyped
+                                                            ? (isCorrect === false ? 'text-rose-400' : 'text-white')
+                                                            : showHint
+                                                                ? 'text-slate-500'
+                                                                : 'text-transparent'
+                                                    }`}>
+                                                        {isTyped ? typedChar : (showHint ? hintChar : char)}
+                                                    </span>
+                                                )}
+                                                {/* Underline */}
+                                                {!isSpace && (
+                                                    <div className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full transition-colors duration-200 ${
+                                                        isTyped
+                                                            ? (isCorrect === false ? 'bg-rose-500' : 'bg-primary')
+                                                            : 'bg-slate-700'
+                                                    }`} />
+                                                )}
+                                                {/* Cursor blink */}
+                                                {isCurrent && isCorrect !== false && (
+                                                    <motion.div
+                                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
+                                                        animate={{ opacity: [1, 0] }}
+                                                        transition={{ duration: 0.7, repeat: Infinity }}
+                                                    />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
 
+                                {/* Placeholder when empty */}
+                                {!showHint && inputValue.length === 0 && (
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-600 text-sm italic">
+                                        Nhấn để gõ...
+                                    </div>
+                                )}
+
+                                {/* Hidden real input */}
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    title="Nhập từ vựng"
+                                    aria-label="Nhập từ vựng"
+                                    value={inputValue}
+                                    onChange={(e) => {
+                                        if (showAnswer) return;
+                                        const v = e.target.value;
+                                        if (v.length <= word.word.length) setInputValue(v.toLowerCase());
+                                    }}
+                                    onKeyDown={handleKeyDown}
+                                    maxLength={word.word.length}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
+                                    autoComplete="off"
+                                    spellCheck="false"
+                                    autoFocus
+                                />
+
+                                {/* Error icon */}
                                 {isCorrect === false && (
-                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-rose-500 material-symbols-outlined">
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-rose-500 material-symbols-outlined text-xl pointer-events-none">
                                         error
                                     </span>
                                 )}
-                            </motion.div>
-
-                            <div className="flex flex-col sm:flex-row gap-4 items-center">
-                                <button
-                                    onClick={handleCheckAnswer}
-                                    disabled={!inputValue.trim()}
-                                    className="group flex items-center justify-center gap-2 bg-primary hover:bg-yellow-400 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-500 dark:disabled:text-slate-600 text-slate-900 font-bold py-3.5 px-10 rounded-2xl transition-all duration-300 shadow-[0_0_15px_-3px_rgba(250,204,21,0.4)] disabled:shadow-none transform hover:scale-105 active:scale-95 cursor-pointer disabled:cursor-not-allowed"
-                                >
-                                    <span className="material-symbols-outlined font-bold text-xl">check_circle</span>
-                                    <span className="text-base tracking-wide uppercase">Kiểm tra</span>
-                                </button>
-
-                                <button
-                                    onClick={() => {
-                                        setShowAnswer(true);
-                                        setIsCorrect(false); 
-                                        speak(word.word);
-                                    }}
-                                    className="group flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl font-bold text-sm text-slate-500 dark:text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 border border-transparent hover:border-rose-500/20 hover:bg-rose-500/5 transition-all duration-500 uppercase tracking-widest"
-                                >
-                                    <span className="material-symbols-outlined text-[18px] opacity-70 group-hover:rotate-12 transition-transform">visibility</span>
-                                    <span>Bỏ qua / Xem đáp án</span>
-                                </button>
                             </div>
                         </motion.div>
-                    ) : !isCorrect ? (
-                        <motion.div
-                            key="skip-next"
-                            initial={{ opacity: 0, scale: 0.9, y: 15 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            className="w-full flex flex-col items-center gap-8"
-                        >
-                            <div className="relative group/alert w-full max-w-sm px-6 py-6 rounded-[2.5rem] bg-white/5 dark:bg-slate-900/40 backdrop-blur-3xl border border-white/10 dark:border-white/5 shadow-2xl overflow-hidden transition-all duration-500 hover:shadow-rose-500/10 hover:border-rose-500/20">
-                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-rose-500/10 rounded-full blur-[40px] pointer-events-none group-hover/alert:bg-rose-500/20 transition-all" />
-                                <div className="relative z-10 flex flex-col items-center text-center">
-                                    <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center mb-4 border border-rose-500/20 rotate-3 group-hover/alert:rotate-0 transition-transform">
-                                        <span className="material-symbols-outlined text-rose-500 text-2xl filled animate-pulse">priority_high</span>
-                                    </div>
-                                    <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] mb-2 opacity-80">Ghi nhận: Quên mất</h4>
-                                    <p className="text-base font-bold text-slate-700 dark:text-slate-100 leading-snug max-w-[220px]">
-                                        Tổ ong sẽ giúp bạn ôn tập lại từ này sớm nhất!
-                                    </p>
-                                </div>
-                            </div>
+
+                        {/* ── Action buttons ── */}
+                        <div className="flex items-center gap-3 w-full justify-center">
+                            <button
+                                onClick={handleCheckAnswer}
+                                disabled={!inputValue.trim()}
+                                className="flex items-center justify-center gap-2 bg-primary hover:bg-yellow-300 disabled:bg-slate-800 disabled:text-slate-600 text-slate-900 font-black py-3 px-8 rounded-2xl transition-all duration-300 shadow-[0_0_20px_-4px_rgba(250,204,21,0.4)] disabled:shadow-none hover:scale-105 active:scale-95 disabled:cursor-not-allowed text-sm uppercase tracking-widest"
+                            >
+                                <span className="material-symbols-outlined text-lg">check_circle</span>
+                                Kiểm tra
+                            </button>
 
                             <button
-                                onClick={() => handleReview(0)}
-                                disabled={isChecking}
-                                className="group relative w-full max-w-xs h-16 rounded-[2rem] bg-[#FACC15] hover:bg-[#FDE047] text-slate-900 font-extrabold tracking-tight transition-all duration-500 shadow-[0_20px_40px_-15px_rgba(250,204,21,0.3)] hover:shadow-[0_25px_50px_-12px_rgba(250,204,21,0.5)] transform hover:scale-[1.02] active:scale-[0.98] overflow-hidden flex items-center justify-center gap-3"
+                                onClick={() => { setShowAnswer(true); setIsCorrect(false); speak(word.word); }}
+                                className="flex items-center gap-1.5 px-5 py-3 rounded-2xl font-bold text-xs text-slate-500 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 hover:bg-rose-500/5 transition-all duration-300 uppercase tracking-widest"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                                <span className="text-lg relative z-10">TIẾP TỤC ÔN TẬP</span>
-                                <div className="size-8 rounded-full bg-slate-900/5 flex items-center justify-center group-hover:bg-slate-900 transition-colors relative z-10">
-                                    <span className="material-symbols-outlined text-[20px] group-hover:text-white group-hover:translate-x-0.5 transition-all">arrow_forward</span>
-                                </div>
+                                <span className="material-symbols-outlined text-[16px] opacity-70">visibility</span>
+                                Bỏ qua
                             </button>
-                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] opacity-40">
-                                Nhấn Enter để chuyển tiếp
-                            </p>
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key="rating-buttons"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="w-full"
-                        >
-                            <h4 className="text-center text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">
-                                Bạn đánh giá độ khó thế nào?
-                            </h4>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {ratingButtons.map(({ quality, label, sublabel, color, border }) => (
-                                    <button
-                                        key={quality}
-                                        onClick={() => handleReview(quality)}
-                                        disabled={isChecking}
-                                        className={`group flex flex-col items-center justify-center gap-1.5 py-5 rounded-2xl border-2 border-slate-200/70 dark:border-slate-800/70 bg-surface/80 ${border} shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50`}
-                                    >
-                                        <span className={`text-sm font-black ${color} uppercase tracking-[0.1em]`}>{label}</span>
-                                        <span className="text-[10px] text-slate-400 font-semibold">{sublabel}</span>
-                                    </button>
-                                ))}
+                        </div>
+                    </motion.div>
+                ) : !isCorrect ? (
+                    /* ─── Skipped / Wrong: next card ─── */
+                    <motion.div
+                        key="skip-next"
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col items-center gap-4 w-full"
+                    >
+                        <div className="w-full max-w-sm px-5 py-4 rounded-2xl bg-rose-500/5 border border-rose-500/20 flex items-center gap-3">
+                            <div className="size-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
+                                <span className="material-symbols-outlined text-rose-500 text-xl filled">priority_high</span>
                             </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-0.5">Ghi nhận: Quên mất</p>
+                                <p className="text-sm font-semibold text-slate-300 leading-snug">VocaBee sẽ ôn lại từ này sớm nhất!</p>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => handleReview(0)}
+                            disabled={isChecking}
+                            className="group relative w-full max-w-sm h-14 rounded-2xl bg-primary hover:bg-yellow-300 text-slate-900 font-black tracking-tight transition-all duration-300 shadow-[0_8px_25px_-8px_rgba(250,204,21,0.4)] hover:shadow-[0_12px_30px_-6px_rgba(250,204,21,0.5)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden flex items-center justify-center gap-2.5 disabled:opacity-50"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                            <span className="text-base relative z-10 uppercase tracking-widest">Tiếp tục ôn tập</span>
+                            <span className="material-symbols-outlined text-xl relative z-10">arrow_forward</span>
+                        </button>
+                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">Hoặc nhấn Enter</p>
+                    </motion.div>
+                ) : (
+                    /* ─── Correct: rate difficulty ─── */
+                    <motion.div
+                        key="rating-buttons"
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="w-full flex flex-col gap-3"
+                    >
+                        <p className="text-center text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
+                            Đánh giá độ khó
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                            {ratingButtons.map(({ quality, label, sublabel, color, border }) => (
+                                <button
+                                    key={quality}
+                                    onClick={() => handleReview(quality)}
+                                    disabled={isChecking}
+                                    className={`group flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl border-2 border-slate-800 bg-slate-900/50 ${border} shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50`}
+                                >
+                                    <span className={`text-sm font-black ${color} uppercase tracking-[0.08em]`}>{label}</span>
+                                    <span className="text-[10px] text-slate-500 font-semibold">{sublabel}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

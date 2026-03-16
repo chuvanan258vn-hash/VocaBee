@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import { getDashboardStats, getWordsPaginatedAction } from '@/app/actions';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import WordList from '@/components/WordList';
+import ScrollToTopButton from '@/components/ScrollToTopButton';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +39,7 @@ export default async function VocabularyPage({
         <div className="flex min-h-screen bg-background text-foreground font-sans">
             <Sidebar />
 
-            <main className="flex-1 md:ml-64 relative h-screen overflow-y-auto no-scrollbar bg-background transition-colors">
+            <main id="vocab-scroll-container" className="flex-1 md:ml-64 relative h-screen overflow-y-auto no-scrollbar bg-background transition-colors">
                 {/* Sticky Header */}
                 <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-xl px-4 sm:px-8 py-5 flex items-center justify-between border-b border-glass-border">
                     <div className="flex items-center gap-4">
@@ -78,6 +79,7 @@ export default async function VocabularyPage({
                         availableWordTypes={allWordTypes}
                     />
                 </div>
+                <ScrollToTopButton scrollContainerId="vocab-scroll-container" />
             </main>
         </div>
     );

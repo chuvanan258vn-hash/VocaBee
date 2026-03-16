@@ -113,8 +113,7 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
 
             {/* === CARD CONTAINER === */}
             <div
-                className="w-full cursor-pointer select-none card-flip-container"
-                onClick={handleFlip}
+                className="w-full card-flip-container"
             >
                 <div
                     className={`card-flip-inner${isFlipped ? ' flipped' : ''}`}
@@ -187,15 +186,17 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
 
                         {/* Bottom hint */}
                         <div className="absolute bottom-6 flex items-center gap-2 text-slate-400 dark:text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-                            <span className="material-symbols-outlined text-[16px]">touch_app</span>
-                            Chạm để lật
+                            <span className="material-symbols-outlined text-[16px]">keyboard_space</span>
+                            Nhấn Space để lật
                         </div>
                     </div>
 
                     {/* ====== BACK FACE ====== */}
                     <div
-                        className="card-face-back absolute inset-0 rounded-[28px] bg-surface border border-slate-200 dark:border-slate-800/80 shadow-2xl flex flex-col p-7 md:p-10 overflow-y-auto"
+                        className="card-face-back absolute inset-0 rounded-[28px] bg-surface border border-slate-200 dark:border-slate-800/80 shadow-2xl flex flex-col p-7 md:p-10 overflow-y-auto no-scrollbar"
                     >
+                        {/* Fade gradient at bottom — hints there's more content */}
+                        <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-surface to-transparent rounded-b-[28px] z-10" />
                         {/* Subtle colored glow */}
                         <div className="card-ambient-glow absolute inset-0 pointer-events-none rounded-[28px]" />
 
@@ -265,6 +266,12 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
                                 ))}
                             </div>
                         )}
+
+                        {/* Bottom hint */}
+                        <div className="mt-4 flex items-center justify-center gap-2 text-slate-400 dark:text-slate-600 text-[10px] font-bold uppercase tracking-[0.2em] opacity-60 shrink-0">
+                            <span className="material-symbols-outlined text-[16px]">keyboard_space</span>
+                            Nhấn Space để lật
+                        </div>
                     </div>
                 </div>
             </div>
