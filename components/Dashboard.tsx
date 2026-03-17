@@ -158,7 +158,7 @@ function StatCard({ icon, label, value, color, trend, variant, extra, footer }: 
                     <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">{label}</p>
                     {extra && <span className="text-[10px] font-black text-amber-500/80 uppercase tracking-tighter">{extra}</span>}
                 </div>
-                <h3 className="text-4xl font-bold tracking-tighter text-foreground leading-none">{value.toLocaleString()}</h3>
+                <h3 className="text-4xl font-bold tracking-tighter text-foreground leading-none">{value.toLocaleString('en-US')}</h3>
                 {footer}
             </div>
         </div>

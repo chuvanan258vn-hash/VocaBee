@@ -17,6 +17,8 @@ model User {
   grammarCards      GrammarCard[]
   dailyNewWordGoal     Int          @default(20)
   dailyNewGrammarGoal  Int          @default(10)
+  dailyMaxVocabReview  Int          @default(100)
+  dailyMaxGrammarReview Int         @default(50)
   streakCount          Int          @default(0)
   lastGoalMetDate      DateTime?
   points               Int          @default(0)

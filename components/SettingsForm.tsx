@@ -10,21 +10,29 @@ import { motion } from "framer-motion";
 interface SettingsFormProps {
     initialDailyGoal: number;
     initialDailyGrammarGoal?: number;
+    initialDailyMaxVocabReview?: number;
+    initialDailyMaxGrammarReview?: number;
 }
 
-export default function SettingsForm({ initialDailyGoal, initialDailyGrammarGoal }: SettingsFormProps) {
+export default function SettingsForm({ initialDailyGoal, initialDailyGrammarGoal, initialDailyMaxVocabReview, initialDailyMaxGrammarReview }: SettingsFormProps) {
     const { showToast } = useToast();
     const router = useRouter();
     const [dailyGoal, setDailyGoal] = useState(initialDailyGoal || 20);
     const [dailyGrammarGoal, setDailyGrammarGoal] = useState<number>(
         (typeof (initialDailyGrammarGoal as number) === 'number' ? (initialDailyGrammarGoal as number) : 5)
     );
+    const [dailyMaxVocabReview, setDailyMaxVocabReview] = useState<number>(
+        typeof initialDailyMaxVocabReview === 'number' ? initialDailyMaxVocabReview : 100
+    );
+    const [dailyMaxGrammarReview, setDailyMaxGrammarReview] = useState<number>(
+        typeof initialDailyMaxGrammarReview === 'number' ? initialDailyMaxGrammarReview : 50
+    );
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSave = async () => {
         setIsLoading(true);
         try {
-            const res = await updateUserSettingsAction({ dailyGoal, dailyGrammarGoal });
+            const res = await updateUserSettingsAction({ dailyGoal, dailyGrammarGoal, dailyMaxVocabReview, dailyMaxGrammarReview });
             if (res.success) {
                 showToast("Đã lưu cài đặt thành công! Đang về Dashboard... 🐝✨", "success");
                 // Refresh current page data, then auto-navigate to dashboard
@@ -46,6 +54,14 @@ export default function SettingsForm({ initialDailyGoal, initialDailyGrammarGoal
 
     const adjustGrammarGoal = (amount: number) => {
         setDailyGrammarGoal(prev => Math.max(1, Math.min(50, prev + amount)));
+    };
+
+    const adjustMaxVocabReview = (amount: number) => {
+        setDailyMaxVocabReview(prev => Math.max(10, Math.min(500, prev + amount)));
+    };
+
+    const adjustMaxGrammarReview = (amount: number) => {
+        setDailyMaxGrammarReview(prev => Math.max(10, Math.min(200, prev + amount)));
     };
 
     return (
@@ -162,6 +178,43 @@ export default function SettingsForm({ initialDailyGoal, initialDailyGrammarGoal
                             <span className="text-xs font-black text-slate-500 uppercase tracking-widest">TỪ / NGÀY</span>
                         </div>
                     </div>
+
+                    <hr className="border-glass-border opacity-50" />
+
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <p className="font-bold text-foreground">Giới hạn ôn tập từ vựng</p>
+                            <p className="text-xs text-slate-500">Giới hạn số lượng từ cũ xuất hiện mỗi ngày để tránh quá tải.</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center bg-surface border border-glass-border rounded-2xl overflow-hidden p-1 shadow-inner">
+                                <button
+                                    onClick={() => adjustMaxVocabReview(-10)}
+                                    type="button"
+                                    className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors rounded-xl"
+                                    title="Giảm 10 từ"
+                                >
+                                    <Minus size={20} />
+                                </button>
+                                <input
+                                    type="number"
+                                    value={dailyMaxVocabReview}
+                                    onChange={(e) => setDailyMaxVocabReview(Number(e.target.value))}
+                                    title="Giới hạn ôn tập từ vựng hàng ngày"
+                                    className="w-20 bg-transparent border-none text-center font-black text-primary focus:ring-0 outline-none text-2xl"
+                                />
+                                <button
+                                    onClick={() => adjustMaxVocabReview(10)}
+                                    type="button"
+                                    className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors rounded-xl"
+                                    title="Thêm 10 từ"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            </div>
+                            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">TỪ / NGÀY</span>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -203,6 +256,43 @@ export default function SettingsForm({ initialDailyGoal, initialDailyGrammarGoal
                                 </button>
                             </div>
                             <span className="text-xs font-black text-slate-500 uppercase tracking-widest">PHẦN NGỮ PHÁP / NGÀY</span>
+                        </div>
+                    </div>
+
+                    <hr className="border-glass-border opacity-50 mt-8 mb-8" />
+
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <p className="font-bold text-foreground">Giới hạn ôn tập ngữ pháp</p>
+                            <p className="text-xs text-slate-500">Giới hạn số thẻ ngữ pháp cũ xuất hiện mỗi ngày.</p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center bg-surface border border-glass-border rounded-2xl overflow-hidden p-1 shadow-inner">
+                                <button
+                                    onClick={() => adjustMaxGrammarReview(-5)}
+                                    type="button"
+                                    className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors rounded-xl"
+                                    title="Giảm 5 thẻ"
+                                >
+                                    <Minus size={20} />
+                                </button>
+                                <input
+                                    type="number"
+                                    value={dailyMaxGrammarReview}
+                                    onChange={(e) => setDailyMaxGrammarReview(Number(e.target.value))}
+                                    title="Giới hạn ôn tập ngữ pháp hàng ngày"
+                                    className="w-20 bg-transparent border-none text-center font-black text-primary focus:ring-0 outline-none text-2xl"
+                                />
+                                <button
+                                    onClick={() => adjustMaxGrammarReview(5)}
+                                    type="button"
+                                    className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 transition-colors rounded-xl"
+                                    title="Thêm 5 thẻ"
+                                >
+                                    <Plus size={20} />
+                                </button>
+                            </div>
+                            <span className="text-xs font-black text-slate-500 uppercase tracking-widest">THẺ / NGÀY</span>
                         </div>
                     </div>
                 </section>

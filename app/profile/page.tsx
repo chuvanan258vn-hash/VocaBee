@@ -55,7 +55,7 @@ export default async function ProfilePage() {
                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ngày liên tiếp</p>
                             </div>
                             <div className="border-x border-glass-border">
-                                <p className="text-2xl font-black text-foreground tracking-tight">{(stats?.points || 0).toLocaleString()}</p>
+                                <p className="text-2xl font-black text-foreground tracking-tight">{(stats?.points || 0).toLocaleString('en-US')}</p>
                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Điểm tích lũy</p>
                             </div>
                             <div>

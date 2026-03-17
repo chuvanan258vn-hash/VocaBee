@@ -53,7 +53,7 @@ Part 7: xem hình tôi gửi đây đừng quan tâm những trước đó và l
 - liệt kê ý chính trọng điểm giúp tìm ra đáp án khi làm phần reading
 - liệt kê các từ vựng nghĩa tiếng việt từ, phiên âm, loại từ
 
-hãy liệt kê từ vựng theo format Json như sau cho từng từ:
+trong bài toiec các từ sau hãy liệt kê từ vựng theo format Json như sau cho từng từ: 
 [
     {
         "word": "Từ vựng",
@@ -67,98 +67,4 @@ hãy liệt kê từ vựng theo format Json như sau cho từng từ:
     ...
 ]
 
-cho những từ sau:charitable fundraiser, give a speech , Dưới đây là danh sách giá trị của field Từ (chỉ bao gồm tên từ vựng) theo đúng thứ tự bạn đã cung cấp:
-
-affordably priced
-
-along a road
-
-around the corner
-
-art supplies
-
-beverage voucher
-
-blueprint
-
-booth
-
-charitable fundraiser
-
-city council
-
-company outing
-
-cuisine
-
-dressing
-
-drop off
-
-endorse
-
-exceed expectations
-
-factory
-
-first impression
-
-generous contribution
-
-genuinely
-
-give a speech
-
-go over
-
-headquarters
-
-honestly
-
-incredible
-
-influencer
-
-kindergarten
-
-leading
-
-lifetime discount
-
-manufacturing plant
-
-orientation
-
-pay period
-
-permit
-
-post office
-
-potential customers
-
-putting on
-
-recruits
-
-retailer
-
-road
-
-roadway
-
-sidewalk
-
-sincerely
-
-sizable donation
-
-substantial gift
-
-tax return
-
-vendor
-
-walkway
-
-wearing
+cho những từ sau: 

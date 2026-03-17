@@ -45,9 +45,9 @@ export default async function StatsPage() {
                             <span className="material-symbols-outlined text-amber-500 text-[20px] filled">local_fire_department</span>
                             <span className="text-amber-500 font-bold text-sm">{dashboardStats?.streak || 0}</span>
                         </div>
-                        <div className="hidden md:flex items-center gap-2 bg-surface/50 border border-glass-border px-3 py-1.5 rounded-full backdrop-blur-sm" title={`${(dashboardStats?.points || 0).toLocaleString()} Bees`}>
+                        <div className="hidden md:flex items-center gap-2 bg-surface/50 border border-glass-border px-3 py-1.5 rounded-full backdrop-blur-sm" title={`${(dashboardStats?.points || 0).toLocaleString('en-US')} Bees`}>
                             <span className="material-symbols-outlined text-primary text-[20px] filled">hive</span>
-                            <span className="text-primary font-bold text-sm">{(dashboardStats?.points || 0).toLocaleString()}</span>
+                            <span className="text-primary font-bold text-sm">{(dashboardStats?.points || 0).toLocaleString('en-US')}</span>
                         </div>
                         <div className="h-8 w-px bg-glass-border mx-1 md:mx-2"></div>
                         <div className="flex items-center gap-3 cursor-pointer group">

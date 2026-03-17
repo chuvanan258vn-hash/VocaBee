@@ -67,7 +67,7 @@ function DebugRow({
                 )}
             </div>
             <span className={`text-sm font-bold tabular-nums ${color} shrink-0`}>
-                {typeof value === "number" ? value.toLocaleString() : value}
+                {typeof value === "number" ? value.toLocaleString('en-US') : value}
             </span>
         </div>
     );

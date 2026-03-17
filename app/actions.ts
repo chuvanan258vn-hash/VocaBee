@@ -392,7 +392,18 @@ export async function getDashboardStats() {
 
   // --- BANNER COUNTS ---
   // A. Vocabulary
-  const vocabDueCount = await prisma.vocabulary.count({
+  // Count already reviewed today to cap daily backlog
+  const alreadyReviewedVocabToday = await prisma.vocabulary.count({
+    where: {
+      userId: user.id,
+      updatedAt: { gte: todayStart },
+      repetition: { gt: 1 }
+    } as any
+  });
+  const MAX_DAILY_VOCAB_REVIEWS = vUser.dailyMaxVocabReview || 100;
+  const remainingVocabReviewQuota = Math.max(0, MAX_DAILY_VOCAB_REVIEWS - alreadyReviewedVocabToday);
+
+  const rawVocabDueCount = await prisma.vocabulary.count({
     where: {
       userId: user.id,
       interval: { gt: 0 },
@@ -400,9 +411,21 @@ export async function getDashboardStats() {
       isDeferred: false
     } as any
   });
+  const vocabDueCount = Math.min(rawVocabDueCount, remainingVocabReviewQuota);
   const totalDueVocab = vocabDueCount + canLearnMoreCount;
 
   // B. Grammar
+  // For Grammar already reviewed
+  const alreadyReviewedGrammarRaw: { count: bigint }[] = await prisma.$queryRawUnsafe(`
+    SELECT COUNT(*) as count FROM GrammarCard 
+    WHERE userId = ? 
+      AND updatedAt >= ?
+      AND repetition > 1
+  `, user.id, todayStart.toISOString());
+  const alreadyReviewedGrammarToday = Number(alreadyReviewedGrammarRaw[0]?.count || 0);
+  const MAX_DAILY_GRAMMAR_REVIEWS = vUser.dailyMaxGrammarReview || 50;
+  const remainingGrammarReviewQuota = Math.max(0, MAX_DAILY_GRAMMAR_REVIEWS - alreadyReviewedGrammarToday);
+
   const grammarDue: any[] = await prisma.$queryRawUnsafe(`
     SELECT COUNT(*) as count FROM GrammarCard 
     WHERE userId = ? 
@@ -412,7 +435,8 @@ export async function getDashboardStats() {
       AND NOT (repetition = 1 AND updatedAt >= ? AND updatedAt < ?)
   `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString());
   
-  const grammarDueCount = Number(grammarDue[0]?.count || 0);
+  const rawGrammarDueCount = Number(grammarDue[0]?.count || 0);
+  const grammarDueCount = Math.min(rawGrammarDueCount, remainingGrammarReviewQuota);
   const totalDueGrammar = grammarDueCount + canLearnMoreGrammarCount;
 
   let currentStreak = vUser.streakCount || 0;
@@ -472,8 +496,8 @@ export async function getDashboardStats() {
     totalWords: user._count.words,
     dueReviews: totalDueVocab,
     dueGrammarCount: totalDueGrammar,
-    rawVocabDueCount: vocabDueCount,
-    rawGrammarDueCount: grammarDueCount,
+    rawVocabDueCount: rawVocabDueCount,
+    rawGrammarDueCount: rawGrammarDueCount,
     wordTypes: allWordTypes,
     streak: currentStreak,
     points: vUser.points || 0,
@@ -510,13 +534,20 @@ export async function checkWordsExistenceAction(words: string[]) {
 
 
 
-export async function updateUserSettingsAction(data: { dailyGoal: number; dailyGrammarGoal?: number }) {
+export async function updateUserSettingsAction(data: { 
+  dailyGoal: number; 
+  dailyGrammarGoal?: number; 
+  dailyMaxVocabReview?: number; 
+  dailyMaxGrammarReview?: number; 
+}) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Bạn cần đăng nhập." };
 
   try {
     const updateData: any = { dailyNewWordGoal: data.dailyGoal };
     if (typeof data.dailyGrammarGoal === 'number') updateData.dailyNewGrammarGoal = data.dailyGrammarGoal;
+    if (typeof data.dailyMaxVocabReview === 'number') updateData.dailyMaxVocabReview = data.dailyMaxVocabReview;
+    if (typeof data.dailyMaxGrammarReview === 'number') updateData.dailyMaxGrammarReview = data.dailyMaxGrammarReview;
 
     const updatedUser = await prisma.user.update({
       where: { id: user.id },

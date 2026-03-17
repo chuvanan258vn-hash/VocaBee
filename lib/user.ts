@@ -7,6 +7,8 @@ export interface VocaBeeUser {
     name?: string | null;
     dailyNewWordGoal: number;
     dailyNewGrammarGoal: number;
+    dailyMaxVocabReview?: number;
+    dailyMaxGrammarReview?: number;
     streakCount: number;
     lastGoalMetDate?: Date | null;
     points: number;
@@ -47,7 +49,9 @@ export async function getAuthenticatedUser(): Promise<VocaBeeUser | null> {
                     name: session.user.name || email.split('@')[0],
                     password: "$2a$10$UserWasAutoCreatedFromSessionButDBWasWiped", // Dummy hash
                     dailyNewWordGoal: 20,
-                    dailyNewGrammarGoal: 10
+                    dailyNewGrammarGoal: 10,
+                    dailyMaxVocabReview: 100,
+                    dailyMaxGrammarReview: 50
                 }
             }) as unknown as VocaBeeUser;
         } catch (createError) {

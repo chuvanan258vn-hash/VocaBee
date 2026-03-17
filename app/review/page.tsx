@@ -102,7 +102,18 @@ export default async function ReviewPage({
     // --- SESSION LIMITS ---
     // --- DYNAMIC SESSION LIMITS ---
     // Count exact items available to decide if we should merge sessions
-    const vocabDueCount = await prisma.vocabulary.count({
+    const alreadyReviewedVocabToday = await prisma.vocabulary.count({
+        where: {
+            userId: user.id,
+            updatedAt: { gte: todayStart },
+            repetition: { gt: 1 }
+        }
+    });
+    const vUser = user as unknown as VocaBeeUser;
+    const MAX_DAILY_VOCAB_REVIEWS = vUser.dailyMaxVocabReview ?? 100;
+    const remainingVocabReviewQuota = isReviewAll ? 9999 : Math.max(0, MAX_DAILY_VOCAB_REVIEWS - alreadyReviewedVocabToday);
+
+    const rawVocabDueCount = await prisma.vocabulary.count({
         where: {
             userId: user.id,
             interval: { gt: 0 },
@@ -110,15 +121,29 @@ export default async function ReviewPage({
             isDeferred: false
         }
     });
+    const vocabDueCount = Math.min(rawVocabDueCount, remainingVocabReviewQuota);
     const totalPotentialVocab = vocabDueCount + canLearnMoreCount;
 
     // Similarly for grammar
+    const alreadyReviewedGrammarRaw: { count: bigint }[] = await prisma.$queryRawUnsafe(`
+        SELECT COUNT(*) as count FROM GrammarCard 
+        WHERE userId = ? 
+          AND updatedAt >= ?
+          AND repetition > 1
+    `, user.id, todayStart.toISOString());
+    const alreadyReviewedGrammarToday = Number(alreadyReviewedGrammarRaw[0]?.count || 0);
+    const MAX_DAILY_GRAMMAR_REVIEWS = vUser.dailyMaxGrammarReview ?? 50;
+    const remainingGrammarReviewQuota = isReviewAll ? 9999 : Math.max(0, MAX_DAILY_GRAMMAR_REVIEWS - alreadyReviewedGrammarToday);
+
     const grammarDueRaw: { count: bigint }[] = await prisma.$queryRawUnsafe(`
         SELECT COUNT(*) as count FROM GrammarCard 
         WHERE userId = ? AND interval > 0 AND nextReview <= ? AND isDeferred = 0
         AND NOT (repetition = 1 AND updatedAt >= ? AND updatedAt < ?)
     `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString());
-    const totalPotentialGrammar = Number(grammarDueRaw[0]?.count || 0) + canLearnMoreGrammarCount;
+    
+    const maxGrammarQueryCount = Number(grammarDueRaw[0]?.count || 0);
+    const effectiveGrammarDueCount = Math.min(maxGrammarQueryCount, remainingGrammarReviewQuota);
+    const totalPotentialGrammar = effectiveGrammarDueCount + canLearnMoreGrammarCount;
 
     // Thresholds: if items are below these, take them all in one session
     const VOCAB_THRESHOLD = 25;
@@ -133,6 +158,7 @@ export default async function ReviewPage({
         : (totalPotentialGrammar <= GRAMMAR_THRESHOLD ? GRAMMAR_THRESHOLD : 10);
 
     // 1. Lấy các từ ĐANG ÔN TẬP nhưng đến hạn (Priority 1)
+    const dueVocabLimit = Math.min(VOCAB_SESSION_LIMIT, remainingVocabReviewQuota);
     const dueWords = (type === 'grammar') ? [] : await prisma.vocabulary.findMany({
         where: {
             userId: user.id,
@@ -141,10 +167,11 @@ export default async function ReviewPage({
             isDeferred: false
         },
         orderBy: { nextReview: 'asc' },
-        take: VOCAB_SESSION_LIMIT
+        take: dueVocabLimit
     });
 
         // 1.5. Lấy các câu NGỮ PHÁP đến hạn (Priority 1), loại grammar mới học hôm qua
+        const dueGrammarLimit = Math.min(GRAMMAR_SESSION_LIMIT, remainingGrammarReviewQuota);
         const dueGrammar: GrammarCard[] = (type === 'vocab') ? [] : await prisma.$queryRawUnsafe(`
                 SELECT * FROM GrammarCard 
                 WHERE userId = ? 
@@ -154,7 +181,7 @@ export default async function ReviewPage({
                     AND NOT (repetition = 1 AND updatedAt >= ? AND updatedAt < ?)
                 ORDER BY nextReview ASC 
                 LIMIT ?
-        `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString(), GRAMMAR_SESSION_LIMIT);
+        `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString(), dueGrammarLimit);
 
     // Calculate remaining slots for new items in this session
     const vocabSlotsLeft = Math.max(0, VOCAB_SESSION_LIMIT - dueWords.length);

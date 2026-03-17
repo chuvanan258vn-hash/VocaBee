@@ -50,7 +50,7 @@ export default async function LeaderboardPage() {
                         </div>
                         <div className="hidden md:flex items-center gap-2 bg-surface/50 border border-glass-border px-3 py-1.5 rounded-full backdrop-blur-sm">
                             <span className="material-symbols-outlined text-primary text-[20px] filled">hive</span>
-                            <span className="text-primary font-bold text-sm">{(stats?.points || 0).toLocaleString()}</span>
+                            <span className="text-primary font-bold text-sm">{(stats?.points || 0).toLocaleString('en-US')}</span>
                         </div>
                         <div className="h-8 w-px bg-glass-border mx-1 md:mx-2"></div>
                         <ThemeToggle />
@@ -71,7 +71,7 @@ export default async function LeaderboardPage() {
                                 </div>
                                 <div className="text-center">
                                     <h3 className="font-bold text-lg truncate max-w-[150px]">{top3[1].name}</h3>
-                                    <p className="text-slate-500 font-medium">{top3[1].points.toLocaleString()} XP</p>
+                                    <p className="text-slate-500 font-medium">{top3[1].points.toLocaleString('en-US')} XP</p>
                                 </div>
                             </div>
                         )}
@@ -90,7 +90,7 @@ export default async function LeaderboardPage() {
                                 </div>
                                 <div className="text-center">
                                     <h3 className="font-black text-2xl text-gradient-amber tracking-tight">{top3[0].name}</h3>
-                                    <p className="text-amber-500 font-bold text-lg">{top3[0].points.toLocaleString()} XP</p>
+                                    <p className="text-amber-500 font-bold text-lg">{top3[0].points.toLocaleString('en-US')} XP</p>
                                 </div>
                             </div>
                         )}
@@ -106,7 +106,7 @@ export default async function LeaderboardPage() {
                                 </div>
                                 <div className="text-center">
                                     <h3 className="font-bold text-lg truncate max-w-[150px]">{top3[2].name}</h3>
-                                    <p className="text-slate-500 font-medium">{top3[2].points.toLocaleString()} XP</p>
+                                    <p className="text-slate-500 font-medium">{top3[2].points.toLocaleString('en-US')} XP</p>
                                 </div>
                             </div>
                         )}
@@ -136,7 +136,7 @@ export default async function LeaderboardPage() {
                                             <p className="text-xs text-slate-500 font-medium uppercase tracking-widest">{u.streakCount} Day Streak</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-black text-foreground">{u.points.toLocaleString()} <span className="text-[10px] text-slate-500">XP</span></p>
+                                            <p className="font-black text-foreground">{u.points.toLocaleString('en-US')} <span className="text-[10px] text-slate-500">XP</span></p>
                                         </div>
                                     </div>
                                 );
@@ -157,7 +157,7 @@ export default async function LeaderboardPage() {
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-2xl font-black text-primary">{stats?.points.toLocaleString()} <span className="text-xs text-slate-500 font-bold uppercase">XP</span></p>
+                                <p className="text-2xl font-black text-primary">{stats?.points.toLocaleString('en-US')} <span className="text-xs text-slate-500 font-bold uppercase">XP</span></p>
                             </div>
                         </div>
                     )}
