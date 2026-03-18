@@ -15,7 +15,7 @@ export async function addWordAction(formData: Record<string, any>) {
   if (!user) return { error: "Bạn cần đăng nhập để thêm từ! 🐝" };
 
   const { wordType, meaning } = formData;
-  const word = formData.word?.trim();
+  const word = formData.word?.trim().toLowerCase();
 
   if (!word || !wordType || !meaning?.trim()) {
     return { error: "Vui lòng điền đầy đủ các thông tin bắt buộc! 🐝" };
@@ -75,7 +75,7 @@ export async function updateWordAction(id: string, formData: any) {
     await prisma.vocabulary.update({
       where: { id: id },
       data: {
-        word: formData.word,
+        word: formData.word?.trim().toLowerCase(),
         wordType: formData.wordType,
         meaning: formData.meaning,
         pronunciation: formData.pronunciation,
@@ -263,7 +263,7 @@ export async function importWordsAction(words: any[]) {
         await prisma.vocabulary.upsert({
           where: {
             word_userId: {
-              word: item.word.trim(),
+              word: item.word.trim().toLowerCase(),
               userId: user.id
             }
           },
@@ -276,7 +276,7 @@ export async function importWordsAction(words: any[]) {
             context: item.context || undefined,
           },
           create: {
-            word: item.word.trim(),
+            word: item.word.trim().toLowerCase(),
             wordType: item.wordType || undefined,
             meaning: item.meaning || undefined,
             pronunciation: item.pronunciation || undefined,

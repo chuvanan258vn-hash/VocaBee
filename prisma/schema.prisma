@@ -75,6 +75,10 @@ model GrammarCard {
   trap          String?  
   goldenRule    String?  
   tags          String?  
+  toeicPart       String?
+  grammarCategory String?
+  signalKeywords  String?
+  formula         String?
 
   // Rule-based fields
   importanceScore Int      @default(0)
