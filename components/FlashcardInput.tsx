@@ -32,7 +32,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
     const [showAnswer, setShowAnswer] = useState(false);
     const [shake, setShake] = useState(false);
-    const [showHint, setShowHint] = useState(false);
+    const [hintLevel, setHintLevel] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Reset when word changes
@@ -40,7 +40,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
         setInputValue('');
         setIsCorrect(null);
         setShowAnswer(false);
-        setShowHint(false);
+        setHintLevel(0);
         const t = setTimeout(() => inputRef.current?.focus(), 80);
         return () => clearTimeout(t);
     }, [word.id]);
@@ -121,15 +121,42 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
         frame();
     };
 
+    const calculatedQuality = isCorrect ? (hintLevel === 0 ? 5 : hintLevel === 1 ? 4 : hintLevel === 2 ? 3 : 2) : 0;
+
+    useEffect(() => {
+        if (showAnswer && !isChecking) {
+            let active = false;
+            // Delay listener activation slightly to prevent catching the same Enter press or key-repeat
+            const t = setTimeout(() => { active = true; }, 400);
+
+            const handleEnter = (e: KeyboardEvent) => {
+                if (!active) return;
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleReview(calculatedQuality);
+                }
+            };
+            window.addEventListener('keydown', handleEnter);
+            return () => {
+                clearTimeout(t);
+                window.removeEventListener('keydown', handleEnter);
+            };
+        }
+    }, [showAnswer, isChecking, calculatedQuality]);
+
     const handleCheckAnswer = () => {
-        if (!inputValue.trim()) return;
+        if (!inputValue.trim() || isCorrect === true) return;
         const cleanInput = inputValue.trim().toLowerCase();
         const cleanAnswer = word.word.trim().toLowerCase();
         if (cleanInput === cleanAnswer) {
             setIsCorrect(true);
-            setShowAnswer(true);
             speak(word.word);
-            if (!showHint) triggerConfetti();
+            if (hintLevel === 0) triggerConfetti();
+            
+            // Wait 800ms before showing the Result screen to let user see green text
+            setTimeout(() => {
+                setShowAnswer(true);
+            }, 800);
         } else {
             setIsCorrect(false);
             setShake(true);
@@ -143,7 +170,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
 
     const handleReview = async (quality: number) => {
         setIsChecking(true);
-        const isTypingBonus = isCorrect === true && !showHint && quality >= 4;
+        const isTypingBonus = isCorrect === true && hintLevel === 0 && quality >= 4;
         onNext();
         const result = await reviewWordAction(word.id, quality, isTypingBonus);
         if (!result.success) showToast(result.error || 'Lỗi khi cập nhật', 'error');
@@ -158,13 +185,6 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
         if (days === 1) return '1 ngày';
         return `${days} ngày`;
     };
-
-    const ratingButtons = [
-        { quality: 0, label: 'Quên mất', sublabel: getNextReviewLabel(0), color: 'text-rose-500', border: 'hover:border-rose-500/70 hover:bg-rose-500/5 hover:shadow-rose-500/10' },
-        { quality: 3, label: 'Khó nhớ', sublabel: getNextReviewLabel(3), color: 'text-orange-500', border: 'hover:border-orange-500/70 hover:bg-orange-500/5 hover:shadow-orange-500/10' },
-        { quality: 4, label: 'Nhớ được', sublabel: getNextReviewLabel(4), color: 'text-emerald-500', border: 'hover:border-emerald-500/70 hover:bg-emerald-500/5 hover:shadow-emerald-500/10' },
-        { quality: 5, label: 'Nhớ ngay', sublabel: getNextReviewLabel(5), color: 'text-teal-400', border: 'hover:border-teal-400/70 hover:bg-teal-400/5 hover:shadow-teal-400/10' },
-    ];
 
     const typeStyles = getWordTypeStyles(word.wordType);
     const borderColor = isCorrect === null
@@ -193,7 +213,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                     <div className="flex items-center gap-2">
                         {/* Typing Bonus badge */}
                         <AnimatePresence>
-                            {isCorrect === true && !showHint && (
+                            {isCorrect === true && hintLevel === 0 && (
                                 <motion.span
                                     initial={{ opacity: 0, scale: 0.7, x: 10 }}
                                     animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -206,13 +226,20 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                             )}
                         </AnimatePresence>
 
-                        <button
-                            onClick={(e) => { e.stopPropagation(); speak(word.word); }}
-                            className="size-10 rounded-full bg-amber-500/10 hover:bg-amber-500/25 text-amber-500 flex items-center justify-center transition-all duration-300 active:scale-90"
-                            title="Nghe phát âm"
-                        >
-                            <span className="material-symbols-outlined text-xl filled">volume_up</span>
-                        </button>
+                        <AnimatePresence>
+                            {(showAnswer || hintLevel >= 3) && (
+                                <motion.button
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    onClick={(e) => { e.stopPropagation(); speak(word.word); }}
+                                    className="size-10 rounded-full bg-amber-500/10 hover:bg-amber-500/25 text-amber-500 flex items-center justify-center transition-all duration-300 active:scale-90"
+                                    title="Nghe phát âm"
+                                >
+                                    <span className="material-symbols-outlined text-xl filled">volume_up</span>
+                                </motion.button>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
@@ -238,6 +265,19 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                                     {word.meaning}
                                 </h2>
 
+                                {/* Pronunciation hint */}
+                                {hintLevel >= 2 && word.pronunciation && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="text-center -mt-2 mb-2"
+                                    >
+                                        <span className="text-lg md:text-xl font-mono text-teal-400/90 tracking-[0.15em] bg-teal-500/10 px-4 py-1.5 rounded-xl border border-teal-500/20 shadow-sm inline-block">
+                                            /{word.pronunciation.replace(/^\/|\/$/g, '')}/
+                                        </span>
+                                    </motion.div>
+                                )}
+
                                 {/* Context hint */}
                                 {word.context && (
                                     <div className="w-full max-w-md bg-amber-500/5 border border-amber-500/20 rounded-2xl px-4 py-3">
@@ -253,13 +293,27 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                                     <span className="px-3 py-1 rounded-full border border-slate-700 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
                                         Lần học: {word.repetition + 1}
                                     </span>
-                                    {!showHint && (
+                                    {hintLevel < 3 && (
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); setShowHint(true); setInputValue(''); }}
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                if (hintLevel === 0) {
+                                                    setHintLevel(1); 
+                                                    setInputValue('');
+                                                } else if (hintLevel === 1) {
+                                                    setHintLevel(word.pronunciation ? 2 : 3);
+                                                    if (!word.pronunciation) speak(word.word);
+                                                } else {
+                                                    setHintLevel(3);
+                                                    speak(word.word);
+                                                }
+                                            }}
                                             className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-primary/30 bg-primary/5 hover:bg-primary/15 text-primary text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300"
                                         >
-                                            <span className="material-symbols-outlined text-[14px] filled">lightbulb</span>
-                                            Gợi ý
+                                            <span className="material-symbols-outlined text-[14px] filled">
+                                                {hintLevel === 0 ? 'lightbulb' : hintLevel === 1 && word.pronunciation ? 'subtitles' : 'volume_up'}
+                                            </span>
+                                            {hintLevel === 0 ? 'Gợi ý' : hintLevel === 1 && word.pronunciation ? 'Phiên âm' : 'Nghe Audio'}
                                         </button>
                                     )}
                                 </div>
@@ -354,19 +408,19 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                                                 {!isSpace && (
                                                     <span className={`text-xl md:text-2xl font-black font-mono leading-none pb-1 transition-colors duration-150 ${
                                                         isTyped
-                                                            ? (isCorrect === false ? 'text-rose-400' : 'text-white')
-                                                            : showHint
+                                                            ? (isCorrect === false ? 'text-rose-400' : isCorrect === true ? 'text-teal-400' : 'text-white')
+                                                            : hintLevel > 0
                                                                 ? 'text-slate-500'
                                                                 : 'text-transparent'
                                                     }`}>
-                                                        {isTyped ? typedChar : (showHint ? hintChar : char)}
+                                                        {isTyped ? typedChar : (hintLevel > 0 ? hintChar : char)}
                                                     </span>
                                                 )}
                                                 {/* Underline */}
                                                 {!isSpace && (
                                                     <div className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full transition-colors duration-200 ${
                                                         isTyped
-                                                            ? (isCorrect === false ? 'bg-rose-500' : 'bg-primary')
+                                                            ? (isCorrect === false ? 'bg-rose-500' : isCorrect === true ? 'bg-teal-500' : 'bg-primary')
                                                             : 'bg-slate-700'
                                                     }`} />
                                                 )}
@@ -384,7 +438,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                                 </div>
 
                                 {/* Placeholder when empty */}
-                                {!showHint && inputValue.length === 0 && (
+                                {hintLevel === 0 && inputValue.length === 0 && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-600 text-sm italic">
                                         Nhấn để gõ...
                                     </div>
@@ -397,8 +451,9 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                                     title="Nhập từ vựng"
                                     aria-label="Nhập từ vựng"
                                     value={inputValue}
+                                    readOnly={showAnswer || isCorrect === true}
                                     onChange={(e) => {
-                                        if (showAnswer) return;
+                                        if (showAnswer || isCorrect === true) return;
                                         const v = e.target.value;
                                         if (v.length <= word.word.length) setInputValue(v.toLowerCase());
                                     }}
@@ -469,29 +524,49 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                         <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">Hoặc nhấn Enter</p>
                     </motion.div>
                 ) : (
-                    /* ─── Correct: rate difficulty ─── */
+                    /* ─── Correct: auto rate difficulty ─── */
                     <motion.div
-                        key="rating-buttons"
+                        key="auto-rating"
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="w-full flex flex-col gap-3"
+                        className="flex flex-col items-center gap-4 w-full"
                     >
-                        <p className="text-center text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
-                            Đánh giá độ khó
-                        </p>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-                            {ratingButtons.map(({ quality, label, sublabel, color, border }) => (
-                                <button
-                                    key={quality}
-                                    onClick={() => handleReview(quality)}
-                                    disabled={isChecking}
-                                    className={`group flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl border-2 border-slate-800 bg-slate-900/50 ${border} shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50`}
-                                >
-                                    <span className={`text-sm font-black ${color} uppercase tracking-[0.08em]`}>{label}</span>
-                                    <span className="text-[10px] text-slate-500 font-semibold">{sublabel}</span>
-                                </button>
-                            ))}
-                        </div>
+                        {(() => {
+                            const finalRating = [
+                                { quality: 0, label: 'Quên mất', sublabel: getNextReviewLabel(0), color: 'text-rose-500', bg: 'bg-rose-500/10', border: 'border-rose-500/30' },
+                                { quality: 2, label: 'Nhớ kém', sublabel: getNextReviewLabel(2), color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/30' },
+                                { quality: 3, label: 'Khó nhớ', sublabel: getNextReviewLabel(3), color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/30' },
+                                { quality: 4, label: 'Nhớ được', sublabel: getNextReviewLabel(4), color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
+                                { quality: 5, label: 'Nhớ ngay', sublabel: getNextReviewLabel(5), color: 'text-teal-400', bg: 'bg-teal-400/10', border: 'border-teal-400/30' },
+                            ].find(r => r.quality === calculatedQuality) || { quality: calculatedQuality, label: 'Nhớ ngay', sublabel: getNextReviewLabel(5), color: 'text-teal-400', bg: 'bg-teal-400/10', border: 'border-teal-400/30' };
+
+                            return (
+                                <>
+                                    <div className={`w-full max-w-sm px-5 py-4 rounded-2xl ${finalRating.bg} border ${finalRating.border} flex items-center gap-3`}>
+                                        <div className={`size-10 rounded-xl ${finalRating.bg} border ${finalRating.border} flex items-center justify-center shrink-0`}>
+                                            <span className={`material-symbols-outlined ${finalRating.color} text-xl filled`}>
+                                                {calculatedQuality >= 4 ? 'verified' : 'fact_check'}
+                                            </span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className={`text-[10px] font-black ${finalRating.color} uppercase tracking-widest mb-0.5`}>Đánh giá: {finalRating.label}</p>
+                                            <p className="text-sm font-semibold text-slate-300 leading-snug">Ôn lại sau: {finalRating.sublabel}</p>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => handleReview(calculatedQuality)}
+                                        disabled={isChecking}
+                                        className="group relative w-full max-w-sm h-14 rounded-2xl bg-primary hover:bg-yellow-300 text-slate-900 font-black tracking-tight transition-all duration-300 shadow-[0_8px_25px_-8px_rgba(250,204,21,0.4)] hover:shadow-[0_12px_30px_-6px_rgba(250,204,21,0.5)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden flex items-center justify-center gap-2.5 disabled:opacity-50"
+                                    >
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                                        <span className="text-base relative z-10 uppercase tracking-widest">Tiếp tục ôn tập</span>
+                                        <span className="material-symbols-outlined text-xl relative z-10">arrow_forward</span>
+                                    </button>
+                                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em]">Hoặc nhấn Enter</p>
+                                </>
+                            );
+                        })()}
                     </motion.div>
                 )}
             </AnimatePresence>
