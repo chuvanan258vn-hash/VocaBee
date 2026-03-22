@@ -36,9 +36,9 @@ export default async function ReviewPage({
     let testVocabToday = 0;
     try {
         const vTest: any = await prisma.$queryRawUnsafe(
-            `SELECT COUNT(*) as count FROM Vocabulary WHERE userId = ? AND source = 'TEST' AND importanceScore >= 3 AND createdAt >= ?`,
+            `SELECT COUNT(*) as count FROM "Vocabulary" WHERE "userId" = $1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= $2`,
             user.id,
-            todayStart.toISOString()
+            todayStart
         );
         testVocabToday = Number(vTest[0]?.count || 0);
     } catch (_e) {
@@ -126,20 +126,20 @@ export default async function ReviewPage({
 
     // Similarly for grammar
     const alreadyReviewedGrammarRaw: { count: bigint }[] = await prisma.$queryRawUnsafe(`
-        SELECT COUNT(*) as count FROM GrammarCard 
-        WHERE userId = ? 
-          AND updatedAt >= ?
+        SELECT COUNT(*) as count FROM "GrammarCard" 
+        WHERE "userId" = $1 
+          AND "updatedAt" >= $2
           AND repetition > 1
-    `, user.id, todayStart.toISOString());
+    `, user.id, todayStart);
     const alreadyReviewedGrammarToday = Number(alreadyReviewedGrammarRaw[0]?.count || 0);
     const MAX_DAILY_GRAMMAR_REVIEWS = vUser.dailyMaxGrammarReview ?? 50;
     const remainingGrammarReviewQuota = isReviewAll ? 9999 : Math.max(0, MAX_DAILY_GRAMMAR_REVIEWS - alreadyReviewedGrammarToday);
 
     const grammarDueRaw: { count: bigint }[] = await prisma.$queryRawUnsafe(`
-        SELECT COUNT(*) as count FROM GrammarCard 
-        WHERE userId = ? AND interval > 0 AND nextReview <= ? AND isDeferred = 0
-        AND NOT (repetition = 1 AND updatedAt >= ? AND updatedAt < ?)
-    `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString());
+        SELECT COUNT(*) as count FROM "GrammarCard" 
+        WHERE "userId" = $1 AND interval > 0 AND "nextReview" <= $2 AND "isDeferred" = false
+        AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
+    `, user.id, now, yesterdayStart, todayStart);
     
     const maxGrammarQueryCount = Number(grammarDueRaw[0]?.count || 0);
     const effectiveGrammarDueCount = Math.min(maxGrammarQueryCount, remainingGrammarReviewQuota);
@@ -173,15 +173,15 @@ export default async function ReviewPage({
         // 1.5. Lấy các câu NGỮ PHÁP đến hạn (Priority 1), loại grammar mới học hôm qua
         const dueGrammarLimit = Math.min(GRAMMAR_SESSION_LIMIT, remainingGrammarReviewQuota);
         const dueGrammar: GrammarCard[] = (type === 'vocab') ? [] : await prisma.$queryRawUnsafe(`
-                SELECT * FROM GrammarCard 
-                WHERE userId = ? 
+                SELECT * FROM "GrammarCard" 
+                WHERE "userId" = $1 
                     AND interval > 0 
-                    AND nextReview <= ? 
-                    AND isDeferred = 0
-                    AND NOT (repetition = 1 AND updatedAt >= ? AND updatedAt < ?)
-                ORDER BY nextReview ASC 
-                LIMIT ?
-        `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString(), dueGrammarLimit);
+                    AND "nextReview" <= $2 
+                    AND "isDeferred" = false
+                    AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
+                ORDER BY "nextReview" ASC 
+                LIMIT $5
+        `, user.id, now, yesterdayStart, todayStart, dueGrammarLimit);
 
     // Calculate remaining slots for new items in this session
     const vocabSlotsLeft = Math.max(0, VOCAB_SESSION_LIMIT - dueWords.length);
@@ -226,12 +226,12 @@ export default async function ReviewPage({
         const fetchGrammarCount = Math.min(grammarSlotsLeft, canLearnMoreGrammarCount);
 
         newGrammar = await prisma.$queryRawUnsafe(`
-            SELECT * FROM GrammarCard 
-            WHERE userId = ? 
+            SELECT * FROM "GrammarCard" 
+            WHERE "userId" = $1 
               AND interval = 0 
-              AND isDeferred = 0
-            ORDER BY createdAt ASC 
-            LIMIT ?
+              AND "isDeferred" = false
+            ORDER BY "createdAt" ASC 
+            LIMIT $2
         `, user.id, fetchGrammarCount);
     }
 

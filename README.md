@@ -250,20 +250,32 @@ Chúng ta sử dụng thuật toán **SM-2** đã được cải tiến (giống
    ```bash
    npm install
    ```
-2. **Cấu hình môi trường:** Tạo file `.env` chứa `DATABASE_URL` (SQLite file: `file:./dev.db`) và `AUTH_SECRET`.
-3. **Migration database:**
-   ```bash
-   npx prisma migrate dev
+2. **Cấu hình môi trường:** Tạo file `.env` với các biến sau và `AUTH_SECRET`.
+   > Dự án hiện sử dụng **Supabase (PostgreSQL)** thay cho SQLite.
+   ```env
+   # Connection pooling (dùng cho ứng dụng)
+   DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+   # Direct connection (dùng cho Migration)
+   DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"
    ```
-4. **Xem giao diện Database / Dữ liệu:**
+3. **Đồng bộ Schema lên Database:**
+   ```bash
+   npx prisma db push
+   ```
+4. **Xem và quản lý Database:**
    ```bash
    npx prisma studio
    ```
-5. **Chạy server phát triển (Development Server):**
+5. **Chạy server phát triển:**
    ```bash
    npm run dev
    ```
 
+> [!TIP]
+> **Migrate dữ liệu từ SQLite cũ lên Supabase (chỉ thực hiện 1 lần):**
+> ```bash
+> npx tsx scripts/migrate_to_supabase.ts
+> ```
 ---
 
 _Phát triển bởi team VocaBee 🐝 – Học tập không giới hạn._
