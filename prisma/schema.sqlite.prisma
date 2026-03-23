@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/sqlite-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  password          String
+  name              String?
+  words             Vocabulary[]
+  grammarCards      GrammarCard[]
+  dailyNewWordGoal     Int          @default(20)
+  dailyNewGrammarGoal  Int          @default(10)
+  dailyMaxVocabReview  Int          @default(100)
+  dailyMaxGrammarReview Int         @default(50)
+  streakCount          Int          @default(0)
+  lastGoalMetDate      DateTime?
+  points               Int          @default(0)
+  streakFreeze         Int          @default(0)
+  createdAt         DateTime     @default(now())
+  securityQuestion  String?
+  securityAnswer    String?
+}
+
+model Vocabulary {
+  id            String   @id @default(uuid())
+  word          String
+  wordType      String?
+  meaning       String
+  pronunciation String?
+  example       String?
+  synonyms      String?
+  context       String?
+  
+  importanceScore Int      @default(0)
+  source          String   @default("COLLECTION")
+  isDeferred      Boolean  @default(false)
+
+  nextReview    DateTime @default(now())
+  interval      Int      @default(0)
+  repetition    Int      @default(0)
+  efactor       Float    @default(2.5)
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([word, userId])
+  @@index([userId, nextReview])
+  @@index([userId, repetition])
+  @@index([userId, updatedAt])
+}
+
+model GrammarCard {
+  id            String   @id @default(uuid())
+  type          String
+  prompt        String   
+  answer        String   
+  meaning       String?  
+  options       String?  
+  hint          String?  
+  explanation   String?  
+  myError       String?  
+  trap          String?  
+  goldenRule    String?  
+  tags          String?  
+  toeicPart       String?
+  grammarCategory String?
+  signalKeywords  String?
+  formula         String?
+
+  importanceScore Int      @default(0)
+  source          String   @default("COLLECTION")
+  isDeferred      Boolean  @default(false)
+
+  nextReview    DateTime @default(now())
+  interval      Int      @default(0)
+  repetition    Int      @default(0)
+  efactor       Float    @default(2.0)
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId, nextReview])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, token])
+}

@@ -328,41 +328,110 @@ export async function getDashboardStats() {
   const yesterdayStart = new Date(todayStart);
   yesterdayStart.setDate(yesterdayStart.getDate() - 1);
 
-  // 1. Count items successfully learned for the FIRST TIME today (interval: 0 -> interval > 0)
-  const learnedToday = await prisma.vocabulary.count({
-    where: {
-      userId: user.id,
-      updatedAt: { gte: todayStart },
-      repetition: 1
-    } as any
-  });
-
-  const learnedGrammarToday = await (prisma as any).grammarCard.count({
-    where: {
-      userId: user.id,
-      updatedAt: { gte: todayStart },
-      repetition: 1
-    }
-  });
-
-  // 2. Count items added YESTERDAY (unlearned)
-  const unlearnedYesterdayVocab = await prisma.vocabulary.count({
-    where: {
-      userId: user.id,
-      interval: 0,
-      isDeferred: false,
-      createdAt: { gte: yesterdayStart, lt: todayStart }
-    } as any
-  });
-
-  const unlearnedYesterdayGrammar = await (prisma as any).grammarCard.count({
-    where: {
-      userId: user.id,
-      interval: 0,
-      isDeferred: false,
-      createdAt: { gte: yesterdayStart, lt: todayStart }
-    }
-  });
+  // Group all independent sequential queries into a single Promise.all
+  const [
+    learnedToday,
+    learnedGrammarToday,
+    unlearnedYesterdayVocab,
+    unlearnedYesterdayGrammar,
+    availableNewVocabCount,
+    availableNewGrammarCount,
+    alreadyReviewedVocabToday,
+    rawVocabDueCount,
+    alreadyReviewedGrammarRaw,
+    grammarDue,
+    vTest,
+    wordTypesData
+  ] = await Promise.all([
+    // 1. Count items successfully learned for the FIRST TIME today (interval: 0 -> interval > 0)
+    prisma.vocabulary.count({
+      where: {
+        userId: user.id,
+        updatedAt: { gte: todayStart },
+        repetition: 1
+      } as any
+    }),
+    (prisma as any).grammarCard.count({
+      where: {
+        userId: user.id,
+        updatedAt: { gte: todayStart },
+        repetition: 1
+      }
+    }),
+    // 2. Count items added YESTERDAY (unlearned)
+    prisma.vocabulary.count({
+      where: {
+        userId: user.id,
+        interval: 0,
+        isDeferred: false,
+        createdAt: { gte: yesterdayStart, lt: todayStart }
+      } as any
+    }),
+    (prisma as any).grammarCard.count({
+      where: {
+        userId: user.id,
+        interval: 0,
+        isDeferred: false,
+        createdAt: { gte: yesterdayStart, lt: todayStart }
+      }
+    }),
+    // 4. Calculate actual available new items (interval = 0)
+    prisma.vocabulary.count({
+      where: { userId: user.id, interval: 0, isDeferred: false } as any
+    }),
+    (prisma as any).grammarCard.count({
+      where: { userId: user.id, interval: 0, isDeferred: false }
+    }),
+    // A. Vocabulary already reviewed today
+    prisma.vocabulary.count({
+      where: {
+        userId: user.id,
+        updatedAt: { gte: todayStart },
+        repetition: { gt: 1 }
+      } as any
+    }),
+    // rawVocabDueCount
+    prisma.vocabulary.count({
+      where: {
+        userId: user.id,
+        interval: { gt: 0 },
+        nextReview: { lte: now },
+        isDeferred: false
+      } as any
+    }),
+    // B. Grammar already reviewed
+    prisma.$queryRawUnsafe(`
+      SELECT COUNT(*) as count FROM "GrammarCard" 
+      WHERE "userId" = $1 
+        AND "updatedAt" >= $2
+        AND repetition > 1
+    `, user.id, todayStart) as Promise<{ count: bigint }[]>,
+    // rawGrammarDueCount
+    prisma.$queryRawUnsafe(`
+      SELECT COUNT(*) as count FROM "GrammarCard" 
+      WHERE "userId" = $1 
+        AND interval > 0 
+        AND "nextReview" <= $2 
+        AND "isDeferred" = false
+        AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
+    `, user.id, now, yesterdayStart, todayStart) as Promise<any[]>,
+    // testVocabToday
+    // Wrap in catch to handled un-migrated schema safely
+    prisma.$queryRawUnsafe(
+      `SELECT COUNT(*) as count FROM "Vocabulary" WHERE "userId" = $1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= $2`,
+      user.id,
+      todayStart
+    ).catch(() => {
+      console.log("Smart Capture columns not yet migrated, skipping test item count");
+      return [{ count: 0 }];
+    }) as Promise<any[]>,
+    // Fetch all unique word types for the user (for filtering)
+    prisma.vocabulary.findMany({
+      where: { userId: user.id },
+      select: { wordType: true },
+      distinct: ['wordType']
+    })
+  ]);
 
   // 3. Calculate Goals
   const vUser = user as unknown as VocaBeeUser;
@@ -371,14 +440,6 @@ export async function getDashboardStats() {
 
   const baseGrammarGoal = vUser.dailyNewGrammarGoal || 30;
   const totalGrammarGoal = baseGrammarGoal + unlearnedYesterdayGrammar;
-
-  // 4. Calculate actual available new items (interval = 0)
-  const availableNewVocabCount = await prisma.vocabulary.count({
-    where: { userId: user.id, interval: 0, isDeferred: false } as any
-  });
-  const availableNewGrammarCount = await (prisma as any).grammarCard.count({
-    where: { userId: user.id, interval: 0, isDeferred: false }
-  });
 
   // Calculate "Can Learn More" (Dynamic Goal Progress limited by available DB items)
   const canLearnMoreCount = Math.min(
@@ -392,51 +453,19 @@ export async function getDashboardStats() {
 
   // --- BANNER COUNTS ---
   // A. Vocabulary
-  // Count already reviewed today to cap daily backlog
-  const alreadyReviewedVocabToday = await prisma.vocabulary.count({
-    where: {
-      userId: user.id,
-      updatedAt: { gte: todayStart },
-      repetition: { gt: 1 }
-    } as any
-  });
   const MAX_DAILY_VOCAB_REVIEWS = vUser.dailyMaxVocabReview || 100;
   const remainingVocabReviewQuota = Math.max(0, MAX_DAILY_VOCAB_REVIEWS - alreadyReviewedVocabToday);
 
-  const rawVocabDueCount = await prisma.vocabulary.count({
-    where: {
-      userId: user.id,
-      interval: { gt: 0 },
-      nextReview: { lte: now },
-      isDeferred: false
-    } as any
-  });
   const vocabDueCount = Math.min(rawVocabDueCount, remainingVocabReviewQuota);
   const totalDueVocab = vocabDueCount + canLearnMoreCount;
 
   // B. Grammar
-  // For Grammar already reviewed
-  const alreadyReviewedGrammarRaw: { count: bigint }[] = await prisma.$queryRawUnsafe(`
-    SELECT COUNT(*) as count FROM "GrammarCard" 
-    WHERE "userId" = $1 
-      AND "updatedAt" >= $2
-      AND repetition > 1
-  `, user.id, todayStart);
   const alreadyReviewedGrammarToday = Number(alreadyReviewedGrammarRaw[0]?.count || 0);
   const MAX_DAILY_GRAMMAR_REVIEWS = vUser.dailyMaxGrammarReview || 50;
   const remainingGrammarReviewQuota = Math.max(0, MAX_DAILY_GRAMMAR_REVIEWS - alreadyReviewedGrammarToday);
 
-  const grammarDue: any[] = await prisma.$queryRawUnsafe(`
-    SELECT COUNT(*) as count FROM "GrammarCard" 
-    WHERE "userId" = $1 
-      AND interval > 0 
-      AND "nextReview" <= $2 
-      AND "isDeferred" = false
-      AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
-  `, user.id, now, yesterdayStart, todayStart);
-  
-  const rawGrammarDueCount = Number(grammarDue[0]?.count || 0);
-  const grammarDueCount = Math.min(rawGrammarDueCount, remainingGrammarReviewQuota);
+  const rawGrammarDueCountResolved = Number(grammarDue[0]?.count || 0);
+  const grammarDueCount = Math.min(rawGrammarDueCountResolved, remainingGrammarReviewQuota);
   const totalDueGrammar = grammarDueCount + canLearnMoreGrammarCount;
 
   let currentStreak = vUser.streakCount || 0;
@@ -459,45 +488,24 @@ export async function getDashboardStats() {
     }
   }
 
-  // Count "from_test_highprio" items added today
-  let testVocabToday = 0;
+  // testVocabToday processing
+  const testVocabTodayCount = Number(vTest[0]?.count || 0);
 
-  try {
-    const vTest: any = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*) as count FROM "Vocabulary" WHERE "userId" = $1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= $2`,
-      user.id,
-      todayStart
-    );
-    testVocabToday = Number(vTest[0]?.count || 0);
-  } catch (e) {
-    console.log("Smart Capture columns not yet migrated, skipping test item count");
-    testVocabToday = 0;
-  }
-
-  // Fetch all unique word types for the user (for filtering)
-  const wordTypesData = await prisma.vocabulary.findMany({
-    where: { userId: user.id },
-    select: { wordType: true },
-    distinct: ['wordType']
-  });
   const allWordTypes = wordTypesData
     .map(w => w.wordType?.trim())
-    .filter((w): w is string => !!w)
+    .filter(w => !!w)
     .sort();
 
-  const totalVocabGoalFinal = totalVocabGoal;
-  const totalGrammarGoalFinal = totalGrammarGoal;
-
   return {
-    dailyGoal: totalVocabGoalFinal + totalGrammarGoalFinal,
-    learnedToday: learnedToday,
+    dailyGoal: totalVocabGoal + totalGrammarGoal,
+    learnedToday,
     learnedGrammarToday,
-    testVocabToday,
+    testVocabToday: testVocabTodayCount,
     totalWords: user._count.words,
     dueReviews: totalDueVocab,
     dueGrammarCount: totalDueGrammar,
     rawVocabDueCount: rawVocabDueCount,
-    rawGrammarDueCount: rawGrammarDueCount,
+    rawGrammarDueCount: rawGrammarDueCountResolved,
     wordTypes: allWordTypes,
     streak: currentStreak,
     points: vUser.points || 0,

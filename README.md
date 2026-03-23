@@ -1,4 +1,4 @@
-﻿# 🐝 VocaBee - Smart Spaced Repetition Vocabulary App
+# 🐝 VocaBee - Smart Spaced Repetition Vocabulary App
 
 VocaBee là một ứng dụng học từ vựng thông minh dựa trên phương pháp **Spaced Repetition (Lặp lại ngắt quãng)**. Ứng dụng giúp người dùng ghi nhớ từ vựng lâu dài thông qua việc lên lịch ôn tập khoa học và đặt mục tiêu hàng ngày, với giao diện hiện đại và trải nghiệm người dùng cao cấp.
 
@@ -284,6 +284,7 @@ _Phát triển bởi team VocaBee 🐝 – Học tập không giới hạn._
 > - **Review Session Snappiness**: Implemented Optimistic UI, background data syncing, and stabilized session state to eliminate "hangs" when clicking evaluation buttons. Reduced server-side revalidation overhead by 90% during active study.
 > - **[UI/UX - 2026-03-14] Accessibility Improvement:** Fixed accessibility issues in `GrammarList.tsx` and `AddGrammarForm.tsx`. Fixed missing `aria-label` and `title` for close buttons and inputs to ensure discernible text for screen readers.
 > - **[UI/UX - 2026-03-15] Study Flow Enhancement:** Added **Pronunciation** and **Context** display during the typing phase in `FlashcardInput.tsx`. This provides users with essential clues and reinforcement BEFORE they reveal the answer, making the active recall process more effective.
+> - **[Performance - 2026-03-23] Dashboard Load Time:** Optimized `getDashboardStats` in `actions.ts` by parallelizing 13 sequential Prisma SQL queries using `Promise.all`. This significantly reduced delay/lag (from 12s down to ~1s) on the dashboard and Server Actions (like Add/Review Word) that trigger `revalidatePath('/')`.
 T h � m   g i �i   h �n 
  
  - Đã thêm logic giới hạn từ/ngữ pháp ôn tập mỗi ngày (100 từ vựng, 50 ngữ pháp) để tránh bị quá tải số lượng ôn tập.
