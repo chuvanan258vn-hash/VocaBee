@@ -72,10 +72,24 @@ export async function updateWordAction(id: string, formData: any) {
       return { error: "Không tìm thấy từ hoặc bạn không có quyền sửa." };
     }
 
+    const newWordText = formData.word?.trim().toLowerCase();
+    
+    if (newWordText && newWordText !== existingWord.word) {
+      const duplicateWord = await prisma.vocabulary.findFirst({
+        where: {
+          word: newWordText,
+          userId: user.id
+        }
+      });
+      if (duplicateWord) {
+        return { error: `Từ "${newWordText}" đã có trong tổ ong rồi! 🐝` };
+      }
+    }
+
     await prisma.vocabulary.update({
       where: { id: id },
       data: {
-        word: formData.word?.trim().toLowerCase(),
+        word: newWordText,
         wordType: formData.wordType,
         meaning: formData.meaning,
         pronunciation: formData.pronunciation,
