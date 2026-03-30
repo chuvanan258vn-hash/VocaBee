@@ -1,4 +1,4 @@
-﻿# 🐝 VocaBee - Smart Spaced Repetition Vocabulary App
+# 🐝 VocaBee - Smart Spaced Repetition Vocabulary App
 
 VocaBee là một ứng dụng học từ vựng thông minh dựa trên phương pháp **Spaced Repetition (Lặp lại ngắt quãng)**. Ứng dụng giúp người dùng ghi nhớ từ vựng lâu dài thông qua việc lên lịch ôn tập khoa học và đặt mục tiêu hàng ngày, với giao diện hiện đại và trải nghiệm người dùng cao cấp.
 
@@ -250,20 +250,32 @@ Chúng ta sử dụng thuật toán **SM-2** đã được cải tiến (giống
    ```bash
    npm install
    ```
-2. **Cấu hình môi trường:** Tạo file `.env` chứa `DATABASE_URL` (SQLite file: `file:./dev.db`) và `AUTH_SECRET`.
-3. **Migration database:**
-   ```bash
-   npx prisma migrate dev
+2. **Cấu hình môi trường:** Tạo file `.env` với các biến sau và `AUTH_SECRET`.
+   > Dự án hiện sử dụng **Supabase (PostgreSQL)** thay cho SQLite.
+   ```env
+   # Connection pooling (dùng cho ứng dụng)
+   DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+   # Direct connection (dùng cho Migration)
+   DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"
    ```
-4. **Xem giao diện Database / Dữ liệu:**
+3. **Đồng bộ Schema lên Database:**
+   ```bash
+   npx prisma db push
+   ```
+4. **Xem và quản lý Database:**
    ```bash
    npx prisma studio
    ```
-5. **Chạy server phát triển (Development Server):**
+5. **Chạy server phát triển:**
    ```bash
    npm run dev
    ```
 
+> [!TIP]
+> **Migrate dữ liệu từ SQLite cũ lên Supabase (chỉ thực hiện 1 lần):**
+> ```bash
+> npx tsx scripts/migrate_to_supabase.ts
+> ```
 ---
 
 _Phát triển bởi team VocaBee 🐝 – Học tập không giới hạn._
@@ -272,6 +284,7 @@ _Phát triển bởi team VocaBee 🐝 – Học tập không giới hạn._
 > - **Review Session Snappiness**: Implemented Optimistic UI, background data syncing, and stabilized session state to eliminate "hangs" when clicking evaluation buttons. Reduced server-side revalidation overhead by 90% during active study.
 > - **[UI/UX - 2026-03-14] Accessibility Improvement:** Fixed accessibility issues in `GrammarList.tsx` and `AddGrammarForm.tsx`. Fixed missing `aria-label` and `title` for close buttons and inputs to ensure discernible text for screen readers.
 > - **[UI/UX - 2026-03-15] Study Flow Enhancement:** Added **Pronunciation** and **Context** display during the typing phase in `FlashcardInput.tsx`. This provides users with essential clues and reinforcement BEFORE they reveal the answer, making the active recall process more effective.
+> - **[Performance - 2026-03-23] Dashboard Load Time:** Optimized `getDashboardStats` in `actions.ts` by parallelizing 13 sequential Prisma SQL queries using `Promise.all`. This significantly reduced delay/lag (from 12s down to ~1s) on the dashboard and Server Actions (like Add/Review Word) that trigger `revalidatePath('/')`.
 T h � m   g i �i   h �n 
  
  - Đã thêm logic giới hạn từ/ngữ pháp ôn tập mỗi ngày (100 từ vựng, 50 ngữ pháp) để tránh bị quá tải số lượng ôn tập.

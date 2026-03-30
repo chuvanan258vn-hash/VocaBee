@@ -29,7 +29,7 @@ export async function getAuthenticatedUser(): Promise<VocaBeeUser | null> {
         console.warn(`User not found by exact email: ${email}. Trying case-insensitive lookup.`);
         try {
             const users = await prisma.$queryRawUnsafe<any[]>(
-                `SELECT id FROM "User" WHERE LOWER(email) = LOWER(?) LIMIT 1`,
+                `SELECT id FROM "User" WHERE LOWER(email) = LOWER($1) LIMIT 1`,
                 email
             );
             if (users && users.length > 0) {

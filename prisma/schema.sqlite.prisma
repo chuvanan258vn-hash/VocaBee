@@ -1,13 +1,12 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/sqlite-client"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
-
 
 model User {
   id                String       @id @default(uuid())
@@ -32,25 +31,22 @@ model User {
 model Vocabulary {
   id            String   @id @default(uuid())
   word          String
-  wordType      String?  // Noun, Verb, Adj, etc.
+  wordType      String?
   meaning       String
   pronunciation String?
   example       String?
   synonyms      String?
-  context       String?  // Ngữ cảnh sử dụng từ vựng
+  context       String?
   
-  // Rule-based fields
-  importanceScore Int      @default(0) // 0-4 points
-  source          String   @default("COLLECTION") // COLLECTION or TEST
+  importanceScore Int      @default(0)
+  source          String   @default("COLLECTION")
   isDeferred      Boolean  @default(false)
 
-  // SRS fields
   nextReview    DateTime @default(now())
   interval      Int      @default(0)
   repetition    Int      @default(0)
   efactor       Float    @default(2.5)
 
-  // Relation to User
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -65,7 +61,7 @@ model Vocabulary {
 
 model GrammarCard {
   id            String   @id @default(uuid())
-  type          String   // CLOZE, PRODUCTION, ERROR_CORRECTION, MCQ, TRANSFORMATION, EXPLANATION
+  type          String
   prompt        String   
   answer        String   
   meaning       String?  
@@ -81,18 +77,15 @@ model GrammarCard {
   signalKeywords  String?
   formula         String?
 
-  // Rule-based fields
   importanceScore Int      @default(0)
   source          String   @default("COLLECTION")
   isDeferred      Boolean  @default(false)
 
-  // SRS fields
   nextReview    DateTime @default(now())
   interval      Int      @default(0)
   repetition    Int      @default(0)
   efactor       Float    @default(2.0)
 
-  // Relation to User
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

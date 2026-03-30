@@ -72,10 +72,24 @@ export async function updateWordAction(id: string, formData: any) {
       return { error: "Không tìm thấy từ hoặc bạn không có quyền sửa." };
     }
 
+    const newWordText = formData.word?.trim().toLowerCase();
+    
+    if (newWordText && newWordText !== existingWord.word) {
+      const duplicateWord = await prisma.vocabulary.findFirst({
+        where: {
+          word: newWordText,
+          userId: user.id
+        }
+      });
+      if (duplicateWord) {
+        return { error: `Từ "${newWordText}" đã có trong tổ ong rồi! 🐝` };
+      }
+    }
+
     await prisma.vocabulary.update({
       where: { id: id },
       data: {
-        word: formData.word?.trim().toLowerCase(),
+        word: newWordText,
         wordType: formData.wordType,
         meaning: formData.meaning,
         pronunciation: formData.pronunciation,
@@ -328,41 +342,110 @@ export async function getDashboardStats() {
   const yesterdayStart = new Date(todayStart);
   yesterdayStart.setDate(yesterdayStart.getDate() - 1);
 
-  // 1. Count items successfully learned for the FIRST TIME today (interval: 0 -> interval > 0)
-  const learnedToday = await prisma.vocabulary.count({
-    where: {
-      userId: user.id,
-      updatedAt: { gte: todayStart },
-      repetition: 1
-    } as any
-  });
-
-  const learnedGrammarToday = await (prisma as any).grammarCard.count({
-    where: {
-      userId: user.id,
-      updatedAt: { gte: todayStart },
-      repetition: 1
-    }
-  });
-
-  // 2. Count items added YESTERDAY (unlearned)
-  const unlearnedYesterdayVocab = await prisma.vocabulary.count({
-    where: {
-      userId: user.id,
-      interval: 0,
-      isDeferred: false,
-      createdAt: { gte: yesterdayStart, lt: todayStart }
-    } as any
-  });
-
-  const unlearnedYesterdayGrammar = await (prisma as any).grammarCard.count({
-    where: {
-      userId: user.id,
-      interval: 0,
-      isDeferred: false,
-      createdAt: { gte: yesterdayStart, lt: todayStart }
-    }
-  });
+  // Group all independent sequential queries into a single Promise.all
+  const [
+    learnedToday,
+    learnedGrammarToday,
+    unlearnedYesterdayVocab,
+    unlearnedYesterdayGrammar,
+    availableNewVocabCount,
+    availableNewGrammarCount,
+    alreadyReviewedVocabToday,
+    rawVocabDueCount,
+    alreadyReviewedGrammarRaw,
+    grammarDue,
+    vTest,
+    wordTypesData
+  ] = await Promise.all([
+    // 1. Count items successfully learned for the FIRST TIME today (interval: 0 -> interval > 0)
+    prisma.vocabulary.count({
+      where: {
+        userId: user.id,
+        updatedAt: { gte: todayStart },
+        repetition: 1
+      } as any
+    }),
+    (prisma as any).grammarCard.count({
+      where: {
+        userId: user.id,
+        updatedAt: { gte: todayStart },
+        repetition: 1
+      }
+    }),
+    // 2. Count items added YESTERDAY (unlearned)
+    prisma.vocabulary.count({
+      where: {
+        userId: user.id,
+        interval: 0,
+        isDeferred: false,
+        createdAt: { gte: yesterdayStart, lt: todayStart }
+      } as any
+    }),
+    (prisma as any).grammarCard.count({
+      where: {
+        userId: user.id,
+        interval: 0,
+        isDeferred: false,
+        createdAt: { gte: yesterdayStart, lt: todayStart }
+      }
+    }),
+    // 4. Calculate actual available new items (interval = 0)
+    prisma.vocabulary.count({
+      where: { userId: user.id, interval: 0, isDeferred: false } as any
+    }),
+    (prisma as any).grammarCard.count({
+      where: { userId: user.id, interval: 0, isDeferred: false }
+    }),
+    // A. Vocabulary already reviewed today
+    prisma.vocabulary.count({
+      where: {
+        userId: user.id,
+        updatedAt: { gte: todayStart },
+        repetition: { gt: 1 }
+      } as any
+    }),
+    // rawVocabDueCount
+    prisma.vocabulary.count({
+      where: {
+        userId: user.id,
+        interval: { gt: 0 },
+        nextReview: { lte: now },
+        isDeferred: false
+      } as any
+    }),
+    // B. Grammar already reviewed
+    prisma.$queryRawUnsafe(`
+      SELECT COUNT(*) as count FROM "GrammarCard" 
+      WHERE "userId" = $1 
+        AND "updatedAt" >= $2
+        AND repetition > 1
+    `, user.id, todayStart) as Promise<{ count: bigint }[]>,
+    // rawGrammarDueCount
+    prisma.$queryRawUnsafe(`
+      SELECT COUNT(*) as count FROM "GrammarCard" 
+      WHERE "userId" = $1 
+        AND interval > 0 
+        AND "nextReview" <= $2 
+        AND "isDeferred" = false
+        AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
+    `, user.id, now, yesterdayStart, todayStart) as Promise<any[]>,
+    // testVocabToday
+    // Wrap in catch to handled un-migrated schema safely
+    prisma.$queryRawUnsafe(
+      `SELECT COUNT(*) as count FROM "Vocabulary" WHERE "userId" = $1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= $2`,
+      user.id,
+      todayStart
+    ).catch(() => {
+      console.log("Smart Capture columns not yet migrated, skipping test item count");
+      return [{ count: 0 }];
+    }) as Promise<any[]>,
+    // Fetch all unique word types for the user (for filtering)
+    prisma.vocabulary.findMany({
+      where: { userId: user.id },
+      select: { wordType: true },
+      distinct: ['wordType']
+    })
+  ]);
 
   // 3. Calculate Goals
   const vUser = user as unknown as VocaBeeUser;
@@ -371,14 +454,6 @@ export async function getDashboardStats() {
 
   const baseGrammarGoal = vUser.dailyNewGrammarGoal || 30;
   const totalGrammarGoal = baseGrammarGoal + unlearnedYesterdayGrammar;
-
-  // 4. Calculate actual available new items (interval = 0)
-  const availableNewVocabCount = await prisma.vocabulary.count({
-    where: { userId: user.id, interval: 0, isDeferred: false } as any
-  });
-  const availableNewGrammarCount = await (prisma as any).grammarCard.count({
-    where: { userId: user.id, interval: 0, isDeferred: false }
-  });
 
   // Calculate "Can Learn More" (Dynamic Goal Progress limited by available DB items)
   const canLearnMoreCount = Math.min(
@@ -392,51 +467,19 @@ export async function getDashboardStats() {
 
   // --- BANNER COUNTS ---
   // A. Vocabulary
-  // Count already reviewed today to cap daily backlog
-  const alreadyReviewedVocabToday = await prisma.vocabulary.count({
-    where: {
-      userId: user.id,
-      updatedAt: { gte: todayStart },
-      repetition: { gt: 1 }
-    } as any
-  });
   const MAX_DAILY_VOCAB_REVIEWS = vUser.dailyMaxVocabReview || 100;
   const remainingVocabReviewQuota = Math.max(0, MAX_DAILY_VOCAB_REVIEWS - alreadyReviewedVocabToday);
 
-  const rawVocabDueCount = await prisma.vocabulary.count({
-    where: {
-      userId: user.id,
-      interval: { gt: 0 },
-      nextReview: { lte: now },
-      isDeferred: false
-    } as any
-  });
   const vocabDueCount = Math.min(rawVocabDueCount, remainingVocabReviewQuota);
   const totalDueVocab = vocabDueCount + canLearnMoreCount;
 
   // B. Grammar
-  // For Grammar already reviewed
-  const alreadyReviewedGrammarRaw: { count: bigint }[] = await prisma.$queryRawUnsafe(`
-    SELECT COUNT(*) as count FROM GrammarCard 
-    WHERE userId = ? 
-      AND updatedAt >= ?
-      AND repetition > 1
-  `, user.id, todayStart.toISOString());
   const alreadyReviewedGrammarToday = Number(alreadyReviewedGrammarRaw[0]?.count || 0);
   const MAX_DAILY_GRAMMAR_REVIEWS = vUser.dailyMaxGrammarReview || 50;
   const remainingGrammarReviewQuota = Math.max(0, MAX_DAILY_GRAMMAR_REVIEWS - alreadyReviewedGrammarToday);
 
-  const grammarDue: any[] = await prisma.$queryRawUnsafe(`
-    SELECT COUNT(*) as count FROM GrammarCard 
-    WHERE userId = ? 
-      AND interval > 0 
-      AND nextReview <= ? 
-      AND isDeferred = 0
-      AND NOT (repetition = 1 AND updatedAt >= ? AND updatedAt < ?)
-  `, user.id, now.toISOString(), yesterdayStart.toISOString(), todayStart.toISOString());
-  
-  const rawGrammarDueCount = Number(grammarDue[0]?.count || 0);
-  const grammarDueCount = Math.min(rawGrammarDueCount, remainingGrammarReviewQuota);
+  const rawGrammarDueCountResolved = Number(grammarDue[0]?.count || 0);
+  const grammarDueCount = Math.min(rawGrammarDueCountResolved, remainingGrammarReviewQuota);
   const totalDueGrammar = grammarDueCount + canLearnMoreGrammarCount;
 
   let currentStreak = vUser.streakCount || 0;
@@ -459,45 +502,24 @@ export async function getDashboardStats() {
     }
   }
 
-  // Count "from_test_highprio" items added today
-  let testVocabToday = 0;
+  // testVocabToday processing
+  const testVocabTodayCount = Number(vTest[0]?.count || 0);
 
-  try {
-    const vTest: any = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*) as count FROM Vocabulary WHERE userId = ? AND source = 'TEST' AND importanceScore >= 3 AND createdAt >= ?`,
-      user.id,
-      todayStart.toISOString()
-    );
-    testVocabToday = Number(vTest[0]?.count || 0);
-  } catch (e) {
-    console.log("Smart Capture columns not yet migrated, skipping test item count");
-    testVocabToday = 0;
-  }
-
-  // Fetch all unique word types for the user (for filtering)
-  const wordTypesData = await prisma.vocabulary.findMany({
-    where: { userId: user.id },
-    select: { wordType: true },
-    distinct: ['wordType']
-  });
   const allWordTypes = wordTypesData
     .map(w => w.wordType?.trim())
-    .filter((w): w is string => !!w)
+    .filter(w => !!w)
     .sort();
 
-  const totalVocabGoalFinal = totalVocabGoal;
-  const totalGrammarGoalFinal = totalGrammarGoal;
-
   return {
-    dailyGoal: totalVocabGoalFinal + totalGrammarGoalFinal,
-    learnedToday: learnedToday,
+    dailyGoal: totalVocabGoal + totalGrammarGoal,
+    learnedToday,
     learnedGrammarToday,
-    testVocabToday,
+    testVocabToday: testVocabTodayCount,
     totalWords: user._count.words,
     dueReviews: totalDueVocab,
     dueGrammarCount: totalDueGrammar,
     rawVocabDueCount: rawVocabDueCount,
-    rawGrammarDueCount: rawGrammarDueCount,
+    rawGrammarDueCount: rawGrammarDueCountResolved,
     wordTypes: allWordTypes,
     streak: currentStreak,
     points: vUser.points || 0,
@@ -513,10 +535,9 @@ export async function checkWordsExistenceAction(words: string[]) {
   console.log(`[ExistenceCheck] Checking ${trimmedWords.length} words for user ${user.id}:`, trimmedWords);
 
   try {
-    // Use raw query for case-insensitive matching across different DB environments (SQLite/Postgres)
-    // For SQLite, we use LOWER(word) and LOWER(?)
-    const placeholders = trimmedWords.map(() => 'LOWER(?)').join(',');
-    const query = `SELECT * FROM Vocabulary WHERE userId = ? AND LOWER(word) IN (${placeholders})`;
+    // Use raw query for case-insensitive matching - PostgreSQL style
+    const placeholders = trimmedWords.map((_, i) => `$${i + 2}`).join(',');
+    const query = `SELECT * FROM "Vocabulary" WHERE "userId" = $1 AND LOWER(word) IN (${placeholders})`;
     
     const existingWords: any[] = await prisma.$queryRawUnsafe(
       query,
@@ -583,8 +604,8 @@ export async function addGrammarCardAction(data: {
   try {
     // Use raw SQL to avoid Prisma client sync issues
     await prisma.$executeRawUnsafe(
-      `INSERT INTO GrammarCard (id, userId, type, prompt, answer, meaning, options, hint, explanation, myError, trap, goldenRule, tags, interval, repetition, efactor, nextReview, createdAt, updatedAt, isDeferred, source, importanceScore) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 2.0, ?, ?, ?, 0, 'MANUAL', 0)`,
+      `INSERT INTO "GrammarCard" (id, "userId", type, prompt, answer, meaning, options, hint, explanation, "myError", trap, "goldenRule", tags, interval, repetition, efactor, "nextReview", "createdAt", "updatedAt", "isDeferred", source, "importanceScore") 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 0, 0, 2.0, $14, $15, $16, false, 'MANUAL', 0)`,
       crypto.randomUUID(),
       user.id,
       data.type,
@@ -598,9 +619,9 @@ export async function addGrammarCardAction(data: {
       data.trap || null,
       data.goldenRule || null,
       data.tags || null,
-      new Date().toISOString(),
-      new Date().toISOString(),
-      new Date().toISOString()
+      new Date(),
+      new Date(),
+      new Date()
     );
 
     revalidatePath('/');
@@ -652,12 +673,12 @@ export async function reviewGrammarCardAction(id: string, grade: number) {
     // locale strings (e.g. "Mon Jul 06 2026 04:00:00 GMT+0700") which breaks
     // SQLite date comparisons (they become lexicographic string comparisons).
     await prisma.$executeRawUnsafe(
-      `UPDATE GrammarCard SET interval = ?, repetition = ?, efactor = ?, nextReview = ?, updatedAt = ? WHERE id = ?`,
+      `UPDATE "GrammarCard" SET interval = $1, repetition = $2, efactor = $3, "nextReview" = $4, "updatedAt" = $5 WHERE id = $6`,
       nextInterval,
       nextRepetition,
       nextEfactor,
-      nextReviewDate.toISOString(),
-      new Date().toISOString(),
+      nextReviewDate,
+      new Date(),
       id
     );
 
@@ -919,21 +940,21 @@ export async function seedGrammarCardsAction() {
       } else {
         // Raw SQL fallback logic (update or insert)
         const existing: any = await prisma.$queryRawUnsafe(
-          `SELECT id FROM GrammarCard WHERE prompt = ? AND userId = ? LIMIT 1`,
+          `SELECT id FROM "GrammarCard" WHERE prompt = $1 AND "userId" = $2 LIMIT 1`,
           card.prompt, user.id
         );
 
         if (existing && existing.length > 0) {
           await prisma.$executeRawUnsafe(
-            `UPDATE GrammarCard SET hint = ? WHERE id = ?`,
+            `UPDATE "GrammarCard" SET hint = $1 WHERE id = $2`,
             card.hint, existing[0].id
           );
         } else {
           await prisma.$executeRawUnsafe(
-            `INSERT INTO GrammarCard (id, type, prompt, answer, options, hint, explanation, tags, userId, nextReview, interval, repetition, efactor) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO "GrammarCard" (id, type, prompt, answer, options, hint, explanation, tags, "userId", "nextReview", interval, repetition, efactor) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, 0, 2.0)`,
             crypto.randomUUID(), card.type, card.prompt, card.answer, card.options || null, card.hint || "", card.explanation, card.tags, user.id,
-            new Date().toISOString(), 0, 0, 2.0
+            new Date()
           );
           createdCount++;
         }
@@ -982,7 +1003,7 @@ export async function importGrammarCardsAction(cards: any[]) {
         } else {
           // Fallback Raw Query to check existence
           const check = await prisma.$queryRawUnsafe<any[]>(
-            `SELECT id FROM GrammarCard WHERE prompt = ? AND userId = ? LIMIT 1`,
+            `SELECT id FROM "GrammarCard" WHERE prompt = $1 AND "userId" = $2 LIMIT 1`,
             promptTrim,
             user.id
           );
@@ -1063,7 +1084,7 @@ export async function generateGrammarHintsAction() {
       });
     } else {
       cards = await prisma.$queryRawUnsafe(
-        `SELECT * FROM GrammarCard WHERE userId = ? AND (hint = '' OR hint IS NULL)`,
+        `SELECT * FROM "GrammarCard" WHERE "userId" = $1 AND (hint = '' OR hint IS NULL)`,
         user.id
       );
     }
@@ -1097,7 +1118,7 @@ export async function generateGrammarHintsAction() {
         });
       } else {
         await prisma.$executeRawUnsafe(
-          `UPDATE GrammarCard SET hint = ? WHERE id = ?`,
+          `UPDATE "GrammarCard" SET hint = $1 WHERE id = $2`,
           smartHint, card.id
         );
       }
@@ -1169,20 +1190,20 @@ export async function smartCaptureAction(data: {
     if (data.word) {
       // Vocabulary capture - Using raw SQL fallback for new fields
       await prisma.$executeRawUnsafe(
-        `INSERT INTO Vocabulary (id, word, wordType, meaning, example, importanceScore, source, isDeferred, userId, nextReview, interval, repetition, efactor, createdAt, updatedAt) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO "Vocabulary" (id, word, "wordType", meaning, example, "importanceScore", source, "isDeferred", "userId", "nextReview", interval, repetition, efactor, "createdAt", "updatedAt") 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, 0, 2.5, $11, $12)`,
         crypto.randomUUID(), data.word.trim(), data.wordType || null, data.meaning || "", data.example || null,
-        data.importanceScore, data.source, isDeferred ? 1 : 0, user.id,
-        new Date().toISOString(), 0, 0, 2.5, new Date().toISOString(), new Date().toISOString()
+        data.importanceScore, data.source, isDeferred, user.id,
+        new Date(), new Date(), new Date()
       );
     } else if (data.prompt) {
       // Grammar capture
       await prisma.$executeRawUnsafe(
-        `INSERT INTO GrammarCard (id, type, prompt, answer, importanceScore, source, isDeferred, userId, tags, explanation, hint, nextReview, interval, repetition, efactor, createdAt, updatedAt) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO "GrammarCard" (id, type, prompt, answer, "importanceScore", source, "isDeferred", "userId", tags, explanation, hint, "nextReview", interval, repetition, efactor, "createdAt", "updatedAt") 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 0, 0, 2.0, $13, $14)`,
         crypto.randomUUID(), data.type || "PRODUCTION", data.prompt.trim(), data.answer || "",
-        data.importanceScore, data.source, isDeferred ? 1 : 0, user.id, tagPrefix, data.explanation || "", data.hint || "",
-        new Date().toISOString(), 0, 0, 2.0, new Date().toISOString(), new Date().toISOString()
+        data.importanceScore, data.source, isDeferred, user.id, tagPrefix, data.explanation || "", data.hint || "",
+        new Date(), new Date(), new Date()
       );
     }
 
@@ -1203,12 +1224,12 @@ export async function getDeferredItemsAction() {
 
   try {
     const vocab: any[] = await prisma.$queryRawUnsafe(
-      `SELECT * FROM Vocabulary WHERE userId = ? AND isDeferred = 1 ORDER BY createdAt DESC`,
+      `SELECT * FROM "Vocabulary" WHERE "userId" = $1 AND "isDeferred" = true ORDER BY "createdAt" DESC`,
       user.id
     );
 
     const grammar: any[] = await prisma.$queryRawUnsafe(
-      `SELECT * FROM GrammarCard WHERE userId = ? AND isDeferred = 1 ORDER BY createdAt DESC`,
+      `SELECT * FROM "GrammarCard" WHERE "userId" = $1 AND "isDeferred" = true ORDER BY "createdAt" DESC`,
       user.id
     );
 
@@ -1225,11 +1246,11 @@ export async function manageInboxItemAction(id: string, type: "VOCAB" | "GRAMMAR
 
   try {
     if (action === "DELETE") {
-      const table = type === "VOCAB" ? "Vocabulary" : "GrammarCard";
-      await prisma.$executeRawUnsafe(`DELETE FROM ${table} WHERE id = ?`, id);
+      const table = type === "VOCAB" ? '"Vocabulary"' : '"GrammarCard"';
+      await prisma.$executeRawUnsafe(`DELETE FROM ${table} WHERE id = $1`, id);
     } else {
-      const table = type === "VOCAB" ? "Vocabulary" : "GrammarCard";
-      await prisma.$executeRawUnsafe(`UPDATE ${table} SET isDeferred = 0 WHERE id = ?`, id);
+      const table = type === "VOCAB" ? '"Vocabulary"' : '"GrammarCard"';
+      await prisma.$executeRawUnsafe(`UPDATE ${table} SET "isDeferred" = false WHERE id = $1`, id);
     }
 
     revalidatePath('/inbox');
@@ -1444,14 +1465,14 @@ export async function getDetailedStatsAction() {
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     oneYearAgo.setHours(0, 0, 0, 0);
 
-    // SQLite raw query to group by day
+    // PostgreSQL raw query to group by day
     const heatmapData: any[] = await prisma.$queryRawUnsafe(`
       SELECT date, COUNT(*) as count FROM (
-        SELECT strftime('%Y-%m-%d', updatedAt) as date FROM Vocabulary WHERE userId = ? AND updatedAt >= ?
+        SELECT TO_CHAR("updatedAt", 'YYYY-MM-DD') as date FROM "Vocabulary" WHERE "userId" = $1 AND "updatedAt" >= $2
         UNION ALL
-        SELECT strftime('%Y-%m-%d', updatedAt) as date FROM GrammarCard WHERE userId = ? AND updatedAt >= ?
-      ) GROUP BY date ORDER BY date ASC
-    `, userBase.id, oneYearAgo.toISOString(), userBase.id, oneYearAgo.toISOString());
+        SELECT TO_CHAR("updatedAt", 'YYYY-MM-DD') as date FROM "GrammarCard" WHERE "userId" = $3 AND "updatedAt" >= $4
+      ) sub GROUP BY date ORDER BY date ASC
+    `, userBase.id, oneYearAgo, userBase.id, oneYearAgo);
 
     // 3. Retention Rate (Mocked or % of EF > 2.0)
     const stableItems = mastered + learning;
@@ -1536,8 +1557,8 @@ export async function saveToeicQuestionAction(data: {
 
   try {
     await prisma.$executeRawUnsafe(
-      `INSERT INTO GrammarCard (id, userId, type, prompt, answer, options, hint, explanation, tags, toeicPart, grammarCategory, signalKeywords, formula, goldenRule, interval, repetition, efactor, nextReview, createdAt, updatedAt, isDeferred, source, importanceScore)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 2.0, ?, ?, ?, 0, 'TOEIC', 0)`,
+      `INSERT INTO "GrammarCard" (id, "userId", type, prompt, answer, options, hint, explanation, tags, "toeicPart", "grammarCategory", "signalKeywords", formula, "goldenRule", interval, repetition, efactor, "nextReview", "createdAt", "updatedAt", "isDeferred", source, "importanceScore")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 0, 0, 2.0, $15, $16, $17, false, 'TOEIC', 0)`,
       crypto.randomUUID(),
       user.id,
       cardType,
@@ -1552,9 +1573,9 @@ export async function saveToeicQuestionAction(data: {
       data.signalKeywords || null,
       data.formula || null,
       goldenRule,
-      new Date().toISOString(),
-      new Date().toISOString(),
-      new Date().toISOString()
+      new Date(),
+      new Date(),
+      new Date()
     );
 
     revalidatePath('/');
@@ -1573,35 +1594,36 @@ export async function getWeakCategoriesAction() {
     const results: any[] = await prisma.$queryRawUnsafe(`
       WITH CategoryStats AS (
         SELECT 
-          grammarCategory,
-          toeicPart,
-          COUNT(CASE WHEN repetition = 0 AND interval > 0 THEN 1 END) AS failureCount,
-          COUNT(*) AS totalCards,
-          AVG(efactor) AS avgEF,
-          MAX(updatedAt) AS lastActive
-        FROM GrammarCard
-        WHERE userId = ? 
-          AND toeicPart IS NOT NULL 
-          AND grammarCategory IS NOT NULL
-          AND grammarCategory != ''
-        GROUP BY grammarCategory
-        HAVING totalCards >= 2
+          "grammarCategory",
+          "toeicPart",
+          COUNT(CASE WHEN repetition = 0 AND interval > 0 THEN 1 END) AS "failureCount",
+          COUNT(*) AS "totalCards",
+          AVG(efactor) AS "avgEF",
+          MAX("updatedAt") AS "lastActive"
+        FROM "GrammarCard"
+        WHERE "userId" = $1 
+          AND "toeicPart" IS NOT NULL 
+          AND "grammarCategory" IS NOT NULL
+          AND "grammarCategory" != ''
+        GROUP BY "grammarCategory", "toeicPart"
+        HAVING COUNT(*) >= 2
       )
       SELECT 
-        grammarCategory,
-        toeicPart,
-        failureCount,
-        totalCards,
-        ROUND(avgEF, 2) AS avgEF,
-        lastActive,
+        "grammarCategory",
+        "toeicPart",
+        "failureCount",
+        "totalCards",
+        ROUND(CAST("avgEF" AS NUMERIC), 2) AS "avgEF",
+        "lastActive",
         ROUND(
-          (CAST(failureCount AS REAL) / (failureCount + (totalCards - failureCount) + 1))
-          * (1.0 / (1.0 + (julianday('now') - julianday(lastActive)) * 0.1))
-          * (1.0 / avgEF),
-          4
-        ) AS weaknessScore
+          CAST(
+            (CAST("failureCount" AS FLOAT) / ("failureCount" + ("totalCards" - "failureCount") + 1))
+            * (1.0 / (1.0 + EXTRACT(EPOCH FROM (NOW() - "lastActive")) / 86400 * 0.1))
+            * (1.0 / NULLIF("avgEF", 0))
+          AS NUMERIC), 4
+        ) AS "weaknessScore"
       FROM CategoryStats
-      ORDER BY weaknessScore DESC
+      ORDER BY "weaknessScore" DESC
       LIMIT 3
     `, user.id);
 

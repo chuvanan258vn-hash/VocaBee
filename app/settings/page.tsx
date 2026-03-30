@@ -3,10 +3,8 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/user';
 import Sidebar from '@/components/Sidebar';
-import { getDashboardStats } from '@/app/actions';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import SettingsForm from '@/components/SettingsForm';
-import { Settings, Save } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
