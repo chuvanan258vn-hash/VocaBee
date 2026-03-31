@@ -183,6 +183,24 @@ body {
   background: rgba(245, 158, 11, 0.5);
 }
 
+/* Slim scrollbar for dark panels (slate-colored) */
+.scrollbar-slim::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-slim::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4); /* slate-500 */
+  border-radius: 99px;
+}
+
+.scrollbar-slim::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6); /* slate-400 */
+}
+
 .text-shadow-gold {
   text-shadow: 0 0 12px var(--primary-glow);
 }

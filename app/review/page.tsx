@@ -172,16 +172,26 @@ export default async function ReviewPage({
 
         // 1.5. Lấy các câu NGỮ PHÁP đến hạn (Priority 1), loại grammar mới học hôm qua
         const dueGrammarLimit = Math.min(GRAMMAR_SESSION_LIMIT, remainingGrammarReviewQuota);
-        const dueGrammar: GrammarCard[] = (type === 'vocab') ? [] : await prisma.$queryRawUnsafe(`
+        let dueGrammar: GrammarCard[] = [];
+        if (type !== 'vocab') {
+            let filterString = ``;
+            if (type === 'toeic_p5') filterString = `AND type = 'TOEIC_P5'`;
+            else if (type === 'toeic_p6') filterString = `AND type = 'TOEIC_P6'`;
+            else if (type === 'toeic_p7') filterString = `AND type = 'TOEIC_P7'`;
+            else if (type === 'grammar_other') filterString = `AND type NOT IN ('TOEIC_P5', 'TOEIC_P6', 'TOEIC_P7')`;
+
+            dueGrammar = await prisma.$queryRawUnsafe(`
                 SELECT * FROM "GrammarCard" 
                 WHERE "userId" = $1 
                     AND interval > 0 
                     AND "nextReview" <= $2 
                     AND "isDeferred" = false
                     AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
+                    ${filterString}
                 ORDER BY "nextReview" ASC 
                 LIMIT $5
-        `, user.id, now, yesterdayStart, todayStart, dueGrammarLimit);
+            `, user.id, now, yesterdayStart, todayStart, dueGrammarLimit);
+        }
 
     // Calculate remaining slots for new items in this session
     const vocabSlotsLeft = Math.max(0, VOCAB_SESSION_LIMIT - dueWords.length);
@@ -224,12 +234,19 @@ export default async function ReviewPage({
     let newGrammar: GrammarCard[] = [];
     if (grammarSlotsLeft > 0 && canLearnMoreGrammarCount > 0 && type !== 'vocab') {
         const fetchGrammarCount = Math.min(grammarSlotsLeft, canLearnMoreGrammarCount);
+        
+        let newFilterString = ``;
+        if (type === 'toeic_p5') newFilterString = `AND type = 'TOEIC_P5'`;
+        else if (type === 'toeic_p6') newFilterString = `AND type = 'TOEIC_P6'`;
+        else if (type === 'toeic_p7') newFilterString = `AND type = 'TOEIC_P7'`;
+        else if (type === 'grammar_other') newFilterString = `AND type NOT IN ('TOEIC_P5', 'TOEIC_P6', 'TOEIC_P7')`;
 
         newGrammar = await prisma.$queryRawUnsafe(`
             SELECT * FROM "GrammarCard" 
             WHERE "userId" = $1 
               AND interval = 0 
               AND "isDeferred" = false
+              ${newFilterString}
             ORDER BY "createdAt" ASC 
             LIMIT $2
         `, user.id, fetchGrammarCount);

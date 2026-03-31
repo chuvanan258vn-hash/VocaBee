@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { reviewWordAction } from '@/app/actions';
 import { useToast } from './ToastProvider';
 import { speak, normalizeWordType, getWordTypeStyles } from '@/lib/utils';
 import { calculateSm2 } from '@/lib/sm2';
@@ -22,10 +21,12 @@ interface FlashcardInputProps {
         interval: number;
         efactor: number;
     };
-    onNext: () => void;
+    onNext: (result?: { id: string; quality: number; type: 'vocab'; isTypingBonus?: boolean }) => void;
+    /** Called immediately when the answer outcome is known, before user clicks TIẾP TỤC */
+    onResult?: (result: { id: string; quality: number; type: 'vocab'; isTypingBonus?: boolean }) => void;
 }
 
-export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
+export default function FlashcardInput({ word, onNext, onResult }: FlashcardInputProps) {
     const { showToast } = useToast();
     const [inputValue, setInputValue] = useState('');
     const [isChecking, setIsChecking] = useState(false);
@@ -33,6 +34,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
     const [showAnswer, setShowAnswer] = useState(false);
     const [shake, setShake] = useState(false);
     const [hintLevel, setHintLevel] = useState(0);
+    const [errorCount, setErrorCount] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Reset when word changes
@@ -41,6 +43,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
         setIsCorrect(null);
         setShowAnswer(false);
         setHintLevel(0);
+        setErrorCount(0);
         const t = setTimeout(() => inputRef.current?.focus(), 80);
         return () => clearTimeout(t);
     }, [word.id]);
@@ -133,7 +136,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                 if (!active) return;
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    handleReview(calculatedQuality);
+                    handleNextSuccess(calculatedQuality);
                 }
             };
             window.addEventListener('keydown', handleEnter);
@@ -151,14 +154,20 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
         if (cleanInput === cleanAnswer) {
             setIsCorrect(true);
             speak(word.word);
-            if (hintLevel === 0) triggerConfetti();
+            if (hintLevel === 0 && errorCount === 0) triggerConfetti();
             
+            // Notify parent immediately (before TIẾP TỤC is clicked)
+            const quality = hintLevel === 0 ? 5 : hintLevel === 1 ? 4 : hintLevel === 2 ? 3 : 2;
+            const isBonus = quality >= 4 && errorCount === 0 && hintLevel === 0;
+            onResult?.({ id: word.id, quality, type: 'vocab', isTypingBonus: isBonus });
+
             // Wait 800ms before showing the Result screen to let user see green text
             setTimeout(() => {
                 setShowAnswer(true);
             }, 800);
         } else {
             setIsCorrect(false);
+            setErrorCount(prev => prev + 1);
             setShake(true);
             setTimeout(() => setShake(false), 500);
         }
@@ -168,12 +177,10 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
         if (e.key === 'Enter') { e.preventDefault(); handleCheckAnswer(); }
     };
 
-    const handleReview = async (quality: number) => {
+    const handleNextSuccess = async (quality: number) => {
         setIsChecking(true);
-        const isTypingBonus = isCorrect === true && hintLevel === 0 && quality >= 4;
-        onNext();
-        const result = await reviewWordAction(word.id, quality, isTypingBonus);
-        if (!result.success) showToast(result.error || 'Lỗi khi cập nhật', 'error');
+        const isBonus = quality >= 4 && errorCount === 0 && hintLevel === 0;
+        onNext({ id: word.id, quality, type: 'vocab', isTypingBonus: isBonus });
         setIsChecking(false);
     };
 
@@ -486,7 +493,13 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                             </button>
 
                             <button
-                                onClick={() => { setShowAnswer(true); setIsCorrect(false); speak(word.word); }}
+                                onClick={() => {
+                                    setShowAnswer(true);
+                                    setIsCorrect(false);
+                                    speak(word.word);
+                                    // Notify parent: skipped = quality 0
+                                    onResult?.({ id: word.id, quality: 0, type: 'vocab', isTypingBonus: false });
+                                }}
                                 className="flex items-center gap-1.5 px-5 py-3 rounded-2xl font-bold text-xs text-slate-500 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 hover:bg-rose-500/5 transition-all duration-300 uppercase tracking-widest"
                             >
                                 <span className="material-symbols-outlined text-[16px] opacity-70">visibility</span>
@@ -513,7 +526,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                         </div>
 
                         <button
-                            onClick={() => handleReview(0)}
+                            onClick={() => handleNextSuccess(0)}
                             disabled={isChecking}
                             className="group relative w-full max-w-sm h-14 rounded-2xl bg-primary hover:bg-yellow-300 text-slate-900 font-black tracking-tight transition-all duration-300 shadow-[0_8px_25px_-8px_rgba(250,204,21,0.4)] hover:shadow-[0_12px_30px_-6px_rgba(250,204,21,0.5)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden flex items-center justify-center gap-2.5 disabled:opacity-50"
                         >
@@ -555,7 +568,7 @@ export default function FlashcardInput({ word, onNext }: FlashcardInputProps) {
                                     </div>
 
                                     <button
-                                        onClick={() => handleReview(calculatedQuality)}
+                                        onClick={() => handleNextSuccess(calculatedQuality)}
                                         disabled={isChecking}
                                         className="group relative w-full max-w-sm h-14 rounded-2xl bg-primary hover:bg-yellow-300 text-slate-900 font-black tracking-tight transition-all duration-300 shadow-[0_8px_25px_-8px_rgba(250,204,21,0.4)] hover:shadow-[0_12px_30px_-6px_rgba(250,204,21,0.5)] hover:scale-[1.02] active:scale-[0.98] overflow-hidden flex items-center justify-center gap-2.5 disabled:opacity-50"
                                     >

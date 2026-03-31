@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { reviewWordAction } from '@/app/actions';
+// import { reviewWordAction } from '@/app/actions'; // Removed for batch updating
 import { useToast } from './ToastProvider';
 import { speak, normalizeWordType, getWordTypeStyles } from '@/lib/utils';
 import { calculateSm2 } from '@/lib/sm2';
@@ -21,7 +21,7 @@ interface FlashcardProps {
         interval: number;
         efactor: number;
     };
-    onNext: () => void;
+    onNext: (result?: { id: string; quality: number; type: 'vocab' | 'grammar'; isTypingBonus?: boolean }) => void;
 }
 
 const StatusBadge = ({ repetition, interval }: { repetition: number; interval: number }) => {
@@ -82,14 +82,8 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
     }, [word.id]);
 
     const handleReview = async (quality: number) => {
-        // Optimistic update: move to next card immediately
-        onNext();
-        
-        // Handle server update in background
-        const result = await reviewWordAction(word.id, quality);
-        if (!result.success) {
-            showToast(result.error || "Lỗi khi cập nhật", "error");
-        }
+        // Optimistic local update via queueing instead of calling server directly
+        onNext({ id: word.id, quality, type: 'vocab' });
     };
 
     const getNextReviewLabel = (quality: number) => {

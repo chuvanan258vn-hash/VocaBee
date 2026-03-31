@@ -54,13 +54,26 @@ Part 6: xem hình tôi gửi đây đừng quan tâm những trước đó và l
 - liệt kê ý chính trọng điểm giúp tìm ra đáp án khi làm phần reading
 - liệt kê các từ vựng nghĩa tiếng việt từ, phiên âm, loại từ
 
-Part 7: xem hình tôi gửi đây đừng quan tâm những trước đó và làm theo các yêu sau cho câu 156-159
+Part 7: xem hình tôi gửi đây đừng quan tâm những trước đó và làm theo các yêu sau cho câu 164-167
+
 - dịch: 
-   + song ngữ đoạn văn DỊCH CẢ BÀI, hãy dịch song ngữ từng đoạn
+
+   + hãy tách từng đoạn câu trong bài văn và dịch song ngữ cho dễ xem 
+
+vd: 
+
+Vimalo Brands has partnered with Vancouver-area farms to obtain produce and meat for the Nutridinna line.
+
+Vimalo Brands đã hợp tác với các trang trại ở khu vực Vancouver để thu mua nông sản và thịt cho dòng sản phẩm Nutridinna.
+
    + câu hỏi 
+
    + và 4 đáp án a,b,c,d
+
 - liệt kê ý chính trọng điểm giúp tìm ra đáp án khi làm phần reading
+
 - liệt kê các từ vựng nghĩa tiếng việt từ, phiên âm, loại từ
+
 
 Trong bài thi TOIEC, hãy liệt kê từ vựng theo format Json như sau cho từng từ:
 [
@@ -75,7 +88,6 @@ Trong bài thi TOIEC, hãy liệt kê từ vựng theo format Json như sau cho 
     },
     ...
 ]
-
 example:
 [
   {
@@ -90,5 +102,4 @@ example:
   ........
 ]
 
-cho những từ sau: measure, terminals, leaves,extraordinary 
-feature,  assembling, fuel-efficient, Agenda item, Consultant, Pros and cons, feasible
+cho những từ sau:nature of,adjacent to, Geothermal, Courtesy, attic insulation,gutter,Magnetic,Thoroughness, Resemble, word of mouth,Crucial,Liaison,Biographical, Reliance, Prominently,Prototype, Reiterate, Appealing, 
