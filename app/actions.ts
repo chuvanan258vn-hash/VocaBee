@@ -258,6 +258,164 @@ export async function reviewWordAction(id: string, quality: number, isTypingBonu
   }
 }
 
+export async function batchReviewAction(results: { id: string; quality: number; type: 'vocab' | 'grammar'; isTypingBonus?: boolean }[]) {
+  const user = await getAuthenticatedUser();
+  if (!user) return { error: "Bạn cần đăng nhập để ôn tập! 🐝" };
+
+  try {
+    let totalPoints = 0;
+    const now = new Date();
+    const todayStart = new Date(now);
+    if (now.getHours() < 4) todayStart.setDate(todayStart.getDate() - 1);
+    todayStart.setHours(4, 0, 0, 0);
+    
+    // Separate by type to process them
+    const vocabResults = results.filter(r => r.type === 'vocab');
+    const grammarResults = results.filter(r => r.type === 'grammar');
+
+    // 1. Process Vocabularies
+    if (vocabResults.length > 0) {
+      const vocabIds = vocabResults.map(r => r.id);
+      const vocabItems = await prisma.vocabulary.findMany({
+        where: { id: { in: vocabIds }, userId: user.id }
+      });
+
+      // Use sequential raw updates for SQLite/Prisma compatibility
+      for (const item of vocabItems) {
+        const result = vocabResults.find(r => r.id === item.id);
+        if (!result) continue;
+
+        let pointsToAdd = 1;
+        if (result.quality >= 4) pointsToAdd += 1;
+        if (result.isTypingBonus && result.quality >= 4) pointsToAdd += 1;
+        totalPoints += pointsToAdd;
+
+        let { interval: nextInterval, repetition: nextRepetition, efactor: nextEfactor, nextReview: nextReviewDate } = calculateSm2({
+          interval: item.interval,
+          repetition: item.repetition,
+          efactor: item.efactor,
+          quality: result.quality
+        });
+
+        if (result.isTypingBonus && result.quality >= 4) {
+          nextEfactor = Math.min(nextEfactor + 0.1, 2.8);
+        }
+
+        await prisma.vocabulary.update({
+          where: { id: item.id },
+          data: {
+            interval: nextInterval,
+            repetition: nextRepetition,
+            efactor: nextEfactor,
+            nextReview: nextReviewDate
+          }
+        });
+      }
+    }
+
+    // 2. Process Grammar
+    if (grammarResults.length > 0) {
+      const grammarIds = grammarResults.map(r => r.id);
+      const grammarItems = await (prisma as any).grammarCard.findMany({
+        where: { id: { in: grammarIds }, userId: user.id }
+      });
+
+      for (const item of grammarItems) {
+        const result = grammarResults.find(r => r.id === item.id);
+        if (!result) continue;
+
+        let pointsToAdd = 1;
+        // grade mapping: 1->3, 2->4, 3->5
+        let quality = 0;
+        if (result.quality === 1) quality = 3;
+        if (result.quality === 2) quality = 4;
+        if (result.quality === 3) quality = 5;
+
+        if (result.quality >= 2) pointsToAdd += 1;
+        totalPoints += pointsToAdd;
+
+        const { interval: nextInterval, repetition: nextRepetition, efactor: nextEfactor, nextReview: nextReviewDate } = calculateSm2({
+          interval: item.interval,
+          repetition: item.repetition,
+          efactor: item.efactor,
+          quality: quality
+        });
+
+        await prisma.$executeRawUnsafe(
+          `UPDATE "GrammarCard" SET interval = $1, repetition = $2, efactor = $3, "nextReview" = $4, "updatedAt" = $5 WHERE id = $6`,
+          nextInterval,
+          nextRepetition,
+          nextEfactor,
+          nextReviewDate,
+          new Date(),
+          item.id
+        );
+      }
+    }
+
+    // 3. Update Points and Streak Logic
+    if (totalPoints > 0) {
+      // Use standard User fetch since points manipulation requires real user properties
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      const vUser = dbUser as unknown as VocaBeeUser;
+      const goal = vUser.dailyNewWordGoal || 20;
+      const lastGoalMetDate = vUser.lastGoalMetDate ? new Date(vUser.lastGoalMetDate) : null;
+      const alreadyMetToday = lastGoalMetDate && lastGoalMetDate >= todayStart;
+
+      let streakUpdateArgs: any = { points: { increment: totalPoints } };
+
+      if (!alreadyMetToday) {
+        const learnedToday = await prisma.vocabulary.count({
+          where: {
+            userId: user.id,
+            repetition: { gte: 1 },
+            updatedAt: { gte: todayStart }
+          }
+        });
+
+        if (learnedToday >= goal) {
+          let newStreak = 1;
+          let freezeUsed = false;
+
+          if (lastGoalMetDate) {
+            const yesterdayStart = new Date(todayStart);
+            yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
+            if (lastGoalMetDate >= yesterdayStart && lastGoalMetDate < todayStart) {
+              newStreak = (vUser.streakCount || 0) + 1;
+            } else if (vUser.streakFreeze > 0) {
+              const twoDaysAgo = new Date(yesterdayStart);
+              twoDaysAgo.setDate(twoDaysAgo.getDate() - 1);
+              if (lastGoalMetDate >= twoDaysAgo && lastGoalMetDate < yesterdayStart) {
+                newStreak = ((dbUser as any).streakCount || 0) + 1;
+                freezeUsed = true;
+              }
+            }
+          }
+
+          streakUpdateArgs = {
+            ...streakUpdateArgs,
+            streakCount: newStreak,
+            lastGoalMetDate: now,
+            points: { increment: totalPoints + 5 }, // +5 daily goal bonus
+            streakFreeze: freezeUsed ? { decrement: 1 } : undefined,
+          };
+        }
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: streakUpdateArgs
+      });
+    }
+
+    return { success: true };
+  } catch (_error) {
+    console.error("Error doing batch review:", _error);
+    return { error: "Lỗi lưu kết quả, vui lòng thử lại sau." };
+  }
+}
+
 export async function importWordsAction(words: any[]) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Bạn cần đăng nhập để nhập từ! 🐝" };
@@ -355,7 +513,9 @@ export async function getDashboardStats() {
     alreadyReviewedGrammarRaw,
     grammarDue,
     vTest,
-    wordTypesData
+    wordTypesData,
+    grammarDueByType,
+    grammarNewByType
   ] = await Promise.all([
     // 1. Count items successfully learned for the FIRST TIME today (interval: 0 -> interval > 0)
     prisma.vocabulary.count({
@@ -444,7 +604,25 @@ export async function getDashboardStats() {
       where: { userId: user.id },
       select: { wordType: true },
       distinct: ['wordType']
-    })
+    }),
+    // Aggregation for Grammar Due by Type
+    prisma.$queryRawUnsafe(`
+      SELECT type, COUNT(*) as count FROM "GrammarCard" 
+      WHERE "userId" = $1 
+        AND interval > 0 
+        AND "nextReview" <= $2 
+        AND "isDeferred" = false
+        AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
+      GROUP BY type
+    `, user.id, now, yesterdayStart, todayStart) as Promise<any[]>,
+    // Aggregation for New Grammar by Type
+    prisma.$queryRawUnsafe(`
+      SELECT type, COUNT(*) as count FROM "GrammarCard" 
+      WHERE "userId" = $1 
+        AND interval = 0 
+        AND "isDeferred" = false
+      GROUP BY type
+    `, user.id) as Promise<any[]>
   ]);
 
   // 3. Calculate Goals
@@ -481,6 +659,39 @@ export async function getDashboardStats() {
   const rawGrammarDueCountResolved = Number(grammarDue[0]?.count || 0);
   const grammarDueCount = Math.min(rawGrammarDueCountResolved, remainingGrammarReviewQuota);
   const totalDueGrammar = grammarDueCount + canLearnMoreGrammarCount;
+
+  // C. Calculate grammar segment breakdowns
+  const grammarBreakdown = {
+    part5: { due: 0, new: 0 },
+    part6: { due: 0, new: 0 },
+    part7: { due: 0, new: 0 },
+    other: { due: 0, new: 0 }
+  };
+
+  if (grammarDueByType) {
+    grammarDueByType.forEach(row => {
+      const type = row.type;
+      const count = Number(row.count);
+      if (type === 'TOEIC_P5') grammarBreakdown.part5.due += count;
+      else if (type === 'TOEIC_P6') grammarBreakdown.part6.due += count;
+      else if (type === 'TOEIC_P7') grammarBreakdown.part7.due += count;
+      else grammarBreakdown.other.due += count;
+    });
+  }
+
+  if (grammarNewByType) {
+    grammarNewByType.forEach(row => {
+      const type = row.type;
+      const count = Number(row.count);
+      if (type === 'TOEIC_P5') grammarBreakdown.part5.new += count;
+      else if (type === 'TOEIC_P6') grammarBreakdown.part6.new += count;
+      else if (type === 'TOEIC_P7') grammarBreakdown.part7.new += count;
+      else grammarBreakdown.other.new += count;
+    });
+    
+    // Cap new grammar per part proportionally avoiding complex math, 
+    // or simply just cap the total new available. Let's provide raw new capability for display.
+  }
 
   let currentStreak = vUser.streakCount || 0;
   const lastGoalMetDate = vUser.lastGoalMetDate ? new Date(vUser.lastGoalMetDate) : null;
@@ -523,7 +734,8 @@ export async function getDashboardStats() {
     wordTypes: allWordTypes,
     streak: currentStreak,
     points: vUser.points || 0,
-    streakFrozen
+    streakFrozen,
+    grammarBreakdown
   };
 }
 

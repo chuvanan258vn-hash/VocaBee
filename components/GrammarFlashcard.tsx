@@ -18,7 +18,7 @@ interface GrammarCard {
     trap?: string | null;
     goldenRule?: string | null;
     tags?: string | null;
-    toeicPart?: number | null;
+    toeicPart?: string | null;
     grammarCategory?: string | null;
     signalKeywords?: string | null;
     formula?: string | null;
@@ -29,7 +29,7 @@ interface GrammarCard {
 
 interface GrammarFlashcardProps {
     card: GrammarCard;
-    onNext: () => void;
+    onNext: (result?: { id: string; quality: number; type: 'vocab' | 'grammar'; isTypingBonus?: boolean }) => void;
 }
 
 export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps) {
@@ -38,6 +38,7 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
     const [isCorrect, setIsCorrect] = useState(false);
     const [showExplanation, setShowExplanation] = useState(false);
     const [showHint, setShowHint] = useState(false);
+    const [isGrading, setIsGrading] = useState(false);
     const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
     // Determine if this is a TOEIC card
@@ -124,19 +125,10 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
     };
 
     const handleGrade = async (grade: number) => {
-        // Optimistic Update
-        onNext();
-
-        // Reset state for next card locally
-        setUserInput("");
-        setIsSubmitted(false);
-        setShowExplanation(false);
-
-        const result = await reviewGrammarCardAction(card.id, grade);
-        if (result && !result.success) {
-            // Error handling if needed, but we already moved on
-            console.error(result.error);
-        }
+        setIsGrading(true);
+        // Map native grade to quality on backend, here we just pass grade as quality
+        onNext({ id: card.id, quality: grade, type: 'grammar' });
+        setIsGrading(false);
     };
 
     const getNextReviewLabel = (grade: number) => {
@@ -210,7 +202,7 @@ export default function GrammarFlashcard({ card, onNext }: GrammarFlashcardProps
                                         : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20")
                                     : "bg-primary/10 text-primary border-primary/20"
                                     }`}>
-                                    {isToeic ? `TOEIC Part ${card.toeicPart}` : card.type === "NOTEBOOK" ? "MISTAKE NOTEBOOK" : card.type.replace("_", " ")}
+                                {isToeic ? `TOEIC Part ${card.toeicPart || card.type.replace("TOEIC_P", "")}` : card.type === "NOTEBOOK" ? "MISTAKE NOTEBOOK" : card.type.replace("_", " ")}
                                 </span>
                                 {isToeic && card.grammarCategory && (
                                     <span className="px-3 py-1 bg-indigo-500/10 text-indigo-500 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-indigo-500/20">

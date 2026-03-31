@@ -190,6 +190,28 @@ export default async function Home() {
                         {stats.dueGrammarCount} cấu trúc
                       </span> đang chờ ôn luyện
                     </h3>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {(stats.grammarBreakdown?.part5?.due > 0 || stats.grammarBreakdown?.part5?.new > 0) && (
+                        <Link href="/review?type=toeic_p5" className="px-3 py-1.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/20 hover:border-teal-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer relative z-20">
+                          <span className="material-symbols-outlined text-[14px]">edit_note</span> Part 5 ({stats.grammarBreakdown.part5.due} ôn, {stats.grammarBreakdown.part5.new} mới)
+                        </Link>
+                      )}
+                      {(stats.grammarBreakdown?.part6?.due > 0 || stats.grammarBreakdown?.part6?.new > 0) && (
+                        <Link href="/review?type=toeic_p6" className="px-3 py-1.5 bg-violet-500/10 hover:bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-500/20 hover:border-violet-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer relative z-20">
+                          <span className="material-symbols-outlined text-[14px]">article</span> Part 6 ({stats.grammarBreakdown.part6.due} ôn, {stats.grammarBreakdown.part6.new} mới)
+                        </Link>
+                      )}
+                      {(stats.grammarBreakdown?.part7?.due > 0 || stats.grammarBreakdown?.part7?.new > 0) && (
+                        <Link href="/review?type=toeic_p7" className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:border-rose-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer relative z-20">
+                          <span className="material-symbols-outlined text-[14px]">psychology</span> Part 7 ({stats.grammarBreakdown.part7.due} ôn, {stats.grammarBreakdown.part7.new} mới)
+                        </Link>
+                      )}
+                      {(stats.grammarBreakdown?.other?.due > 0 || stats.grammarBreakdown?.other?.new > 0) && (
+                        <Link href="/review?type=grammar_other" className="px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 hover:border-indigo-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer relative z-20">
+                          <span className="material-symbols-outlined text-[14px]">extension</span> Khác ({stats.grammarBreakdown.other.due} ôn, {stats.grammarBreakdown.other.new} mới)
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <Link
