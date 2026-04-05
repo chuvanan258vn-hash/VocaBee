@@ -68,6 +68,7 @@ export default function ReviewSession({ dueWords: initialDueWords }: ReviewSessi
     const handleNext = (result?: { id: string; quality: number; type: 'vocab' | 'grammar'; isTypingBonus?: boolean }) => {
         if (result) {
             setResults(prev => [...prev, result]);
+            batchReviewAction([result]).catch(err => console.error("Background update failed", err));
         }
         setPendingResult(null); // Clear pending when moving to next card
         
@@ -87,17 +88,12 @@ export default function ReviewSession({ dueWords: initialDueWords }: ReviewSessi
 
     const handleBatchSubmit = async (extraResult?: { id: string; quality: number; type: 'vocab' | 'grammar'; isTypingBonus?: boolean } | null) => {
         setIsSubmitting(true);
-        // Merge any pending current-card result
         const pending = extraResult !== undefined ? extraResult : pendingResult;
-        const allResults = pending ? [...results, pending] : results;
-        const res = await batchReviewAction(allResults);
-        setIsSubmitting(false);
-
-        if (res.success) {
-            setIsFinished(true);
-        } else {
-            showToast(res.error || "Lỗi khi lưu kết quả", "error");
+        if (pending) {
+            await batchReviewAction([pending]).catch(err => console.error("Background update failed", err));
         }
+        setIsSubmitting(false);
+        setIsFinished(true);
     };
 
     if (isFinished) {
@@ -152,7 +148,7 @@ export default function ReviewSession({ dueWords: initialDueWords }: ReviewSessi
                     </div>
                     <h2 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">Tổng kết phiên học</h2>
                     <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
-                        Hoàn thành <span className="font-bold text-amber-500">{dueWords.length}</span> thẻ · Hãy xác nhận để lưu tiến độ
+                        Hoàn thành <span className="font-bold text-amber-500">{dueWords.length}</span> thẻ · Tiến độ của bạn đã được lưu tự động
                     </p>
                 </motion.div>
 
@@ -307,23 +303,15 @@ export default function ReviewSession({ dueWords: initialDueWords }: ReviewSessi
                         {isSubmitting ? (
                             <>
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                <span>Đang lưu...</span>
+                                <span>Đang xử lý...</span>
                             </>
                         ) : (
                             <>
                                 <span className="material-symbols-outlined text-[20px]">check_circle</span>
-                                <span>Xác nhận & Hoàn tất</span>
+                                <span>Hoàn tất phiên học</span>
                             </>
                         )}
                     </button>
-                    {!isSubmitting && (
-                        <Link
-                            href="/"
-                            className="sm:w-auto px-6 py-3.5 rounded-2xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-center font-medium border border-slate-200 dark:border-slate-700"
-                        >
-                            Hủy & Thoát
-                        </Link>
-                    )}
                 </motion.div>
             </motion.div>
         );
@@ -403,24 +391,23 @@ export default function ReviewSession({ dueWords: initialDueWords }: ReviewSessi
                                     </div>
                                     <h3 className="text-xl font-bold text-slate-800 dark:text-white">Bạn muốn thoát thật sao?</h3>
                                     <p className="text-slate-500 dark:text-slate-400">
-                                        Bạn đã ôn tập được {results.length + (pendingResult ? 1 : 0)} thẻ. Bạn có muốn lưu lại kết quả này trước khi thoát không?
+                                        Bạn đã ôn tập được {results.length + (pendingResult ? 1 : 0)} thẻ. Tiến độ cho các thẻ này đã được lưu vào hệ thống!
                                     </p>
                                     
                                     <div className="flex flex-col w-full gap-3 mt-6">
                                         <button
-                                            onClick={() => handleBatchSubmit()}
+                                            onClick={async () => {
+                                                if (pendingResult) {
+                                                    setIsSubmitting(true);
+                                                    await batchReviewAction([pendingResult]).catch(e => console.error(e));
+                                                }
+                                                window.location.href = "/";
+                                            }}
                                             disabled={isSubmitting}
                                             className="w-full btn-amber py-3 rounded-2xl flex items-center justify-center font-semibold gap-2"
                                         >
                                             {isSubmitting && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
-                                            {isSubmitting ? "Đang lưu..." : "Lưu Kết Quả & Thoát"}
-                                        </button>
-                                        <button
-                                            onClick={() => window.location.href = "/"}
-                                            disabled={isSubmitting}
-                                            className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold transition-colors"
-                                        >
-                                            Thoát Luôn (Không Lưu)
+                                            {isSubmitting ? "Đang xử lý..." : "Thoát Về Trang Chủ"}
                                         </button>
                                         <button
                                             onClick={() => setShowQuitConfirm(false)}
