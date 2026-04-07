@@ -159,16 +159,16 @@ export default async function ReviewPage({
 
     // 1. Lấy các từ ĐANG ÔN TẬP nhưng đến hạn (Priority 1)
     const dueVocabLimit = Math.min(VOCAB_SESSION_LIMIT, remainingVocabReviewQuota);
-    const dueWords = (type === 'grammar') ? [] : await prisma.vocabulary.findMany({
-        where: {
-            userId: user.id,
-            interval: { gt: 0 },
-            nextReview: { lte: now },
-            isDeferred: false
-        },
-        orderBy: { nextReview: 'asc' },
-        take: dueVocabLimit
-    });
+    const dueWords: Vocabulary[] = (type === 'grammar') ? [] : await prisma.$queryRawUnsafe(`
+        SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
+        FROM "Vocabulary"
+        WHERE "userId" = $1
+          AND interval > 0
+          AND "nextReview" <= $2
+          AND "isDeferred" = false
+        ORDER BY "nextReview" ASC
+        LIMIT $3
+    `, user.id, now, dueVocabLimit);
 
         // 1.5. Lấy các câu NGỮ PHÁP đến hạn (Priority 1), loại grammar mới học hôm qua
         const dueGrammarLimit = Math.min(GRAMMAR_SESSION_LIMIT, remainingGrammarReviewQuota);
@@ -201,30 +201,30 @@ export default async function ReviewPage({
     let newWords: Vocabulary[] = [];
     if (vocabSlotsLeft > 0 && canLearnMoreCount > 0 && type !== 'grammar') {
         const fetchNewCount = Math.min(vocabSlotsLeft, canLearnMoreCount);
-        const testNewWords: Vocabulary[] = await prisma.vocabulary.findMany({
-            where: {
-                userId: user.id,
-                interval: 0,
-                source: "TEST",
-                importanceScore: { gte: 3 },
-            },
-            take: fetchNewCount,
-            orderBy: { createdAt: 'asc' }
-        });
+        const testNewWords: Vocabulary[] = await prisma.$queryRawUnsafe(`
+            SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
+            FROM "Vocabulary"
+            WHERE "userId" = $1
+              AND interval = 0
+              AND source = 'TEST'
+              AND "importanceScore" >= 3
+            ORDER BY "createdAt" ASC
+            LIMIT $2
+        `, user.id, fetchNewCount);
 
         const remainingNewCount = fetchNewCount - testNewWords.length;
         let scheduledNewWords: Vocabulary[] = [];
         if (remainingNewCount > 0) {
-            scheduledNewWords = await prisma.vocabulary.findMany({
-                where: {
-                    userId: user.id,
-                    interval: 0,
-                    source: "COLLECTION",
-                    isDeferred: false,
-                },
-                take: remainingNewCount,
-                orderBy: { createdAt: 'asc' }
-            });
+            scheduledNewWords = await prisma.$queryRawUnsafe(`
+                SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
+                FROM "Vocabulary"
+                WHERE "userId" = $1
+                  AND interval = 0
+                  AND source = 'COLLECTION'
+                  AND "isDeferred" = false
+                ORDER BY "createdAt" ASC
+                LIMIT $2
+            `, user.id, remainingNewCount);
         }
 
         newWords = [...testNewWords, ...scheduledNewWords];

@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { auth, signOut } from '@/auth'
@@ -12,17 +12,17 @@ export async function signOutAction() {
 
 export async function addWordAction(formData: Record<string, any>) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập để thêm từ! 🐝" };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ thÃªm tá»«! ðŸ" };
 
   const { wordType, meaning } = formData;
   const word = formData.word?.trim().toLowerCase();
 
   if (!word || !wordType || !meaning?.trim()) {
-    return { error: "Vui lòng điền đầy đủ các thông tin bắt buộc! 🐝" };
+    return { error: "Vui lÃ²ng Ä‘iá»n Ä‘áº§y Ä‘á»§ cÃ¡c thÃ´ng tin báº¯t buá»™c! ðŸ" };
   }
 
   try {
-    // 1. Kiểm tra xem từ này đã có trong "Tổ ong" của user này chưa
+    // 1. Kiá»ƒm tra xem tá»« nÃ y Ä‘Ã£ cÃ³ trong "Tá»• ong" cá»§a user nÃ y chÆ°a
     const existingWord = await prisma.vocabulary.findFirst({
       where: {
         word: word,
@@ -31,10 +31,10 @@ export async function addWordAction(formData: Record<string, any>) {
     })
 
     if (existingWord) {
-      return { error: `Từ "${word}" đã có trong tổ ong rồi! 🐝` }
+      return { error: `Tá»« "${word}" Ä‘Ã£ cÃ³ trong tá»• ong rá»“i! ðŸ` }
     }
 
-    // 2. Nếu chưa có, tiến hành lưu mới
+    // 2. Náº¿u chÆ°a cÃ³, tiáº¿n hÃ nh lÆ°u má»›i
     await prisma.vocabulary.create({
       data: {
         word: word,
@@ -45,23 +45,23 @@ export async function addWordAction(formData: Record<string, any>) {
         synonyms: formData.synonyms,
         context: formData.context,
         userId: user.id,
-        // Các trường SRS sẽ tự động lấy giá trị default (0, 2.5, now)
+        // CÃ¡c trÆ°á»ng SRS sáº½ tá»± Ä‘á»™ng láº¥y giÃ¡ trá»‹ default (0, 2.5, now)
       }
     })
 
-    // Làm mới lại trang để hiển thị dữ liệu mới
+    // LÃ m má»›i láº¡i trang Ä‘á»ƒ hiá»ƒn thá»‹ dá»¯ liá»‡u má»›i
     revalidatePath('/')
     return { success: true }
 
   } catch (_error) {
     console.error("Error creating word:", _error)
-    return { error: "Lỗi kỹ thuật, không thể lưu từ." }
+    return { error: "Lá»—i ká»¹ thuáº­t, khÃ´ng thá»ƒ lÆ°u tá»«." }
   }
 }
 
 export async function updateWordAction(id: string, formData: any) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập để sửa từ! 🐝" };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ sá»­a tá»«! ðŸ" };
 
   try {
     const existingWord = await prisma.vocabulary.findUnique({
@@ -69,7 +69,7 @@ export async function updateWordAction(id: string, formData: any) {
     });
 
     if (!existingWord || existingWord.userId !== user.id) {
-      return { error: "Không tìm thấy từ hoặc bạn không có quyền sửa." };
+      return { error: "KhÃ´ng tÃ¬m tháº¥y tá»« hoáº·c báº¡n khÃ´ng cÃ³ quyá»n sá»­a." };
     }
 
     const newWordText = formData.word?.trim().toLowerCase();
@@ -82,7 +82,7 @@ export async function updateWordAction(id: string, formData: any) {
         }
       });
       if (duplicateWord) {
-        return { error: `Từ "${newWordText}" đã có trong tổ ong rồi! 🐝` };
+        return { error: `Tá»« "${newWordText}" Ä‘Ã£ cÃ³ trong tá»• ong rá»“i! ðŸ` };
       }
     }
 
@@ -103,13 +103,13 @@ export async function updateWordAction(id: string, formData: any) {
     return { success: true };
   } catch (_error) {
     console.error("Error updating word:", _error);
-    return { error: "Lỗi kỹ thuật, không thể cập nhật từ." };
+    return { error: "Lá»—i ká»¹ thuáº­t, khÃ´ng thá»ƒ cáº­p nháº­t tá»«." };
   }
 }
 
 export async function deleteWordAction(id: string) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập để xóa từ! 🐝" };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ xÃ³a tá»«! ðŸ" };
 
   try {
     const existingWord = await prisma.vocabulary.findUnique({
@@ -117,7 +117,7 @@ export async function deleteWordAction(id: string) {
     });
 
     if (!existingWord || existingWord.userId !== user.id) {
-      return { error: "Không tìm thấy từ hoặc bạn không có quyền xóa." };
+      return { error: "KhÃ´ng tÃ¬m tháº¥y tá»« hoáº·c báº¡n khÃ´ng cÃ³ quyá»n xÃ³a." };
     }
 
     await prisma.vocabulary.delete({
@@ -128,12 +128,12 @@ export async function deleteWordAction(id: string) {
     return { success: true };
   } catch (_error) {
     console.error("Error deleting word:", _error);
-    return { error: "Lỗi kỹ thuật, không thể xóa từ." };
+    return { error: "Lá»—i ká»¹ thuáº­t, khÃ´ng thá»ƒ xÃ³a tá»«." };
   }
 }
 export async function reviewWordAction(id: string, quality: number, isTypingBonus: boolean = false) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập để ôn tập! 🐝" };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ Ã´n táº­p! ðŸ" };
 
   try {
     const word = await prisma.vocabulary.findUnique({
@@ -141,7 +141,7 @@ export async function reviewWordAction(id: string, quality: number, isTypingBonu
     });
 
     if (!word || word.userId !== user.id) {
-      return { error: "Không tìm thấy từ hoặc bạn không có quyền." };
+      return { error: "KhÃ´ng tÃ¬m tháº¥y tá»« hoáº·c báº¡n khÃ´ng cÃ³ quyá»n." };
     }
 
     // Award points: 1 point for any review, +1 bonus for Good/Easy (quality >= 4)
@@ -155,7 +155,7 @@ export async function reviewWordAction(id: string, quality: number, isTypingBonu
       data: { points: { increment: pointsToAdd } }
     });
 
-    // --- THUẬT TOÁN SM-2 ---
+    // --- THUáº¬T TOÃN SM-2 ---
     let { interval: nextInterval, repetition: nextRepetition, efactor: nextEfactor, nextReview: nextReviewDate } = calculateSm2({
       interval: word.interval,
       repetition: word.repetition,
@@ -254,7 +254,7 @@ export async function reviewWordAction(id: string, quality: number, isTypingBonu
 
   } catch (_error) {
     console.error("Error reviewing word:", _error);
-    return { error: "Lỗi khi cập nhật tiến độ học tập." };
+    return { error: "Lá»—i khi cáº­p nháº­t tiáº¿n Ä‘á»™ há»c táº­p." };
   }
 }
 
@@ -418,7 +418,7 @@ export async function batchReviewAction(results: { id: string; quality: number; 
 
 export async function importWordsAction(words: any[]) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập để nhập từ! 🐝" };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ nháº­p tá»«! ðŸ" };
 
   let successCount = 0;
   let failCount = 0;
@@ -469,7 +469,7 @@ export async function importWordsAction(words: any[]) {
     return { success: true, successCount, failCount };
   } catch (_error) {
     console.error("Error in bulk import:", _error);
-    return { error: "Lỗi kỹ thuật khi nhập dữ liệu." };
+    return { error: "Lá»—i ká»¹ thuáº­t khi nháº­p dá»¯ liá»‡u." };
   }
 }
 
@@ -500,113 +500,109 @@ export async function getDashboardStats() {
   const yesterdayStart = new Date(todayStart);
   yesterdayStart.setDate(yesterdayStart.getDate() - 1);
 
-  // Group all independent sequential queries into a single Promise.all
-  const [
-    learnedToday,
-    learnedGrammarToday,
-    unlearnedYesterdayVocab,
-    unlearnedYesterdayGrammar,
-    availableNewVocabCount,
-    availableNewGrammarCount,
-    alreadyReviewedVocabToday,
-    rawVocabDueCount,
-    alreadyReviewedGrammarRaw,
-    grammarDue,
-    vTest,
-    wordTypesData,
-    grammarDueByType,
-    grammarNewByType
-  ] = await Promise.all([
-    // 1. Count items successfully learned for the FIRST TIME today (interval: 0 -> interval > 0)
-    prisma.vocabulary.count({
-      where: {
-        userId: user.id,
-        updatedAt: { gte: todayStart },
-        repetition: 1
-      } as any
-    }),
-    (prisma as any).grammarCard.count({
-      where: {
-        userId: user.id,
-        updatedAt: { gte: todayStart },
-        repetition: 1
-      }
-    }),
-    // 2. Count items added YESTERDAY (unlearned)
-    prisma.vocabulary.count({
-      where: {
-        userId: user.id,
-        interval: 0,
-        isDeferred: false,
-        createdAt: { gte: yesterdayStart, lt: todayStart }
-      } as any
-    }),
-    (prisma as any).grammarCard.count({
-      where: {
-        userId: user.id,
-        interval: 0,
-        isDeferred: false,
-        createdAt: { gte: yesterdayStart, lt: todayStart }
-      }
-    }),
-    // 4. Calculate actual available new items (interval = 0)
-    prisma.vocabulary.count({
-      where: { userId: user.id, interval: 0, isDeferred: false } as any
-    }),
-    (prisma as any).grammarCard.count({
-      where: { userId: user.id, interval: 0, isDeferred: false }
-    }),
-    // A. Vocabulary already reviewed today
-    prisma.vocabulary.count({
-      where: {
-        userId: user.id,
-        updatedAt: { gte: todayStart },
-        repetition: { gt: 1 }
-      } as any
-    }),
-    // rawVocabDueCount
-    prisma.vocabulary.count({
-      where: {
-        userId: user.id,
-        interval: { gt: 0 },
-        nextReview: { lte: now },
-        isDeferred: false
-      } as any
-    }),
-    // B. Grammar already reviewed
-    prisma.$queryRawUnsafe(`
+  // NOTE:
+  // This endpoint previously executed 14 DB reads concurrently via Promise.all.
+  // On environments with very low DB pool size (e.g. connection_limit=1),
+  // that can trigger Prisma P2024 (pool timeout). Keep these reads sequential
+  // to avoid connection starvation.
+  // 1. Count items successfully learned for the FIRST TIME today (interval: 0 -> interval > 0)
+  const learnedToday = await prisma.vocabulary.count({
+    where: {
+      userId: user.id,
+      updatedAt: { gte: todayStart },
+      repetition: 1
+    } as any
+  });
+  const learnedGrammarToday = await (prisma as any).grammarCard.count({
+    where: {
+      userId: user.id,
+      updatedAt: { gte: todayStart },
+      repetition: 1
+    }
+  });
+
+  // 2. Count items added YESTERDAY (unlearned)
+  const unlearnedYesterdayVocab = await prisma.vocabulary.count({
+    where: {
+      userId: user.id,
+      interval: 0,
+      isDeferred: false,
+      createdAt: { gte: yesterdayStart, lt: todayStart }
+    } as any
+  });
+  const unlearnedYesterdayGrammar = await (prisma as any).grammarCard.count({
+    where: {
+      userId: user.id,
+      interval: 0,
+      isDeferred: false,
+      createdAt: { gte: yesterdayStart, lt: todayStart }
+    }
+  });
+
+  // 4. Calculate actual available new items (interval = 0)
+  const availableNewVocabCount = await prisma.vocabulary.count({
+    where: { userId: user.id, interval: 0, isDeferred: false } as any
+  });
+  const availableNewGrammarCount = await (prisma as any).grammarCard.count({
+    where: { userId: user.id, interval: 0, isDeferred: false }
+  });
+
+  // A. Vocabulary already reviewed today
+  const alreadyReviewedVocabToday = await prisma.vocabulary.count({
+    where: {
+      userId: user.id,
+      updatedAt: { gte: todayStart },
+      repetition: { gt: 1 }
+    } as any
+  });
+  // rawVocabDueCount
+  const rawVocabDueCount = await prisma.vocabulary.count({
+    where: {
+      userId: user.id,
+      interval: { gt: 0 },
+      nextReview: { lte: now },
+      isDeferred: false
+    } as any
+  });
+
+  // B. Grammar already reviewed
+  const alreadyReviewedGrammarRaw = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*) as count FROM "GrammarCard" 
       WHERE "userId" = $1 
         AND "updatedAt" >= $2
         AND repetition > 1
-    `, user.id, todayStart) as Promise<{ count: bigint }[]>,
-    // rawGrammarDueCount
-    prisma.$queryRawUnsafe(`
+    `, user.id, todayStart) as { count: bigint }[];
+
+  // rawGrammarDueCount
+  const grammarDue = await prisma.$queryRawUnsafe(`
       SELECT COUNT(*) as count FROM "GrammarCard" 
       WHERE "userId" = $1 
         AND interval > 0 
         AND "nextReview" <= $2 
         AND "isDeferred" = false
         AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
-    `, user.id, now, yesterdayStart, todayStart) as Promise<any[]>,
-    // testVocabToday
-    // Wrap in catch to handled un-migrated schema safely
-    prisma.$queryRawUnsafe(
-      `SELECT COUNT(*) as count FROM "Vocabulary" WHERE "userId" = $1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= $2`,
-      user.id,
-      todayStart
-    ).catch(() => {
-      console.log("Smart Capture columns not yet migrated, skipping test item count");
-      return [{ count: 0 }];
-    }) as Promise<any[]>,
-    // Fetch all unique word types for the user (for filtering)
-    prisma.vocabulary.findMany({
-      where: { userId: user.id },
-      select: { wordType: true },
-      distinct: ['wordType']
-    }),
-    // Aggregation for Grammar Due by Type
-    prisma.$queryRawUnsafe(`
+    `, user.id, now, yesterdayStart, todayStart) as any[];
+
+  // testVocabToday
+  // Wrap in catch to handled un-migrated schema safely
+  const vTest = await prisma.$queryRawUnsafe(
+    `SELECT COUNT(*) as count FROM "Vocabulary" WHERE "userId" = $1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= $2`,
+    user.id,
+    todayStart
+  ).catch(() => {
+    console.log("Smart Capture columns not yet migrated, skipping test item count");
+    return [{ count: 0 }];
+  }) as any[];
+
+  // Fetch all unique word types for the user (for filtering)
+  const wordTypesData = await prisma.vocabulary.findMany({
+    where: { userId: user.id },
+    select: { wordType: true },
+    distinct: ['wordType']
+  });
+
+  // Aggregation for Grammar Due by Type
+  const grammarDueByType = await prisma.$queryRawUnsafe(`
       SELECT type, COUNT(*) as count FROM "GrammarCard" 
       WHERE "userId" = $1 
         AND interval > 0 
@@ -614,19 +610,21 @@ export async function getDashboardStats() {
         AND "isDeferred" = false
         AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
       GROUP BY type
-    `, user.id, now, yesterdayStart, todayStart) as Promise<any[]>,
-    // Aggregation for New Grammar by Type
-    prisma.$queryRawUnsafe(`
+    `, user.id, now, yesterdayStart, todayStart) as any[];
+
+  // Aggregation for New Grammar by Type
+  const grammarNewByType = await prisma.$queryRawUnsafe(`
       SELECT type, COUNT(*) as count FROM "GrammarCard" 
       WHERE "userId" = $1 
         AND interval = 0 
         AND "isDeferred" = false
       GROUP BY type
-    `, user.id) as Promise<any[]>
-  ]);
+    `, user.id) as any[];
 
   // 3. Calculate Goals
-  const vUser = user as unknown as VocaBeeUser;
+  // `user` (from prisma.user.findUnique) may miss newer fields if Prisma client is stale.
+  // Merge from `userBase` (hydrated in getAuthenticatedUser) so limits/goals use DB truth.
+  const vUser = { ...user, ...userBase } as VocaBeeUser;
   const baseVocabGoal = vUser.dailyNewWordGoal || 30;
   const totalVocabGoal = baseVocabGoal + unlearnedYesterdayVocab;
 
@@ -649,7 +647,10 @@ export async function getDashboardStats() {
   const remainingVocabReviewQuota = Math.max(0, MAX_DAILY_VOCAB_REVIEWS - alreadyReviewedVocabToday);
 
   const vocabDueCount = Math.min(rawVocabDueCount, remainingVocabReviewQuota);
-  const totalDueVocab = vocabDueCount + canLearnMoreCount;
+  const totalDueVocab = Math.min(
+    remainingVocabReviewQuota,
+    vocabDueCount + canLearnMoreCount
+  );
 
   // B. Grammar
   const alreadyReviewedGrammarToday = Number(alreadyReviewedGrammarRaw[0]?.count || 0);
@@ -658,7 +659,10 @@ export async function getDashboardStats() {
 
   const rawGrammarDueCountResolved = Number(grammarDue[0]?.count || 0);
   const grammarDueCount = Math.min(rawGrammarDueCountResolved, remainingGrammarReviewQuota);
-  const totalDueGrammar = grammarDueCount + canLearnMoreGrammarCount;
+  const totalDueGrammar = Math.min(
+    remainingGrammarReviewQuota,
+    grammarDueCount + canLearnMoreGrammarCount
+  );
 
   // C. Calculate grammar segment breakdowns
   const grammarBreakdown = {
@@ -741,7 +745,7 @@ export async function getDashboardStats() {
 
 export async function checkWordsExistenceAction(words: string[]) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập." };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p." };
 
   const trimmedWords = words.map(w => w.trim().replace(/\s+/g, ' ')).filter(w => w.length > 0);
   console.log(`[ExistenceCheck] Checking ${trimmedWords.length} words for user ${user.id}:`, trimmedWords);
@@ -761,7 +765,7 @@ export async function checkWordsExistenceAction(words: string[]) {
     return { success: true, existingWords };
   } catch (_error) {
     console.error("Error checking words existence:", _error);
-    return { error: "Lỗi kỹ thuật khi kiểm tra dữ liệu." };
+    return { error: "Lá»—i ká»¹ thuáº­t khi kiá»ƒm tra dá»¯ liá»‡u." };
   }
 }
 
@@ -774,24 +778,63 @@ export async function updateUserSettingsAction(data: {
   dailyMaxGrammarReview?: number; 
 }) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập." };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p." };
 
   try {
-    const updateData: any = { dailyNewWordGoal: data.dailyGoal };
-    if (typeof data.dailyGrammarGoal === 'number') updateData.dailyNewGrammarGoal = data.dailyGrammarGoal;
-    if (typeof data.dailyMaxVocabReview === 'number') updateData.dailyMaxVocabReview = data.dailyMaxVocabReview;
-    if (typeof data.dailyMaxGrammarReview === 'number') updateData.dailyMaxGrammarReview = data.dailyMaxGrammarReview;
+    const nextDailyGrammarGoal = typeof data.dailyGrammarGoal === 'number'
+      ? data.dailyGrammarGoal
+      : user.dailyNewGrammarGoal;
+    const nextDailyMaxVocabReview = typeof data.dailyMaxVocabReview === 'number'
+      ? data.dailyMaxVocabReview
+      : (user.dailyMaxVocabReview ?? 100);
+    const nextDailyMaxGrammarReview = typeof data.dailyMaxGrammarReview === 'number'
+      ? data.dailyMaxGrammarReview
+      : (user.dailyMaxGrammarReview ?? 50);
 
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: updateData
-    });
+    // Use raw SQL to avoid Prisma client/schema mismatch for newer columns.
+    await prisma.$executeRawUnsafe(
+      `UPDATE "User"
+       SET "dailyNewWordGoal" = $1,
+           "dailyNewGrammarGoal" = $2,
+           "dailyMaxVocabReview" = $3,
+           "dailyMaxGrammarReview" = $4
+       WHERE id = $5`,
+      data.dailyGoal,
+      nextDailyGrammarGoal,
+      nextDailyMaxVocabReview,
+      nextDailyMaxGrammarReview,
+      user.id
+    );
+
+    const updatedRows = await prisma.$queryRawUnsafe<Array<{
+      dailyNewWordGoal: number;
+      dailyNewGrammarGoal: number;
+      dailyMaxVocabReview: number;
+      dailyMaxGrammarReview: number;
+    }>>(
+      `SELECT "dailyNewWordGoal", "dailyNewGrammarGoal", "dailyMaxVocabReview", "dailyMaxGrammarReview"
+       FROM "User"
+       WHERE id = $1
+       LIMIT 1`,
+      user.id
+    );
+
+    const updatedUser = updatedRows?.[0];
+    if (!updatedUser) {
+      return { error: "Could not reload settings after update." };
+    }
 
     revalidatePath('/');
-    return { success: true, dailyGoal: (updatedUser as unknown as VocaBeeUser).dailyNewWordGoal, dailyGrammarGoal: (updatedUser as unknown as VocaBeeUser).dailyNewGrammarGoal };
+    return {
+      success: true,
+      dailyGoal: updatedUser.dailyNewWordGoal,
+      dailyGrammarGoal: updatedUser.dailyNewGrammarGoal,
+      dailyMaxVocabReview: updatedUser.dailyMaxVocabReview,
+      dailyMaxGrammarReview: updatedUser.dailyMaxGrammarReview
+    };
   } catch (_error) {
     console.error("Error updating settings:", _error);
-    return { error: "Lỗi kỹ thuật khi lưu cài đặt." };
+    return { error: "Lá»—i ká»¹ thuáº­t khi lÆ°u cÃ i Ä‘áº·t." };
   }
 }
 
@@ -811,7 +854,7 @@ export async function addGrammarCardAction(data: {
   tags?: string | null;
 }) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập để thêm thẻ ngữ pháp! 🐝" };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ thÃªm tháº» ngá»¯ phÃ¡p! ðŸ" };
 
   try {
     // Use raw SQL to avoid Prisma client sync issues
@@ -840,13 +883,13 @@ export async function addGrammarCardAction(data: {
     return { success: true };
   } catch (_error) {
     console.error("Error adding grammar card:", _error);
-    return { error: "Lỗi khi thêm thẻ ngữ pháp." };
+    return { error: "Lá»—i khi thÃªm tháº» ngá»¯ phÃ¡p." };
   }
 }
 
 export async function reviewGrammarCardAction(id: string, grade: number) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Cần đăng nhập" };
+  if (!user) return { error: "Cáº§n Ä‘Äƒng nháº­p" };
 
   try {
     const card = await (prisma as any).grammarCard.findUnique({ where: { id } });
@@ -898,13 +941,13 @@ export async function reviewGrammarCardAction(id: string, grade: number) {
     return { success: true };
   } catch (_error) {
     console.error("Error reviewing grammar card:", _error);
-    return { error: "Lỗi khi lưu kết quả." };
+    return { error: "Lá»—i khi lÆ°u káº¿t quáº£." };
   }
 }
 
 export async function getGrammarPaginatedAction(skip: number, take: number, search?: string) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập." };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p." };
 
   try {
     const whereClause: any = { userId: user.id };
@@ -928,13 +971,13 @@ export async function getGrammarPaginatedAction(skip: number, take: number, sear
     return { success: true, cards };
   } catch (_error) {
     console.error("Error fetching paginated grammar:", _error);
-    return { error: "Lỗi khi lấy dữ liệu ngữ pháp." };
+    return { error: "Lá»—i khi láº¥y dá»¯ liá»‡u ngá»¯ phÃ¡p." };
   }
 }
 
 export async function updateGrammarCardAction(id: string, data: any) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập." };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p." };
 
   try {
     await (prisma as any).grammarCard.update({
@@ -958,13 +1001,13 @@ export async function updateGrammarCardAction(id: string, data: any) {
     return { success: true };
   } catch (_error) {
     console.error("Error updating grammar card:", _error);
-    return { error: "Lỗi khi cập nhật thẻ ngữ pháp." };
+    return { error: "Lá»—i khi cáº­p nháº­t tháº» ngá»¯ phÃ¡p." };
   }
 }
 
 export async function deleteGrammarCardAction(id: string) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập." };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p." };
 
   try {
     await (prisma as any).grammarCard.delete({
@@ -975,7 +1018,7 @@ export async function deleteGrammarCardAction(id: string) {
     return { success: true };
   } catch (_error) {
     console.error("Error deleting grammar card:", _error);
-    return { error: "Lỗi khi xóa thẻ ngữ pháp." };
+    return { error: "Lá»—i khi xÃ³a tháº» ngá»¯ phÃ¡p." };
   }
 }
 
@@ -984,26 +1027,26 @@ export async function seedVocabularyAction() {
   if (!user) return { error: "User not found" };
 
   const sampleWords = [
-    { word: "resilient", meaning: "kiên cường, có khả năng hồi phục nhanh", example: "She is resilient in the face of adversity.", wordType: "Adjective", pronunciation: "/rɪˈzɪl.jənt/" },
-    { word: "innovative", meaning: "sáng tạo, đổi mới", example: "The company is known for its innovative designs.", wordType: "Adjective", pronunciation: "/ˈɪn.ə.veɪ.tɪv/" },
-    { word: "colleague", meaning: "đồng nghiệp", example: "I had lunch with my colleagues.", wordType: "Noun", pronunciation: "/ˈkɒl.iːɡ/" },
-    { word: "deadline", meaning: "hạn chót", example: "We list to meet the deadline.", wordType: "Noun", pronunciation: "/ˈded.laɪn/" },
-    { word: "negotiate", meaning: "đàm phán, thương lượng", example: "They are negotiating a new contract.", wordType: "Verb", pronunciation: "/nəˈɡəʊ.ʃi.eɪt/" },
-    { word: "strategy", meaning: "chiến lược", example: "We need a marketing strategy.", wordType: "Noun", pronunciation: "/ˈstræt.ə.dʒi/" },
-    { word: "ambitious", meaning: "tham vọng", example: "He has ambitious plans for the future.", wordType: "Adjective", pronunciation: "/æmˈbɪʃ.əs/" },
-    { word: "proposal", meaning: "đề xuất", example: "The committee approved the proposal.", wordType: "Noun", pronunciation: "/prəˈpəʊ.zəl/" },
-    { word: "efficient", meaning: "hiệu quả (năng suất)", example: "This new machine is very efficient.", wordType: "Adjective", pronunciation: "/ɪˈfɪʃ.ənt/" },
-    { word: "launch", meaning: "ra mắt, khai trương", example: "They plan to launch the product in May.", wordType: "Verb", pronunciation: "/lɔːntʃ/" },
-    { word: "objective", meaning: "mục tiêu", example: "Our main objective is to improve quality.", wordType: "Noun", pronunciation: "/əbˈdʒek.tɪv/" },
-    { word: "revenue", meaning: "doanh thu", example: "The company's revenue increased by 10%.", wordType: "Noun", pronunciation: "/ˈrev.ə.nuː/" },
-    { word: "competitor", meaning: "đối thủ cạnh tranh", example: "We are cheaper than our main competitor.", wordType: "Noun", pronunciation: "/kəmˈpet.ɪ.tər/" },
-    { word: "delegation", meaning: "phái đoàn / sự ủy quyền", example: "A delegation from Japan visited the factory.", wordType: "Noun", pronunciation: "/ˌdel.ɪˈɡeɪ.ʃən/" },
-    { word: "incentive", meaning: "sự khích lệ, ưu đãi", example: "Bonus payments provide an incentive to work harder.", wordType: "Noun", pronunciation: "/ɪnˈsen.tɪv/" },
-    { word: "momentum", meaning: "đà (phát triển)", example: "The campaign is gaining momentum.", wordType: "Noun", pronunciation: "/məˈmen.təm/" },
-    { word: "niche", meaning: "thị trường ngách / vị trí thích hợp", example: "They found a niche in the organic food market.", wordType: "Noun", pronunciation: "/niːʃ/" },
-    { word: "outsourcing", meaning: "thuê ngoài", example: "Outsourcing can reduce costs.", wordType: "Noun", pronunciation: "/ˈaʊtˌsɔː.sɪŋ/" },
-    { word: "startup", meaning: "khởi nghiệp", example: "Working at a startup is exciting.", wordType: "Noun", pronunciation: "/ˈstɑːt.ʌp/" },
-    { word: "venture", meaning: "dự án kinh doanh (mạo hiểm)", example: "Their new venture failed.", wordType: "Noun", pronunciation: "/ˈven.tʃər/" }
+    { word: "resilient", meaning: "kiÃªn cÆ°á»ng, cÃ³ kháº£ nÄƒng há»“i phá»¥c nhanh", example: "She is resilient in the face of adversity.", wordType: "Adjective", pronunciation: "/rÉªËˆzÉªl.jÉ™nt/" },
+    { word: "innovative", meaning: "sÃ¡ng táº¡o, Ä‘á»•i má»›i", example: "The company is known for its innovative designs.", wordType: "Adjective", pronunciation: "/ËˆÉªn.É™.veÉª.tÉªv/" },
+    { word: "colleague", meaning: "Ä‘á»“ng nghiá»‡p", example: "I had lunch with my colleagues.", wordType: "Noun", pronunciation: "/ËˆkÉ’l.iËÉ¡/" },
+    { word: "deadline", meaning: "háº¡n chÃ³t", example: "We list to meet the deadline.", wordType: "Noun", pronunciation: "/Ëˆded.laÉªn/" },
+    { word: "negotiate", meaning: "Ä‘Ã m phÃ¡n, thÆ°Æ¡ng lÆ°á»£ng", example: "They are negotiating a new contract.", wordType: "Verb", pronunciation: "/nÉ™ËˆÉ¡É™ÊŠ.Êƒi.eÉªt/" },
+    { word: "strategy", meaning: "chiáº¿n lÆ°á»£c", example: "We need a marketing strategy.", wordType: "Noun", pronunciation: "/ËˆstrÃ¦t.É™.dÊ’i/" },
+    { word: "ambitious", meaning: "tham vá»ng", example: "He has ambitious plans for the future.", wordType: "Adjective", pronunciation: "/Ã¦mËˆbÉªÊƒ.É™s/" },
+    { word: "proposal", meaning: "Ä‘á» xuáº¥t", example: "The committee approved the proposal.", wordType: "Noun", pronunciation: "/prÉ™ËˆpÉ™ÊŠ.zÉ™l/" },
+    { word: "efficient", meaning: "hiá»‡u quáº£ (nÄƒng suáº¥t)", example: "This new machine is very efficient.", wordType: "Adjective", pronunciation: "/ÉªËˆfÉªÊƒ.É™nt/" },
+    { word: "launch", meaning: "ra máº¯t, khai trÆ°Æ¡ng", example: "They plan to launch the product in May.", wordType: "Verb", pronunciation: "/lÉ”ËntÊƒ/" },
+    { word: "objective", meaning: "má»¥c tiÃªu", example: "Our main objective is to improve quality.", wordType: "Noun", pronunciation: "/É™bËˆdÊ’ek.tÉªv/" },
+    { word: "revenue", meaning: "doanh thu", example: "The company's revenue increased by 10%.", wordType: "Noun", pronunciation: "/Ëˆrev.É™.nuË/" },
+    { word: "competitor", meaning: "Ä‘á»‘i thá»§ cáº¡nh tranh", example: "We are cheaper than our main competitor.", wordType: "Noun", pronunciation: "/kÉ™mËˆpet.Éª.tÉ™r/" },
+    { word: "delegation", meaning: "phÃ¡i Ä‘oÃ n / sá»± á»§y quyá»n", example: "A delegation from Japan visited the factory.", wordType: "Noun", pronunciation: "/ËŒdel.ÉªËˆÉ¡eÉª.ÊƒÉ™n/" },
+    { word: "incentive", meaning: "sá»± khÃ­ch lá»‡, Æ°u Ä‘Ã£i", example: "Bonus payments provide an incentive to work harder.", wordType: "Noun", pronunciation: "/ÉªnËˆsen.tÉªv/" },
+    { word: "momentum", meaning: "Ä‘Ã  (phÃ¡t triá»ƒn)", example: "The campaign is gaining momentum.", wordType: "Noun", pronunciation: "/mÉ™Ëˆmen.tÉ™m/" },
+    { word: "niche", meaning: "thá»‹ trÆ°á»ng ngÃ¡ch / vá»‹ trÃ­ thÃ­ch há»£p", example: "They found a niche in the organic food market.", wordType: "Noun", pronunciation: "/niËÊƒ/" },
+    { word: "outsourcing", meaning: "thuÃª ngoÃ i", example: "Outsourcing can reduce costs.", wordType: "Noun", pronunciation: "/ËˆaÊŠtËŒsÉ”Ë.sÉªÅ‹/" },
+    { word: "startup", meaning: "khá»Ÿi nghiá»‡p", example: "Working at a startup is exciting.", wordType: "Noun", pronunciation: "/ËˆstÉ‘Ët.ÊŒp/" },
+    { word: "venture", meaning: "dá»± Ã¡n kinh doanh (máº¡o hiá»ƒm)", example: "Their new venture failed.", wordType: "Noun", pronunciation: "/Ëˆven.tÊƒÉ™r/" }
   ];
 
   try {
@@ -1035,7 +1078,7 @@ export async function seedVocabularyAction() {
     return { success: true, count };
   } catch (error) {
     console.error("Error seeding vocabulary:", error);
-    return { error: "Lỗi khi nạp dữ liệu mẫu." };
+    return { error: "Lá»—i khi náº¡p dá»¯ liá»‡u máº«u." };
   }
 }
 
@@ -1048,32 +1091,32 @@ export async function seedGrammarCardsAction() {
       type: "CLOZE",
       prompt: "He has ___ (work) here for five years.",
       answer: "worked",
-      hint: "Sử dụng Have/Has + V3/ed cho thì Hiện tại hoàn thành.",
-      explanation: "Present perfect (have/has + V3) dùng cho hành động bắt đầu trong quá khứ và còn tiếp diễn.",
+      hint: "Sá»­ dá»¥ng Have/Has + V3/ed cho thÃ¬ Hiá»‡n táº¡i hoÃ n thÃ nh.",
+      explanation: "Present perfect (have/has + V3) dÃ¹ng cho hÃ nh Ä‘á»™ng báº¯t Ä‘áº§u trong quÃ¡ khá»© vÃ  cÃ²n tiáº¿p diá»…n.",
       tags: "Tenses"
     },
     {
       type: "PRODUCTION",
       prompt: "Write a polite email sentence offering help using 'would'.",
       answer: "I would be happy to assist you with that.",
-      hint: "Gợi ý: I + would + be happy + to...",
-      explanation: "Cấu trúc 'would be happy to' là cách đề nghị giúp đỡ lịch sự trong môi trường công sở.",
+      hint: "Gá»£i Ã½: I + would + be happy + to...",
+      explanation: "Cáº¥u trÃºc 'would be happy to' lÃ  cÃ¡ch Ä‘á» nghá»‹ giÃºp Ä‘á»¡ lá»‹ch sá»± trong mÃ´i trÆ°á»ng cÃ´ng sá»Ÿ.",
       tags: "Modal Verbs"
     },
     {
       type: "ERROR_CORRECTION",
-      prompt: "I look forward to meet you. — Find & fix the mistake",
+      prompt: "I look forward to meet you. â€” Find & fix the mistake",
       answer: "I look forward to meeting you.",
-      hint: "Gợi ý: Chú ý động từ sau 'to'.",
-      explanation: "Cấu trúc 'look forward to' đi kèm với V-ing.",
+      hint: "Gá»£i Ã½: ChÃº Ã½ Ä‘á»™ng tá»« sau 'to'.",
+      explanation: "Cáº¥u trÃºc 'look forward to' Ä‘i kÃ¨m vá»›i V-ing.",
       tags: "Gerund"
     },
     {
       type: "CLOZE",
       prompt: "The manager, ___ approved the budget, left early.",
       answer: "who",
-      hint: "Dùng đại từ quan hệ thay cho người.",
-      explanation: "Đại từ quan hệ 'who' dùng thay thế cho danh từ chỉ người đóng vai trò chủ ngữ.",
+      hint: "DÃ¹ng Ä‘áº¡i tá»« quan há»‡ thay cho ngÆ°á»i.",
+      explanation: "Äáº¡i tá»« quan há»‡ 'who' dÃ¹ng thay tháº¿ cho danh tá»« chá»‰ ngÆ°á»i Ä‘Ã³ng vai trÃ² chá»§ ngá»¯.",
       tags: "Relative Clauses"
     },
     {
@@ -1081,40 +1124,40 @@ export async function seedGrammarCardsAction() {
       prompt: "If I ___ more time, I would travel more.",
       answer: "had",
       options: JSON.stringify(["have", "had", "will have", "has"]),
-      hint: "Đây là câu điều kiện loại 2 (giả định loại 1).",
-      explanation: "Câu điều kiện loại 2 (V-ed) diễn tả giả định trái ngược với hiện tại.",
+      hint: "ÄÃ¢y lÃ  cÃ¢u Ä‘iá»u kiá»‡n loáº¡i 2 (giáº£ Ä‘á»‹nh loáº¡i 1).",
+      explanation: "CÃ¢u Ä‘iá»u kiá»‡n loáº¡i 2 (V-ed) diá»…n táº£ giáº£ Ä‘á»‹nh trÃ¡i ngÆ°á»£c vá»›i hiá»‡n táº¡i.",
       tags: "Conditionals"
     },
     {
       type: "PRODUCTION",
       prompt: "Transform to passive voice: 'The team completed the report.'",
       answer: "The report was completed by the team.",
-      hint: "Chuyển tân ngữ 'The report' lên đầu và dùng was/were + V3.",
-      explanation: "Câu bị động quá khứ đơn: was/were + V3/ed.",
+      hint: "Chuyá»ƒn tÃ¢n ngá»¯ 'The report' lÃªn Ä‘áº§u vÃ  dÃ¹ng was/were + V3.",
+      explanation: "CÃ¢u bá»‹ Ä‘á»™ng quÃ¡ khá»© Ä‘Æ¡n: was/were + V3/ed.",
       tags: "Passive Voice"
     },
     {
       type: "CLOZE",
       prompt: "She insisted ___ (go) to the meeting.",
       answer: "on going",
-      hint: "Insist đi kèm với giới từ gì?",
-      explanation: "Insist + on + V-ing: khăng khăng làm gì đó.",
+      hint: "Insist Ä‘i kÃ¨m vá»›i giá»›i tá»« gÃ¬?",
+      explanation: "Insist + on + V-ing: khÄƒng khÄƒng lÃ m gÃ¬ Ä‘Ã³.",
       tags: "Prepositions"
     },
     {
       type: "ERROR_CORRECTION",
-      prompt: "There is less employees this month. — Find & fix the mistake",
+      prompt: "There is less employees this month. â€” Find & fix the mistake",
       answer: "There are fewer employees this month.",
-      hint: "Gợi ý: employees là danh từ đếm được.",
-      explanation: "Dùng 'fewer' cho danh từ đếm được số nhiều (employees).",
+      hint: "Gá»£i Ã½: employees lÃ  danh tá»« Ä‘áº¿m Ä‘Æ°á»£c.",
+      explanation: "DÃ¹ng 'fewer' cho danh tá»« Ä‘áº¿m Ä‘Æ°á»£c sá»‘ nhiá»u (employees).",
       tags: "Comparisons"
     },
     {
       type: "PRODUCTION",
       prompt: "Write a polite email sentence requesting an extension using 'could'.",
       answer: "Could you please grant me an extension on the deadline?",
-      hint: "Gợi ý: Could you please + (động từ)...?",
-      explanation: "Dùng 'Could you please' để đưa ra yêu cầu lịch sự.",
+      hint: "Gá»£i Ã½: Could you please + (Ä‘á»™ng tá»«)...?",
+      explanation: "DÃ¹ng 'Could you please' Ä‘á»ƒ Ä‘Æ°a ra yÃªu cáº§u lá»‹ch sá»±.",
       tags: "Modal Verbs"
     },
     {
@@ -1122,8 +1165,8 @@ export async function seedGrammarCardsAction() {
       prompt: "We missed the train ___ the heavy traffic.",
       answer: "because of",
       options: JSON.stringify(["because", "because of", "although", "despite"]),
-      hint: "Phía sau là một cụm danh từ (heavy traffic).",
-      explanation: "Dùng 'because of' trước một cụm danh từ (heavy traffic).",
+      hint: "PhÃ­a sau lÃ  má»™t cá»¥m danh tá»« (heavy traffic).",
+      explanation: "DÃ¹ng 'because of' trÆ°á»›c má»™t cá»¥m danh tá»« (heavy traffic).",
       tags: "Connectors"
     }
   ];
@@ -1176,7 +1219,7 @@ export async function seedGrammarCardsAction() {
     return { success: true, count: createdCount };
   } catch (error) {
     console.error("Error seeding cards:", error);
-    return { error: "Lỗi khi nạp dữ liệu mẫu." };
+    return { error: "Lá»—i khi náº¡p dá»¯ liá»‡u máº«u." };
   }
 }
 
@@ -1275,13 +1318,13 @@ export async function importGrammarCardsAction(cards: any[]) {
     return { success: true, successCount, failCount };
   } catch (error) {
     console.error("Error in grammar bulk import:", error);
-    return { error: "Lỗi dữ liệu hoặc cấu trúc bảng. Vui lòng kiểm tra lại file." };
+    return { error: "Lá»—i dá»¯ liá»‡u hoáº·c cáº¥u trÃºc báº£ng. Vui lÃ²ng kiá»ƒm tra láº¡i file." };
   }
 }
 
 export async function generateGrammarHintsAction() {
   const session = await auth();
-  if (!session?.user?.email) return { error: "Cần đăng nhập" };
+  if (!session?.user?.email) return { error: "Cáº§n Ä‘Äƒng nháº­p" };
 
   const user = await prisma.user.findUnique({ where: { email: session.user.email } });
   if (!user) return { error: "User not found" };
@@ -1301,25 +1344,25 @@ export async function generateGrammarHintsAction() {
       );
     }
 
-    if (cards.length === 0) return { success: true, count: 0, message: "Tất cả các câu đã có gợi ý!" };
+    if (cards.length === 0) return { success: true, count: 0, message: "Táº¥t cáº£ cÃ¡c cÃ¢u Ä‘Ã£ cÃ³ gá»£i Ã½!" };
 
     let updatedCount = 0;
     for (const card of cards) {
       let smartHint = "";
 
-      // Logic để tạo gợi ý thông minh từ Giải thích và Loại bài tập
+      // Logic Ä‘á»ƒ táº¡o gá»£i Ã½ thÃ´ng minh tá»« Giáº£i thÃ­ch vÃ  Loáº¡i bÃ i táº­p
       if (card.explanation && card.explanation.length > 5) {
-        // Lấy 1 phần nội dung giải thích (ví dụ 10 từ đầu tiên)
+        // Láº¥y 1 pháº§n ná»™i dung giáº£i thÃ­ch (vÃ­ dá»¥ 10 tá»« Ä‘áº§u tiÃªn)
         const words = card.explanation.split(" ");
-        smartHint = "💡 Gợi ý: " + words.slice(0, 12).join(" ") + (words.length > 12 ? "..." : "");
+        smartHint = "ðŸ’¡ Gá»£i Ã½: " + words.slice(0, 12).join(" ") + (words.length > 12 ? "..." : "");
       } else {
-        // Gợi ý mặc định theo loại
+        // Gá»£i Ã½ máº·c Ä‘á»‹nh theo loáº¡i
         switch (card.type) {
-          case "CLOZE": smartHint = "💡 Điền đúng dạng của từ/động từ vào chỗ trống."; break;
-          case "ERROR_CORRECTION": smartHint = "💡 Tìm và sửa lỗi sai về ngữ pháp/từ vựng."; break;
-          case "MCQ": smartHint = "💡 Chọn đáp án chính xác nhất trong các lựa chọn."; break;
-          case "PRODUCTION": smartHint = "💡 Viết lại câu hoặc hoàn thành câu theo yêu cầu."; break;
-          default: smartHint = "💡 Chú ý cấu trúc câu và ngữ cảnh.";
+          case "CLOZE": smartHint = "ðŸ’¡ Äiá»n Ä‘Ãºng dáº¡ng cá»§a tá»«/Ä‘á»™ng tá»« vÃ o chá»— trá»‘ng."; break;
+          case "ERROR_CORRECTION": smartHint = "ðŸ’¡ TÃ¬m vÃ  sá»­a lá»—i sai vá» ngá»¯ phÃ¡p/tá»« vá»±ng."; break;
+          case "MCQ": smartHint = "ðŸ’¡ Chá»n Ä‘Ã¡p Ã¡n chÃ­nh xÃ¡c nháº¥t trong cÃ¡c lá»±a chá»n."; break;
+          case "PRODUCTION": smartHint = "ðŸ’¡ Viáº¿t láº¡i cÃ¢u hoáº·c hoÃ n thÃ nh cÃ¢u theo yÃªu cáº§u."; break;
+          default: smartHint = "ðŸ’¡ ChÃº Ã½ cáº¥u trÃºc cÃ¢u vÃ  ngá»¯ cáº£nh.";
         }
       }
 
@@ -1341,13 +1384,13 @@ export async function generateGrammarHintsAction() {
     return { success: true, count: updatedCount };
   } catch (error) {
     console.error("Error generating hints:", error);
-    return { error: "Lỗi tạo gợi ý." };
+    return { error: "Lá»—i táº¡o gá»£i Ã½." };
   }
 }
 
 export async function buyStreakFreezeAction() {
   const session = await auth();
-  if (!session?.user?.email) return { error: "Cần đăng nhập" };
+  if (!session?.user?.email) return { error: "Cáº§n Ä‘Äƒng nháº­p" };
 
   const user = await prisma.user.findUnique({ where: { email: session.user.email } });
   if (!user) return { error: "User not found" };
@@ -1355,7 +1398,7 @@ export async function buyStreakFreezeAction() {
   const PRICE = 50; // Cost 50 points
 
   if ((user as any).points < PRICE) {
-    return { error: `Bạn không đủ mật ngọt! Cần ${PRICE} 🍯.` };
+    return { error: `Báº¡n khÃ´ng Ä‘á»§ máº­t ngá»t! Cáº§n ${PRICE} ðŸ¯.` };
   }
 
   try {
@@ -1367,9 +1410,9 @@ export async function buyStreakFreezeAction() {
       }
     });
     revalidatePath('/');
-    return { success: true, message: "Đã mua Băng Vĩnh Cửu! 🧊" };
+    return { success: true, message: "ÄÃ£ mua BÄƒng VÄ©nh Cá»­u! ðŸ§Š" };
   } catch (error) {
-    return { error: "Lỗi giao dịch." };
+    return { error: "Lá»—i giao dá»‹ch." };
   }
 }
 
@@ -1390,7 +1433,7 @@ export async function smartCaptureAction(data: {
   explanation?: string;
 }) {
   const session = await auth();
-  if (!session?.user?.email) return { error: "Cần đăng nhập" };
+  if (!session?.user?.email) return { error: "Cáº§n Ä‘Äƒng nháº­p" };
 
   const user = await prisma.user.findUnique({ where: { email: session.user.email } });
   if (!user) return { error: "User not found" };
@@ -1423,13 +1466,13 @@ export async function smartCaptureAction(data: {
     return { success: true, deferred: isDeferred };
   } catch (error) {
     console.error("Error in smart capture:", error);
-    return { error: "Lỗi lưu dữ liệu capture." };
+    return { error: "Lá»—i lÆ°u dá»¯ liá»‡u capture." };
   }
 }
 
 export async function getDeferredItemsAction() {
   const session = await auth();
-  if (!session?.user?.email) return { error: "Cần đăng nhập" };
+  if (!session?.user?.email) return { error: "Cáº§n Ä‘Äƒng nháº­p" };
 
   const user = await prisma.user.findUnique({ where: { email: session.user.email } });
   if (!user) return { error: "User not found" };
@@ -1448,13 +1491,13 @@ export async function getDeferredItemsAction() {
     return { success: true, vocab, grammar };
   } catch (error) {
     console.error("Error fetching deferred items:", error);
-    return { error: "Lỗi khi lấy dữ liệu Inbox." };
+    return { error: "Lá»—i khi láº¥y dá»¯ liá»‡u Inbox." };
   }
 }
 
 export async function manageInboxItemAction(id: string, type: "VOCAB" | "GRAMMAR", action: "ADD" | "DELETE") {
   const session = await auth();
-  if (!session?.user?.email) return { error: "Cần đăng nhập" };
+  if (!session?.user?.email) return { error: "Cáº§n Ä‘Äƒng nháº­p" };
 
   try {
     if (action === "DELETE") {
@@ -1470,7 +1513,7 @@ export async function manageInboxItemAction(id: string, type: "VOCAB" | "GRAMMAR
     return { success: true };
   } catch (error) {
     console.error("Error managing inbox item:", error);
-    return { error: "Lỗi khi xử lý mục này." };
+    return { error: "Lá»—i khi xá»­ lÃ½ má»¥c nÃ y." };
   }
 }
 
@@ -1482,7 +1525,7 @@ import bcrypt from 'bcryptjs';
 
 
 export async function getSecurityQuestionAction(email: string) {
-  if (!email) return { error: "Vui lòng nhập email." };
+  if (!email) return { error: "Vui lÃ²ng nháº­p email." };
 
   // Normalize email
   const normalizedEmail = email.toLowerCase().trim();
@@ -1494,18 +1537,18 @@ export async function getSecurityQuestionAction(email: string) {
   if (!user) {
     // Return a dummy question to prevent email enumeration, or just error if security isn't paramount here
     // For better UX in this specific app context, we'll say email not found
-    return { error: "Email không tồn tại trong hệ thống." };
+    return { error: "Email khÃ´ng tá»“n táº¡i trong há»‡ thá»‘ng." };
   }
 
   if (!(user as any).securityQuestion) {
-    return { error: "Tài khoản này chưa thiết lập câu hỏi bảo mật. Vui lòng liên hệ Admin." };
+    return { error: "TÃ i khoáº£n nÃ y chÆ°a thiáº¿t láº­p cÃ¢u há»i báº£o máº­t. Vui lÃ²ng liÃªn há»‡ Admin." };
   }
 
   return { success: true, question: (user as any).securityQuestion };
 }
 
 export async function verifySecurityAnswerAction(email: string, answer: string) {
-  if (!email || !answer) return { error: "Vui lòng nhập câu trả lời." };
+  if (!email || !answer) return { error: "Vui lÃ²ng nháº­p cÃ¢u tráº£ lá»i." };
 
   const normalizedEmail = email.toLowerCase().trim();
   const normalizedAnswer = answer.trim();
@@ -1515,19 +1558,19 @@ export async function verifySecurityAnswerAction(email: string, answer: string) 
   });
 
   if (!user || !(user as any).securityAnswer) {
-    return { error: "Thông tin không hợp lệ." };
+    return { error: "ThÃ´ng tin khÃ´ng há»£p lá»‡." };
   }
 
   // Simple string comparison (case-insensitive for better UX?)
   if ((user as any).securityAnswer.toLowerCase() !== normalizedAnswer.toLowerCase()) {
-    return { error: "Câu trả lời chưa chính xác." };
+    return { error: "CÃ¢u tráº£ lá»i chÆ°a chÃ­nh xÃ¡c." };
   }
 
   // Answer is correct -> Generate Link
   const passwordResetToken = await generatePasswordResetToken(normalizedEmail);
 
   // In a real app, you might still email this. 
-  // But per requirement: "hiện link trên UI"
+  // But per requirement: "hiá»‡n link trÃªn UI"
 
   const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${passwordResetToken.token}`;
 
@@ -1540,26 +1583,26 @@ export async function resetPasswordAction(token: string, formData: FormData) {
   const confirmPassword = formData.get('confirmPassword') as string;
 
   if (!password || !confirmPassword) {
-    return { error: "Vui lòng nhập đầy đủ thông tin." };
+    return { error: "Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ thÃ´ng tin." };
   }
 
   if (password !== confirmPassword) {
-    return { error: "Mật khẩu không khớp." };
+    return { error: "Máº­t kháº©u khÃ´ng khá»›p." };
   }
 
   if (password.length < 6) {
-    return { error: "Mật khẩu phải có ít nhất 6 ký tự." };
+    return { error: "Máº­t kháº©u pháº£i cÃ³ Ã­t nháº¥t 6 kÃ½ tá»±." };
   }
 
   const existingToken = await getPasswordResetTokenByToken(token);
 
   if (!existingToken) {
-    return { error: "Token không hợp lệ hoặc đã hết hạn." };
+    return { error: "Token khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n." };
   }
 
   const hasExpired = new Date(existingToken.expires) < new Date();
   if (hasExpired) {
-    return { error: "Token đã hết hạn. Vui lòng yêu cầu lại." };
+    return { error: "Token Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng yÃªu cáº§u láº¡i." };
   }
 
   const existingUser = await prisma.user.findFirst({
@@ -1567,7 +1610,7 @@ export async function resetPasswordAction(token: string, formData: FormData) {
   });
 
   if (!existingUser) {
-    return { error: "Email không tồn tại." };
+    return { error: "Email khÃ´ng tá»“n táº¡i." };
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -1581,40 +1624,57 @@ export async function resetPasswordAction(token: string, formData: FormData) {
     where: { id: existingToken.id }
   });
 
-  return { success: "Mật khẩu đã được đặt lại thành công!" };
+  return { success: "Máº­t kháº©u Ä‘Ã£ Ä‘Æ°á»£c Ä‘áº·t láº¡i thÃ nh cÃ´ng!" };
 }
 
 export async function getWordsPaginatedAction(skip: number, take: number, search?: string) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập." };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p." };
 
   try {
-    const whereClause: any = { userId: user.id };
+    const trimmedSearch = search?.trim();
+    const baseSelect = `SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt" FROM "Vocabulary"`;
+    let words: unknown[] = [];
 
-    if (search) {
-      whereClause.OR = [
-        { word: { contains: search } },
-        { meaning: { contains: search } }
-      ];
+    if (trimmedSearch) {
+      const like = `%${trimmedSearch}%`;
+      words = await prisma.$queryRawUnsafe(
+        `${baseSelect}
+         WHERE "userId" = $1
+           AND (
+             LOWER(word) LIKE LOWER($2)
+             OR LOWER(meaning) LIKE LOWER($2)
+             OR LOWER(COALESCE(context, '')) LIKE LOWER($2)
+           )
+         ORDER BY "createdAt" DESC
+         LIMIT $3 OFFSET $4`,
+        user.id,
+        like,
+        take,
+        skip
+      );
+    } else {
+      words = await prisma.$queryRawUnsafe(
+        `${baseSelect}
+         WHERE "userId" = $1
+         ORDER BY "createdAt" DESC
+         LIMIT $2 OFFSET $3`,
+        user.id,
+        take,
+        skip
+      );
     }
-
-    const words = await prisma.vocabulary.findMany({
-      where: whereClause,
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take
-    });
 
     return { success: true, words };
   } catch (error) {
     console.error("Error fetching paginated words:", error);
-    return { error: "Lỗi khi lấy dữ liệu từ vựng." };
+    return { error: "Lá»—i khi láº¥y dá»¯ liá»‡u tá»« vá»±ng." };
   }
 }
 
 export async function checkDuplicateWordAction(word: string) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập." };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p." };
 
   try {
     const trimmedWord = word.trim().toLowerCase();
@@ -1636,7 +1696,7 @@ export async function checkDuplicateWordAction(word: string) {
     return { exists };
   } catch (error) {
     console.error("Error checking duplicate word:", error);
-    return { error: "Lỗi kiểm tra từ trùng." };
+    return { error: "Lá»—i kiá»ƒm tra tá»« trÃ¹ng." };
   }
 }
 
@@ -1733,7 +1793,7 @@ export async function getLeaderboardAction() {
     return { success: true, users };
   } catch (error) {
     console.error("Error fetching leaderboard:", error);
-    return { error: "Lỗi khi lấy dữ liệu bảng xếp hạng." };
+    return { error: "Lá»—i khi láº¥y dá»¯ liá»‡u báº£ng xáº¿p háº¡ng." };
   }
 }
 
@@ -1754,7 +1814,7 @@ export async function saveToeicQuestionAction(data: {
   sentenceStructure?: string; // Part 7 - JSON string of {subject, relativeClause, mainVerb}
 }) {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Bạn cần đăng nhập! 🐝" };
+  if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p! ðŸ" };
 
   const typeMap: Record<number, string> = { 5: "TOEIC_P5", 6: "TOEIC_P6", 7: "TOEIC_P7" };
   const cardType = typeMap[data.toeicPart] || "TOEIC_P5";
@@ -1794,13 +1854,13 @@ export async function saveToeicQuestionAction(data: {
     return { success: true };
   } catch (error) {
     console.error("Error saving TOEIC question:", error);
-    return { error: "Lỗi khi lưu câu hỏi TOEIC." };
+    return { error: "Lá»—i khi lÆ°u cÃ¢u há»i TOEIC." };
   }
 }
 
 export async function getWeakCategoriesAction() {
   const user = await getAuthenticatedUser();
-  if (!user) return { error: "Cần đăng nhập" };
+  if (!user) return { error: "Cáº§n Ä‘Äƒng nháº­p" };
 
   try {
     const results: any[] = await prisma.$queryRawUnsafe(`
@@ -1852,6 +1912,6 @@ export async function getWeakCategoriesAction() {
     };
   } catch (error) {
     console.error("Error fetching weak categories:", error);
-    return { error: "Lỗi khi phân tích điểm yếu." };
+    return { error: "Lá»—i khi phÃ¢n tÃ­ch Ä‘iá»ƒm yáº¿u." };
   }
 }

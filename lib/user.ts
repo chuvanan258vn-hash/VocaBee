@@ -16,6 +16,36 @@ export interface VocaBeeUser {
     createdAt: Date;
 }
 
+function toSafeNumber(value: unknown, fallback: number): number {
+    if (typeof value === 'bigint') return Number(value);
+    if (typeof value === 'number') return value;
+    return fallback;
+}
+
+async function hydrateReviewLimits(user: VocaBeeUser): Promise<VocaBeeUser> {
+    try {
+        const rows = await prisma.$queryRawUnsafe<Array<{
+            dailyMaxVocabReview: unknown;
+            dailyMaxGrammarReview: unknown;
+        }>>(
+            `SELECT "dailyMaxVocabReview", "dailyMaxGrammarReview" FROM "User" WHERE id = $1 LIMIT 1`,
+            user.id
+        );
+
+        const row = rows?.[0];
+        if (!row) return user;
+
+        return {
+            ...user,
+            dailyMaxVocabReview: toSafeNumber(row.dailyMaxVocabReview, user.dailyMaxVocabReview ?? 100),
+            dailyMaxGrammarReview: toSafeNumber(row.dailyMaxGrammarReview, user.dailyMaxGrammarReview ?? 50),
+        };
+    } catch (e) {
+        console.warn('Could not hydrate daily max review limits from raw SQL:', e);
+        return user;
+    }
+}
+
 export async function getAuthenticatedUser(): Promise<VocaBeeUser | null> {
     const session = await auth();
     if (!session?.user?.email) return null;
@@ -49,9 +79,7 @@ export async function getAuthenticatedUser(): Promise<VocaBeeUser | null> {
                     name: session.user.name || email.split('@')[0],
                     password: "$2a$10$UserWasAutoCreatedFromSessionButDBWasWiped", // Dummy hash
                     dailyNewWordGoal: 20,
-                    dailyNewGrammarGoal: 10,
-                    dailyMaxVocabReview: 100,
-                    dailyMaxGrammarReview: 50
+                    dailyNewGrammarGoal: 10
                 }
             }) as unknown as VocaBeeUser;
         } catch (createError) {
@@ -59,5 +87,6 @@ export async function getAuthenticatedUser(): Promise<VocaBeeUser | null> {
         }
     }
 
-    return user;
+    if (!user) return null;
+    return hydrateReviewLimits(user);
 }
