@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import WordList from '@/components/WordList';
 import ScrollToTopButton from '@/components/ScrollToTopButton';
 import { prisma } from '@/lib/prisma';
+import type { Vocabulary } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,17 +24,25 @@ export default async function VocabularyPage({
     }
 
     const user = await getAuthenticatedUser();
+    if (!user) {
+        redirect('/login');
+    }
     const stats = await getDashboardStats();
 
     // Get all unique word types for filtering
-    const allWordTypes = stats?.wordTypes || [];
+    const allWordTypes = (stats?.wordTypes || []).filter(
+        (t): t is string => typeof t === 'string' && t.length > 0
+    );
 
     // Lấy 20 từ đầu tiên để SSR ban đầu
-    const allWords = await prisma.vocabulary.findMany({
-        where: { userId: user?.id },
-        orderBy: { createdAt: 'desc' },
-        take: 20
-    });
+    const allWords = await prisma.$queryRawUnsafe<Vocabulary[]>(
+        `SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
+         FROM "Vocabulary"
+         WHERE "userId" = $1
+         ORDER BY "createdAt" DESC
+         LIMIT 20`,
+        user.id
+    );
 
     return (
         <div className="flex min-h-screen bg-background text-foreground font-sans">
