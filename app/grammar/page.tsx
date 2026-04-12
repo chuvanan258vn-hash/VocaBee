@@ -17,20 +17,28 @@ export default async function GrammarPage() {
         redirect('/login');
     }
 
-    const user = await getAuthenticatedUser();
-    const stats = await getDashboardStats();
+    // Chạy song song: user lookup + dashboard stats
+    // React.cache trên getAuthenticatedUser đảm bảo cả hai dùng chung 1 DB round-trip
+    const [user, stats] = await Promise.all([
+        getAuthenticatedUser(),
+        getDashboardStats(),
+    ]);
 
-    // Lấy 20 thẻ đầu tiên để SSR ban đầu
-    const allGrammar = await (prisma as any).grammarCard.findMany({
-        where: { userId: user?.id },
-        orderBy: { createdAt: 'desc' },
-        take: 20
-    });
+    if (!user) {
+        redirect('/login');
+    }
 
-    // Get total count for grammar cards
-    const totalGrammar = await (prisma as any).grammarCard.count({
-        where: { userId: user?.id }
-    });
+    // Chạy song song: danh sách grammar + tổng số thẻ
+    const [allGrammar, totalGrammar] = await Promise.all([
+        (prisma as any).grammarCard.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            take: 20
+        }),
+        (prisma as any).grammarCard.count({
+            where: { userId: user.id }
+        })
+    ]);
 
     return (
         <div className="flex min-h-screen bg-background text-foreground font-sans">

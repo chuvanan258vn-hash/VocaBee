@@ -32,117 +32,80 @@ export default async function ReviewPage({
     const yesterdayStart = new Date(todayStart);
     yesterdayStart.setDate(yesterdayStart.getDate() - 1);
 
-    // Count high-prio from_test items added today to implement "Swap, don't add"
-    let testVocabToday = 0;
-    try {
-        const vTest: any = await prisma.$queryRawUnsafe(
-            `SELECT COUNT(*) as count FROM "Vocabulary" WHERE "userId" = $1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= $2`,
-            user.id,
-            todayStart
-        );
-        testVocabToday = Number(vTest[0]?.count || 0);
-    } catch (_e) {
-        console.error("Error fetching test vocab count:", _e);
-    }
+    // ─── OPTIMIZATION: Gộp 8+ sequential queries thành 2 parallel SQL aggregations ───
+    // OLD: 8-10 sequential Prisma/raw calls (~6-10s)
+    // NEW: 2 SQL FILTER aggregations + Promise.all (~1 round-trip, ~1s)
+    // ─────────────────────────────────────────────────────────────────────────────────
+    const [vocabCounts, grammarCounts, testVocabRaw] = await Promise.all([
 
-    // Count words learned for the FIRST TIME today
-    const learnedTodayCount = await prisma.vocabulary.count({
-        where: {
-            userId: user.id,
-            updatedAt: { gte: todayStart },
-            repetition: 1
-        }
-    });
+        // ① Tất cả Vocabulary counts trong 1 SQL
+        prisma.$queryRawUnsafe<any[]>(`
+            SELECT
+                COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition = 1)                         AS "learnedToday",
+                COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false
+                                       AND "createdAt" >= $3 AND "createdAt" < $2)                   AS "unlearnedYesterday",
+                COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition > 1)                         AS "alreadyReviewed",
+                COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false) AS "rawDueCount"
+            FROM "Vocabulary"
+            WHERE "userId" = $4
+        `, now, todayStart, yesterdayStart, user.id),
 
-    // Count words added YESTERDAY that haven't been studied yet (interval: 0)
-    const unlearnedYesterdayVocab = await prisma.vocabulary.count({
-        where: {
-            userId: user.id,
-            interval: 0,
-            isDeferred: false,
-            createdAt: {
-                gte: yesterdayStart,
-                lt: todayStart
-            }
-        }
-    });
+        // ② Tất cả GrammarCard counts trong 1 SQL
+        prisma.$queryRawUnsafe<any[]>(`
+            SELECT
+                COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition = 1)                         AS "learnedToday",
+                COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false
+                                       AND "createdAt" >= $3 AND "createdAt" < $2)                   AS "unlearnedYesterday",
+                COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition > 1)                         AS "alreadyReviewed",
+                COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false
+                                       AND NOT (repetition = 1 AND "updatedAt" >= $3
+                                                AND "updatedAt" < $2))                               AS "rawDueCount"
+            FROM "GrammarCard"
+            WHERE "userId" = $4
+        `, now, todayStart, yesterdayStart, user.id),
 
-    const baseVocabGoal = (user as unknown as VocaBeeUser).dailyNewWordGoal || 30;
-    // Total goal = unlearned from yesterday + normal daily goal (Capped at 30)
+        // ③ TEST vocab high-prio count (kept separate with .catch())
+        prisma.$queryRawUnsafe<any[]>(
+            `SELECT COUNT(*) AS count FROM "Vocabulary"
+             WHERE "userId" = $1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= $2`,
+            user.id, todayStart
+        ).catch(() => [{ count: 0 }]),
+    ]);
+
+    // ─── Extract & cast (PostgreSQL COUNT returns bigint) ────────────────────────
+    const vc = vocabCounts[0] || {};
+    const gc = grammarCounts[0] || {};
+
+    const learnedTodayCount           = Number(vc.learnedToday       || 0);
+    const unlearnedYesterdayVocab     = Number(vc.unlearnedYesterday  || 0);
+    const alreadyReviewedVocabToday   = Number(vc.alreadyReviewed     || 0);
+    const rawVocabDueCount            = Number(vc.rawDueCount         || 0);
+    const testVocabToday              = Number(testVocabRaw[0]?.count || 0);
+
+    const learnedGrammarToday         = Number(gc.learnedToday        || 0);
+    const unlearnedYesterdayGrammar   = Number(gc.unlearnedYesterday   || 0);
+    const alreadyReviewedGrammarToday = Number(gc.alreadyReviewed      || 0);
+    const rawGrammarDueCount          = Number(gc.rawDueCount          || 0);
+
+    // ─── Compute goals & quotas ──────────────────────────────────────────────────
+    const vUser = user as unknown as VocaBeeUser;
+
+    const baseVocabGoal = vUser.dailyNewWordGoal || 30;
     const totalVocabGoal = baseVocabGoal + unlearnedYesterdayVocab;
     const canLearnMoreCount = Math.max(0, totalVocabGoal - learnedTodayCount);
 
-    // Count grammar learned for the FIRST TIME today
-    const learnedGrammarToday = await prisma.grammarCard.count({
-        where: {
-            userId: user.id,
-            updatedAt: { gte: todayStart },
-            repetition: 1
-        }
-    });
-
-    // Count grammar added YESTERDAY that haven't been studied yet (interval: 0)
-    const unlearnedYesterdayGrammar = await prisma.grammarCard.count({
-        where: {
-            userId: user.id,
-            interval: 0,
-            isDeferred: false,
-            createdAt: {
-                gte: yesterdayStart,
-                lt: todayStart
-            }
-        }
-    });
-
-    const baseGrammarGoal = (user as unknown as VocaBeeUser).dailyNewGrammarGoal || 30;
-    // Total goal = unlearned from yesterday + normal daily goal
+    const baseGrammarGoal = vUser.dailyNewGrammarGoal || 30;
     const totalGrammarGoal = baseGrammarGoal + unlearnedYesterdayGrammar;
     const canLearnMoreGrammarCount = Math.max(0, totalGrammarGoal - learnedGrammarToday);
 
-    // --- SESSION LIMITS ---
-    // --- DYNAMIC SESSION LIMITS ---
-    // Count exact items available to decide if we should merge sessions
-    const alreadyReviewedVocabToday = await prisma.vocabulary.count({
-        where: {
-            userId: user.id,
-            updatedAt: { gte: todayStart },
-            repetition: { gt: 1 }
-        }
-    });
-    const vUser = user as unknown as VocaBeeUser;
     const MAX_DAILY_VOCAB_REVIEWS = vUser.dailyMaxVocabReview ?? 100;
     const remainingVocabReviewQuota = isReviewAll ? 9999 : Math.max(0, MAX_DAILY_VOCAB_REVIEWS - alreadyReviewedVocabToday);
-
-    const rawVocabDueCount = await prisma.vocabulary.count({
-        where: {
-            userId: user.id,
-            interval: { gt: 0 },
-            nextReview: { lte: now },
-            isDeferred: false
-        }
-    });
     const vocabDueCount = Math.min(rawVocabDueCount, remainingVocabReviewQuota);
     const totalPotentialVocab = vocabDueCount + canLearnMoreCount;
 
-    // Similarly for grammar
-    const alreadyReviewedGrammarRaw: { count: bigint }[] = await prisma.$queryRawUnsafe(`
-        SELECT COUNT(*) as count FROM "GrammarCard" 
-        WHERE "userId" = $1 
-          AND "updatedAt" >= $2
-          AND repetition > 1
-    `, user.id, todayStart);
-    const alreadyReviewedGrammarToday = Number(alreadyReviewedGrammarRaw[0]?.count || 0);
     const MAX_DAILY_GRAMMAR_REVIEWS = vUser.dailyMaxGrammarReview ?? 50;
     const remainingGrammarReviewQuota = isReviewAll ? 9999 : Math.max(0, MAX_DAILY_GRAMMAR_REVIEWS - alreadyReviewedGrammarToday);
-
-    const grammarDueRaw: { count: bigint }[] = await prisma.$queryRawUnsafe(`
-        SELECT COUNT(*) as count FROM "GrammarCard" 
-        WHERE "userId" = $1 AND interval > 0 AND "nextReview" <= $2 AND "isDeferred" = false
-        AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
-    `, user.id, now, yesterdayStart, todayStart);
-    
-    const maxGrammarQueryCount = Number(grammarDueRaw[0]?.count || 0);
-    const effectiveGrammarDueCount = Math.min(maxGrammarQueryCount, remainingGrammarReviewQuota);
+    const effectiveGrammarDueCount = Math.min(rawGrammarDueCount, remainingGrammarReviewQuota);
     const totalPotentialGrammar = effectiveGrammarDueCount + canLearnMoreGrammarCount;
 
     // Thresholds: if items are below these, take them all in one session

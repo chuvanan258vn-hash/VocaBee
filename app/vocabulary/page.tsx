@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getAuthenticatedUser } from '@/lib/user';
 import Sidebar from '@/components/Sidebar';
-import { getDashboardStats, getWordsPaginatedAction } from '@/app/actions';
+import { getWordsPaginatedAction, getVocabPageHeaderStats } from '@/app/actions';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import WordList from '@/components/WordList';
 import ScrollToTopButton from '@/components/ScrollToTopButton';
@@ -27,13 +27,10 @@ export default async function VocabularyPage({
     if (!user) {
         redirect('/login');
     }
-    const stats = await getDashboardStats();
+    // Lightweight header data (streak, points, totalWords, wordTypes)
+    const headerStats = await getVocabPageHeaderStats();
 
-    // Get all unique word types for filtering
-    const allWordTypes = (stats?.wordTypes || []).filter(
-        (t): t is string => typeof t === 'string' && t.length > 0
-    );
-
+    const allWordTypes = (headerStats?.wordTypes || []);
     // Lấy 20 từ đầu tiên để SSR ban đầu
     const allWords = await prisma.$queryRawUnsafe<Vocabulary[]>(
         `SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
@@ -59,13 +56,13 @@ export default async function VocabularyPage({
                     </div>
 
                     <div className="flex items-center gap-4 md:gap-6">
-                        <div className="hidden md:flex items-center gap-2 bg-surface/50 border border-glass-border px-3 py-1.5 rounded-full backdrop-blur-sm" title={`${stats?.streak || 0} Day Streak`}>
+                        <div className="hidden md:flex items-center gap-2 bg-surface/50 border border-glass-border px-3 py-1.5 rounded-full backdrop-blur-sm" title={`${headerStats?.streak || 0} Day Streak`}>
                             <span className="material-symbols-outlined text-amber-500 text-[20px] filled">local_fire_department</span>
-                            <span className="text-amber-500 font-bold text-sm">{stats?.streak || 0}</span>
+                            <span className="text-amber-500 font-bold text-sm">{headerStats?.streak || 0}</span>
                         </div>
-                        <div className="hidden md:flex items-center gap-2 bg-surface/50 border border-glass-border px-3 py-1.5 rounded-full backdrop-blur-sm" title={`${(stats?.points || 0).toLocaleString('en-US')} Bees`}>
+                        <div className="hidden md:flex items-center gap-2 bg-surface/50 border border-glass-border px-3 py-1.5 rounded-full backdrop-blur-sm" title={`${(headerStats?.points || 0).toLocaleString('en-US')} Bees`}>
                             <span className="material-symbols-outlined text-primary text-[20px] filled">hive</span>
-                            <span className="text-primary font-bold text-sm">{(stats?.points || 0).toLocaleString('en-US')}</span>
+                            <span className="text-primary font-bold text-sm">{(headerStats?.points || 0).toLocaleString('en-US')}</span>
                         </div>
                         <div className="h-8 w-px bg-glass-border mx-1 md:mx-2"></div>
                         <div className="flex items-center gap-3 cursor-pointer group">
@@ -84,7 +81,7 @@ export default async function VocabularyPage({
                 <div className="p-4 sm:p-6 max-w-7xl mx-auto flex flex-col gap-6 sm:gap-8 pb-24">
                     <WordList
                         initialWords={allWords}
-                        totalWords={stats?.totalWords || 0}
+                        totalWords={headerStats?.totalWords || 0}
                         availableWordTypes={allWordTypes}
                     />
                 </div>

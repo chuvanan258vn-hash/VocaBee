@@ -73,6 +73,12 @@ export default function GrammarItem({ item }: { item: GrammarCard }) {
     };
 
     if (isEditing) {
+        // Parse MCQ options from JSON string for editing
+        const parsedOptions: string[] = (() => {
+            try { return editData.options ? JSON.parse(editData.options) : ["", "", "", ""]; }
+            catch { return editData.options.split(",").map(s => s.trim()); }
+        })();
+
         return (
             <div className="p-8 glass-panel shadow-[var(--shadow-glass)] rounded-3xl transition-all space-y-6 animate-in fade-in zoom-in duration-300">
                 <div className="flex items-center gap-3 mb-2">
@@ -83,6 +89,7 @@ export default function GrammarItem({ item }: { item: GrammarCard }) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Prompt - full width */}
                     <div className="space-y-1.5 md:col-span-2">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Câu hỏi / Đề bài (Prompt)</label>
                         <textarea
@@ -93,6 +100,7 @@ export default function GrammarItem({ item }: { item: GrammarCard }) {
                         />
                     </div>
 
+                    {/* Answer */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Đáp án (Answer)</label>
                         <input
@@ -103,16 +111,18 @@ export default function GrammarItem({ item }: { item: GrammarCard }) {
                         />
                     </div>
 
+                    {/* Meaning */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Dịch nghĩa (Meaning)</label>
                         <input
                             className="input-premium w-full p-3 text-foreground"
-                            placeholder="Nghĩa của câu"
+                            placeholder="Nghĩa của câu / dịch nghĩa"
                             value={editData.meaning}
                             onChange={(e) => setEditData({ ...editData, meaning: e.target.value })}
                         />
                     </div>
 
+                    {/* Type */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Loại thẻ (Type)</label>
                         <select
@@ -121,13 +131,43 @@ export default function GrammarItem({ item }: { item: GrammarCard }) {
                             value={editData.type}
                             onChange={(e) => setEditData({ ...editData, type: e.target.value })}
                         >
-                            <option value="CLOZE">CLOZE (Điền từ)</option>
-                            <option value="MCQ">MCQ (Trắc nghiệm)</option>
-                            <option value="NOTEBOOK">NOTEBOOK (Sổ tay lỗi sai)</option>
-                            <option value="TRANS">TRANS (Dịch câu)</option>
+                            <option value="CLOZE">CLOZE — Điền từ</option>
+                            <option value="MCQ">MCQ — Trắc nghiệm</option>
+                            <option value="PRODUCTION">PRODUCTION — Viết câu</option>
+                            <option value="ERROR_CORRECTION">ERROR_CORRECTION — Sửa lỗi</option>
+                            <option value="TRANSFORMATION">TRANSFORMATION — Chuyển câu</option>
                         </select>
                     </div>
 
+                    {/* MCQ Options — only shown when type is MCQ */}
+                    {editData.type === "MCQ" && (
+                        <div className="space-y-2 md:col-span-2">
+                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">
+                                Đáp án A-D <span className="text-purple-400 font-normal">*</span>
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                {(["A", "B", "C", "D"] as const).map((letter, idx) => (
+                                    <div key={letter} className="flex items-center gap-2 input-premium p-2">
+                                        <span className="text-xs font-black text-purple-400 w-5 shrink-0">{letter}</span>
+                                        <input
+                                            className="flex-1 bg-transparent outline-none text-foreground text-sm placeholder:text-slate-500"
+                                            placeholder={`Đáp án ${letter}...`}
+                                            value={parsedOptions[idx] ?? ""}
+                                            onChange={(e) => {
+                                                const newOpts = [...parsedOptions];
+                                                while (newOpts.length < 4) newOpts.push("");
+                                                newOpts[idx] = e.target.value;
+                                                setEditData({ ...editData, options: JSON.stringify(newOpts) });
+                                            }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-[10px] text-slate-500 ml-1">💡 Nhấn chữ cái để chọn đáp án đúng khi làm bài</p>
+                        </div>
+                    )}
+
+                    {/* Hint */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Gợi ý (Hint)</label>
                         <input
@@ -137,8 +177,20 @@ export default function GrammarItem({ item }: { item: GrammarCard }) {
                             onChange={(e) => setEditData({ ...editData, hint: e.target.value })}
                         />
                     </div>
+
+                    {/* Tags */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Tag</label>
+                        <input
+                            className="input-premium w-full p-3 text-foreground"
+                            placeholder="vd: tenses, prepositions, TOEIC"
+                            value={editData.tags}
+                            onChange={(e) => setEditData({ ...editData, tags: e.target.value })}
+                        />
+                    </div>
                 </div>
 
+                {/* NOTEBOOK extra fields */}
                 {editData.type === "NOTEBOOK" && (
                     <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl space-y-4">
                         <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-500 flex items-center gap-2">
@@ -176,6 +228,7 @@ export default function GrammarItem({ item }: { item: GrammarCard }) {
                     </div>
                 )}
 
+                {/* Explanation */}
                 <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-1">Giải thích chi tiết (Explanation)</label>
                     <textarea
@@ -209,6 +262,7 @@ export default function GrammarItem({ item }: { item: GrammarCard }) {
             </div>
         );
     }
+
 
     return (
         <div className="glass-panel rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 relative group hover:border-purple-500/40 hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] transition-all duration-300">
