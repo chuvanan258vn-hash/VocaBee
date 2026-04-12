@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -46,7 +47,10 @@ async function hydrateReviewLimits(user: VocaBeeUser): Promise<VocaBeeUser> {
     }
 }
 
-export async function getAuthenticatedUser(): Promise<VocaBeeUser | null> {
+// React.cache deduplicates concurrent calls within the same request lifecycle.
+// This prevents duplicate DB round-trips when multiple server components/actions
+// call getAuthenticatedUser() in parallel (e.g. grammar page + getDashboardStats).
+export const getAuthenticatedUser = cache(async (): Promise<VocaBeeUser | null> => {
     const session = await auth();
     if (!session?.user?.email) return null;
 
@@ -89,4 +93,4 @@ export async function getAuthenticatedUser(): Promise<VocaBeeUser | null> {
 
     if (!user) return null;
     return hydrateReviewLimits(user);
-}
+});
