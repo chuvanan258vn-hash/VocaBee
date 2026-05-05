@@ -26,6 +26,10 @@ export async function authenticate(
     }
 }
 
+export async function signInWithGoogle() {
+    await signIn('google');
+}
+
 export async function register(
     prevState: string | undefined,
     formData: FormData,

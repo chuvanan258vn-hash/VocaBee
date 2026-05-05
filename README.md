@@ -292,6 +292,13 @@ T h � m   g i �i   h �n 
  - Đã thêm logic giới hạn từ/ngữ pháp ôn tập mỗi ngày (100 từ vựng, 50 ngữ pháp) để tránh bị quá tải số lượng ôn tập.
 - Đã thêm tùy biến vào Cài đặt để thay đổi giới hạn từ vựng/ngữ pháp hiển thị trong phần ôn tập mỗi ngày.
 
+## 🎓 Chế độ Nhồi nhét Ôn thi (Exam Cramming)
+Nhằm phục vụ kỳ thi quan trọng vào ngày 1/6, VocaBee đã ra mắt **Chiến dịch ôn thi 1/6**. Chế độ học tập đặc biệt này có những đặc điểm sau:
+1. **Bỏ qua giới hạn SRS thông thường**: Thay vì học theo thuật toán giãn cách thông thường (Spaced Repetition), chế độ này cho phép bạn nhồi nhét tối đa (cramming) toàn bộ dữ liệu bạn đã upload trong giai đoạn nước rút.
+2. **Khoanh vùng thời gian tập trung**: Hệ thống tự động gom nhóm **toàn bộ Từ vựng và Ngữ pháp** được tải lên trong giai đoạn từ `24/04/2026` đến `31/05/2026`. Các thẻ ngoài khung thời gian này sẽ không xuất hiện để tránh làm loãng trọng tâm.
+3. **Truy cập nhanh chóng**: Ngay trên cùng của Dashboard, bạn sẽ thấy 2 banner đỏ và hồng nổi bật với dòng chữ "Chiến dịch ôn thi 1/6" (xuất hiện nếu có dữ liệu thỏa mãn điều kiện thời gian). Chỉ cần click vào "CHIẾN NGAY" là có thể bắt đầu phiên học liên tục.
+
+
 
 ## Logic Ôn Tập Hằng Ngày (Daily Review System)
 Hệ thống tải danh sách ôn tập hàng ngày theo thứ tự ưu tiên và đảm bảo không gây quá tải cho người học. Logic hoạt động cho cả Từ Vựng và Ngữ Pháp:
