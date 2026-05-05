@@ -120,6 +120,39 @@ export default async function ReviewPage({
         ? 100 
         : (totalPotentialGrammar <= GRAMMAR_THRESHOLD ? GRAMMAR_THRESHOLD : 10);
 
+    // --- CRAMMING MODE (CHIẾN DỊCH ÔN THI 1/6) ---
+    if (type === 'vocab_exam' || type === 'grammar_exam') {
+        let cramItems: (Vocabulary | GrammarCard)[] = [];
+        if (type === 'vocab_exam') {
+            const words: Vocabulary[] = await prisma.$queryRawUnsafe(`
+                SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
+                FROM "Vocabulary"
+                WHERE "userId" = $1
+                  AND "createdAt" >= '2026-04-24' 
+                  AND "createdAt" < '2026-06-01'
+                ORDER BY "createdAt" ASC
+                LIMIT 200
+            `, user.id);
+            cramItems = words;
+        } else {
+            const grammar: GrammarCard[] = await prisma.$queryRawUnsafe(`
+                SELECT * FROM "GrammarCard"
+                WHERE "userId" = $1
+                  AND "createdAt" >= '2026-04-24' 
+                  AND "createdAt" < '2026-06-01'
+                ORDER BY "createdAt" ASC
+                LIMIT 200
+            `, user.id);
+            cramItems = grammar;
+        }
+
+        return (
+            <main className="min-h-screen bg-background font-sans">
+                <ReviewSession dueWords={cramItems} />
+            </main>
+        );
+    }
+
     // 1. Lấy các từ ĐANG ÔN TẬP nhưng đến hạn (Priority 1)
     const dueVocabLimit = Math.min(VOCAB_SESSION_LIMIT, remainingVocabReviewQuota);
     const dueWords: Vocabulary[] = (type === 'grammar') ? [] : await prisma.$queryRawUnsafe(`

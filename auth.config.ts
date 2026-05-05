@@ -8,17 +8,26 @@ export const authConfig = {
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;
-            const isOnDashboard = nextUrl.pathname === '/';
+            
+            // Danh sách các trang KHÔNG cần đăng nhập
+            const isAuthPage = nextUrl.pathname.startsWith('/login') || 
+                               nextUrl.pathname.startsWith('/register') || 
+                               nextUrl.pathname.startsWith('/forgot-password');
 
-            if (isOnDashboard) {
-                if (isLoggedIn) return true;
-                return false; // Redirect unauthenticated users to login page
-            } else if (isLoggedIn) {
-                // If user is logged in and tries to access login/register, redirect to dashboard
-                if (nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register')) {
+            if (isAuthPage) {
+                // Nếu đã đăng nhập mà cố vào login/register -> đá về trang chủ
+                if (isLoggedIn) {
                     return Response.redirect(new URL('/', nextUrl));
                 }
+                // Nếu chưa đăng nhập thì cho phép vào trang login/register
+                return true;
             }
+
+            // Mọi trang khác ĐỀU bắt buộc phải đăng nhập
+            if (!isLoggedIn) {
+                return false; // Tự động redirect về '/login'
+            }
+
             return true;
         },
     },

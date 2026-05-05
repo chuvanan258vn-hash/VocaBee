@@ -4,6 +4,8 @@ import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import Google from 'next-auth/providers/google';
+import { PrismaAdapter } from '@auth/prisma-adapter';
 import type { User } from '@/lib/definitions'; // We might need to create this or use Prisma types
 
 async function getUser(email: string): Promise<any> {
@@ -19,8 +21,14 @@ async function getUser(email: string): Promise<any> {
 }
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
+    adapter: PrismaAdapter(prisma),
+    session: { strategy: 'jwt' },
     ...authConfig,
     providers: [
+        Google({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        }),
         Credentials({
             async authorize(credentials) {
                 const parsedCredentials = z
@@ -31,6 +39,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     const { email, password } = parsedCredentials.data;
                     const user = await getUser(email);
                     if (!user) return null;
+                    if (!user.password) return null; // Can't login with credentials if registered via OAuth
 
                     const passwordsMatch = await bcrypt.compare(password, user.password);
 

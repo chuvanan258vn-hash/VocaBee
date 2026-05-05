@@ -137,6 +137,69 @@ export default async function Home() {
         </header>
 
         <div className="p-4 sm:p-6 max-w-7xl mx-auto flex flex-col gap-6 sm:gap-8 pb-24">
+          {/* Exam Cramming Banners */}
+          {stats && stats.examVocabCount > 0 && (
+            <div className="bg-gradient-to-r from-red-600 to-orange-500 rounded-3xl p-1 md:p-1.5 shadow-[0_0_30px_rgba(239,68,68,0.3)] relative overflow-hidden group">
+              <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
+              <div className="bg-surface/40 backdrop-blur-md rounded-2xl p-6 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
+                <div className="flex items-center gap-6 w-full md:w-auto relative z-10">
+                  <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-red-500/30">
+                    <span className="material-symbols-outlined text-white text-3xl">local_fire_department</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
+                      <p className="text-red-500 dark:text-red-300 text-xs font-bold uppercase tracking-widest">Chiến dịch ôn thi 1/6</p>
+                    </div>
+                    <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
+                      Bạn có <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">
+                        {stats.examVocabCount} từ vựng
+                      </span> cần nhồi nhét
+                    </h3>
+                  </div>
+                </div>
+                <Link
+                  href="/review?type=vocab_exam"
+                  className="relative z-10 w-full md:w-auto md:min-w-[220px] group overflow-hidden bg-red-600 text-white font-bold text-sm py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:shadow-[0_0_25px_rgba(220,38,38,0.6)] hover:bg-red-500 hover:scale-[1.02] flex items-center justify-center gap-3"
+                >
+                  CHIẾN NGAY
+                  <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">bolt</span>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {stats && stats.examGrammarCount > 0 && (
+            <div className="bg-gradient-to-r from-pink-600 to-rose-500 rounded-3xl p-1 md:p-1.5 shadow-[0_0_30px_rgba(236,72,153,0.3)] relative overflow-hidden group">
+              <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
+              <div className="bg-surface/40 backdrop-blur-md rounded-2xl p-6 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
+                <div className="flex items-center gap-6 w-full md:w-auto relative z-10">
+                  <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-pink-500/30">
+                    <span className="material-symbols-outlined text-white text-3xl">psychology_alt</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse"></span>
+                      <p className="text-pink-500 dark:text-pink-300 text-xs font-bold uppercase tracking-widest">Chiến dịch ôn thi 1/6</p>
+                    </div>
+                    <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
+                      Bạn có <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">
+                        {stats.examGrammarCount} ngữ pháp
+                      </span> cần nhồi nhét
+                    </h3>
+                  </div>
+                </div>
+                <Link
+                  href="/review?type=grammar_exam"
+                  className="relative z-10 w-full md:w-auto md:min-w-[220px] group overflow-hidden bg-pink-600 text-white font-bold text-sm py-3 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(219,39,119,0.4)] hover:shadow-[0_0_25px_rgba(219,39,119,0.6)] hover:bg-pink-500 hover:scale-[1.02] flex items-center justify-center gap-3"
+                >
+                  CHIẾN NGAY
+                  <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">bolt</span>
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* Daily Mission Banner */}
           {showButton && (
             <div className="amber-glass-gradient rounded-3xl p-1 md:p-1.5 shadow-glow relative overflow-hidden group">
