@@ -14,13 +14,15 @@ import Link from 'next/link';
 
 interface ReviewSessionProps {
     dueWords: (Vocabulary | GrammarCard)[];
+    /** Khi true, từ vựng luôn dùng chế độ lật thẻ (không nhập từ) */
+    flipOnly?: boolean;
 }
 
 const isGrammarCard = (item: Vocabulary | GrammarCard): item is GrammarCard => {
     return 'prompt' in item;
 };
 
-export default function ReviewSession({ dueWords: initialDueWords }: ReviewSessionProps) {
+export default function ReviewSession({ dueWords: initialDueWords, flipOnly = false }: ReviewSessionProps) {
     const [dueWords, setDueWords] = useState(initialDueWords);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isDone, setIsDone] = useState(false);
@@ -37,12 +39,13 @@ export default function ReviewSession({ dueWords: initialDueWords }: ReviewSessi
     // Randomize mode whenever currentIndex changes
     useEffect(() => {
         if (!isDone && dueWords[currentIndex]) {
-            // Grammar cards always use standard mode for now, 
-            // Vocabulary cards have a 50% chance to be Input mode
+            // Grammar cards always use standard mode.
+            // flipOnly=true (e.g. chiến dịch ôn thi): vocab luôn dùng lật thẻ.
+            // Bình thường: từ vựng có 50% xác suất dùng FlashcardInput.
             const isGrammar = isGrammarCard(dueWords[currentIndex]);
-            setUseInputMode(!isGrammar && Math.random() > 0.5);
+            setUseInputMode(!isGrammar && !flipOnly && Math.random() > 0.5);
         }
-    }, [currentIndex, isDone, dueWords]);
+    }, [currentIndex, isDone, dueWords, flipOnly]);
 
 
     if (dueWords.length === 0) {

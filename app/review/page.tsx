@@ -148,7 +148,8 @@ export default async function ReviewPage({
 
         return (
             <main className="min-h-screen bg-background font-sans">
-                <ReviewSession dueWords={cramItems} />
+                {/* vocab_exam: chỉ lật thẻ (flipOnly), không nhập từ */}
+                <ReviewSession dueWords={cramItems} flipOnly={type === 'vocab_exam'} />
             </main>
         );
     }
