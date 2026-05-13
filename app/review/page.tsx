@@ -130,9 +130,18 @@ export default async function ReviewPage({
                 WHERE "userId" = $1
                   AND "createdAt" >= '2026-04-24' 
                   AND "createdAt" < '2026-06-01'
-                ORDER BY "createdAt" ASC
+                ORDER BY
+                  CASE
+                    WHEN repetition = 0 AND interval = 0 THEN 1
+                    WHEN interval > 0 AND "nextReview" <= $2   THEN 2
+                    WHEN repetition > 0 AND efactor < 2.1     THEN 3
+                    WHEN repetition > 0 AND interval < 14     THEN 4
+                    ELSE 5
+                  END ASC,
+                  efactor ASC,
+                  "nextReview" ASC
                 LIMIT 200
-            `, user.id);
+            `, user.id, now);
             cramItems = words;
         } else {
             const grammar: GrammarCard[] = await prisma.$queryRawUnsafe(`
@@ -140,9 +149,18 @@ export default async function ReviewPage({
                 WHERE "userId" = $1
                   AND "createdAt" >= '2026-04-24' 
                   AND "createdAt" < '2026-06-01'
-                ORDER BY "createdAt" ASC
+                ORDER BY
+                  CASE
+                    WHEN repetition = 0 AND interval = 0 THEN 1
+                    WHEN interval > 0 AND "nextReview" <= $2   THEN 2
+                    WHEN repetition > 0 AND efactor < 2.1     THEN 3
+                    WHEN repetition > 0 AND interval < 14     THEN 4
+                    ELSE 5
+                  END ASC,
+                  efactor ASC,
+                  "nextReview" ASC
                 LIMIT 200
-            `, user.id);
+            `, user.id, now);
             cramItems = grammar;
         }
 

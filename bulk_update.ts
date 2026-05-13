@@ -22,7 +22,7 @@ async function main() {
             });
             console.log(`Updated: ${word}`);
         } catch (error) {
-            console.error(`Failed to update ${word} (${id}):`, error.message);
+            console.error(`Failed to update ${word} (${id}):`, (error as Error).message);
         }
     }
 
