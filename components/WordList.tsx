@@ -61,7 +61,7 @@ export default function WordList({ initialWords, totalWords, availableWordTypes 
       try {
         const res = await getWordsPaginatedAction(0, 40, debouncedSearch); // Increase limit for search to show more at once
         if (res.success && res.words) {
-          setWords(res.words);
+          setWords(res.words as Vocabulary[]);
         } else if (res.error) {
           showToast(res.error, "error");
         }
@@ -143,7 +143,7 @@ export default function WordList({ initialWords, totalWords, availableWordTypes 
     const res = await getWordsPaginatedAction(words.length, 20, debouncedSearch);
 
     if (res.success && res.words) {
-      setWords((prev) => [...prev, ...res.words!]);
+      setWords((prev) => [...prev, ...(res.words as Vocabulary[])]);
     } else if (res.error) {
       showToast(res.error, "error");
     }
@@ -156,7 +156,7 @@ export default function WordList({ initialWords, totalWords, availableWordTypes 
     setIsSearching(true);
     const res = await getWordsPaginatedAction(0, 40, searchQuery);
     if (res.success && res.words) {
-      setWords(res.words);
+      setWords(res.words as Vocabulary[]);
     }
     setIsSearching(false);
   };

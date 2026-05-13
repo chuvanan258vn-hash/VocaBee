@@ -298,6 +298,26 @@ Nhằm phục vụ kỳ thi quan trọng vào ngày 1/6, VocaBee đã ra mắt *
 2. **Khoanh vùng thời gian tập trung**: Hệ thống tự động gom nhóm **toàn bộ Từ vựng và Ngữ pháp** được tải lên trong giai đoạn từ `24/04/2026` đến `31/05/2026`. Các thẻ ngoài khung thời gian này sẽ không xuất hiện để tránh làm loãng trọng tâm.
 3. **Truy cập nhanh chóng**: Ngay trên cùng của Dashboard, bạn sẽ thấy 2 banner đỏ và hồng nổi bật với dòng chữ "Chiến dịch ôn thi 1/6" (xuất hiện nếu có dữ liệu thỏa mãn điều kiện thời gian). Chỉ cần click vào "CHIẾN NGAY" là có thể bắt đầu phiên học liên tục.
 
+### 🧠 [Nâng cấp 2026-05-13] SRS-Smart Ordering — Thứ tự ôn thi thông minh
+
+**Vấn đề cũ:** Mỗi ngày mở session thì luôn hiện cùng một danh sách theo thứ tự ngày tạo (`createdAt ASC`) — từ đã thuộc nằm đầu, từ yếu nhất bị đẩy cuối.
+
+**Giải pháp:** Session Cramming giờ sắp xếp theo **5 tầng ưu tiên SRS** — từ cần học nhất lên đầu:
+
+| Tầng | Điều kiện | Ưu tiên |
+|------|-----------|---------|
+| 🔴 Chưa học lần nào | `repetition=0, interval=0` | 1 — cao nhất |
+| 🟠 Đã quên / quá hạn | `interval>0, nextReview≤now` | 2 |
+| 🟡 Đang học, yếu | `efactor < 2.1` (chưa quá hạn) | 3 |
+| 🟢 Đang học, ổn | `efactor ≥ 2.1, interval < 14` | 4 |
+| ⚪ Đã vững | `interval ≥ 14` và chưa đến hạn | 5 — thấp nhất |
+
+Trong mỗi tầng, sắp xếp theo `efactor ASC` (từ khó nhất lên trước). Kết quả: mỗi lần mở session sẽ ưu tiên đúng những từ bạn cần tập trung nhất.
+
+**Số đếm banner:** Chỉ hiển thị các item **thực sự cần ôn** (tầng 1–4). Items đã vững (`interval≥14` và chưa đến hạn) được loại khỏi số đếm.
+
+**Badge breakdown trên banner:** Hiển thị chi tiết `🔴 X chưa học | 🟠 Y quá hạn | 🟡 Z còn yếu` để bạn biết ngay tình trạng chiến dịch.
+
 
 
 ## Logic Ôn Tập Hằng Ngày (Daily Review System)

@@ -152,10 +152,28 @@ export default async function Home() {
                       <p className="text-red-500 dark:text-red-300 text-xs font-bold uppercase tracking-widest">Chiến dịch ôn thi 1/6</p>
                     </div>
                     <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
-                      Bạn có <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">
+                      Còn <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">
                         {stats.examVocabCount} từ vựng
-                      </span> cần nhồi nhét
+                      </span> cần ôn gấp
                     </h3>
+                    {/* SRS Breakdown Badges */}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {stats.examVocabNew > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold">
+                          🔴 {stats.examVocabNew} chưa học
+                        </span>
+                      )}
+                      {stats.examVocabOverdue > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-300 text-xs font-semibold">
+                          🟠 {stats.examVocabOverdue} quá hạn
+                        </span>
+                      )}
+                      {stats.examVocabWeak > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-xs font-semibold">
+                          🟡 {stats.examVocabWeak} còn yếu
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <Link
@@ -183,10 +201,28 @@ export default async function Home() {
                       <p className="text-pink-500 dark:text-pink-300 text-xs font-bold uppercase tracking-widest">Chiến dịch ôn thi 1/6</p>
                     </div>
                     <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
-                      Bạn có <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">
+                      Còn <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">
                         {stats.examGrammarCount} ngữ pháp
-                      </span> cần nhồi nhét
+                      </span> cần ôn gấp
                     </h3>
+                    {/* SRS Breakdown Badges */}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {stats.examGrammarNew > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-300 text-xs font-semibold">
+                          🔴 {stats.examGrammarNew} chưa học
+                        </span>
+                      )}
+                      {stats.examGrammarOverdue > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-300 text-xs font-semibold">
+                          🟠 {stats.examGrammarOverdue} quá hạn
+                        </span>
+                      )}
+                      {stats.examGrammarWeak > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-xs font-semibold">
+                          🟡 {stats.examGrammarWeak} còn yếu
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <Link

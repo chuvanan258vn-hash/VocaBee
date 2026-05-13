@@ -556,7 +556,15 @@ export async function getDashboardStats() {
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false)                                            AS "availableNewVocabCount",
         COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition > 1)                                             AS "alreadyReviewedVocabToday",
         COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false)                     AS "rawVocabDueCount",
-        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01')                       AS "examVocabCount"
+        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+                               AND NOT (interval >= 14 AND "nextReview" > $1))                                    AS "examVocabCount",
+        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+                               AND repetition = 0 AND interval = 0)                                              AS "examVocabNew",
+        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+                               AND interval > 0 AND "nextReview" <= $1)                                          AS "examVocabOverdue",
+        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+                               AND repetition > 0 AND efactor < 2.1
+                               AND NOT (interval > 0 AND "nextReview" <= $1))                                    AS "examVocabWeak"
       FROM "Vocabulary"
       WHERE "userId" = $4
     `, now, todayStart, yesterdayStart, userBase.id),
@@ -590,7 +598,15 @@ export async function getDashboardStats() {
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false AND type = 'TOEIC_P7')                      AS "newP7",
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false
                                AND type NOT IN ('TOEIC_P5','TOEIC_P6','TOEIC_P7'))                               AS "newOther",
-        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01')                       AS "examGrammarCount"
+        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+                               AND NOT (interval >= 14 AND "nextReview" > $1))                                    AS "examGrammarCount",
+        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+                               AND repetition = 0 AND interval = 0)                                              AS "examGrammarNew",
+        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+                               AND interval > 0 AND "nextReview" <= $1)                                          AS "examGrammarOverdue",
+        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+                               AND repetition > 0 AND efactor < 2.1
+                               AND NOT (interval > 0 AND "nextReview" <= $1))                                    AS "examGrammarWeak"
       FROM "GrammarCard"
       WHERE "userId" = $4
     `, now, todayStart, yesterdayStart, userBase.id),
@@ -631,6 +647,9 @@ export async function getDashboardStats() {
   const rawVocabDueCount           = Number(v.rawVocabDueCount           || 0);
   const testVocabTodayCount        = Number(vTest[0]?.count              || 0);
   const examVocabCount             = Number(v.examVocabCount             || 0);
+  const examVocabNew               = Number(v.examVocabNew               || 0);
+  const examVocabOverdue           = Number(v.examVocabOverdue           || 0);
+  const examVocabWeak              = Number(v.examVocabWeak              || 0);
 
   const learnedGrammarToday            = Number(g.learnedGrammarToday            || 0);
   const unlearnedYesterdayGrammar      = Number(g.unlearnedYesterdayGrammar      || 0);
@@ -638,6 +657,9 @@ export async function getDashboardStats() {
   const alreadyReviewedGrammarToday    = Number(g.alreadyReviewedGrammarToday    || 0);
   const rawGrammarDueCountResolved     = Number(g.rawGrammarDueCount             || 0);
   const examGrammarCount               = Number(g.examGrammarCount               || 0);
+  const examGrammarNew                 = Number(g.examGrammarNew                 || 0);
+  const examGrammarOverdue             = Number(g.examGrammarOverdue             || 0);
+  const examGrammarWeak                = Number(g.examGrammarWeak                || 0);
 
   const grammarBreakdown = {
     part5: { due: Number(g.dueP5    || 0), new: Number(g.newP5    || 0) },
@@ -710,7 +732,13 @@ export async function getDashboardStats() {
     streakFrozen,
     grammarBreakdown,
     examVocabCount,
-    examGrammarCount
+    examVocabNew,
+    examVocabOverdue,
+    examVocabWeak,
+    examGrammarCount,
+    examGrammarNew,
+    examGrammarOverdue,
+    examGrammarWeak,
   };
 }
 
