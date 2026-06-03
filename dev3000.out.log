@@ -1,0 +1,22 @@
+
+> vocabee-srs@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 3000
+
+▲ Next.js 16.1.1 (Turbopack)
+- Local:         http://127.0.0.1:3000
+- Network:       http://127.0.0.1:3000
+- Environments: .env
+- Experiments (use with caution):
+  · serverActions
+
+✓ Starting...
+✓ Ready in 3.4s
+ GET /login?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2F 200 in 1361ms (compile: 764ms, proxy.ts: 225ms, render: 372ms)
+ GET /login 200 in 94ms (compile: 9ms, proxy.ts: 10ms, render: 75ms)
+ GET /login?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2F 200 in 328ms (compile: 35ms, proxy.ts: 23ms, render: 271ms)
+ GET /login?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2F 200 in 447ms (compile: 21ms, proxy.ts: 16ms, render: 411ms)
+ GET /login?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2F 200 in 81ms (compile: 15ms, proxy.ts: 5ms, render: 61ms)
+ POST /login?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2F 303 in 656ms (compile: 21ms, proxy.ts: 36ms, render: 599ms)
+○ Compiling / ...
+ GET / 200 in 13.9s (compile: 12.8s, proxy.ts: 16ms, render: 1010ms)
+ GET / 200 in 1583ms (compile: 963ms, proxy.ts: 24ms, render: 597ms)
