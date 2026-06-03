@@ -37,11 +37,13 @@ export default async function SettingsPage() {
                         <p className="text-slate-500 text-sm font-medium">Tùy chỉnh giao diện học tập của bạn để có trải nghiệm tốt nhất.</p>
                     </div>
 
-                    <SettingsForm 
-                        initialDailyGoal={user?.dailyNewWordGoal || 20} 
-                        initialDailyGrammarGoal={user?.dailyNewGrammarGoal || 5} 
+                    <SettingsForm
+                        initialDailyGoal={user?.dailyNewWordGoal || 20}
+                        initialDailyGrammarGoal={user?.dailyNewGrammarGoal || 5}
                         initialDailyMaxVocabReview={(user as any)?.dailyMaxVocabReview ?? 100}
                         initialDailyMaxGrammarReview={(user as any)?.dailyMaxGrammarReview ?? 50}
+                        initialExamStartDate={(user as any)?.examStartDate ? new Date((user as any).examStartDate).toISOString().split('T')[0] : ''}
+                        initialExamDate={(user as any)?.examDate ? new Date((user as any).examDate).toISOString().split('T')[0] : ''}
                     />
                 </div>
             </main>

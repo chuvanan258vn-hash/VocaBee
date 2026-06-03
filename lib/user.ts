@@ -14,6 +14,8 @@ export interface VocaBeeUser {
     lastGoalMetDate?: Date | null;
     points: number;
     streakFreeze: number;
+    examStartDate?: Date | null;
+    examDate?: Date | null;
     createdAt: Date;
 }
 

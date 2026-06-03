@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Plus, Minus } from "lucide-react";
+import { Save, Plus, Minus, Calendar } from "lucide-react";
+
+// Format YYYY-MM-DD → DD/MM/YYYY
+function fmtDate(val: string) {
+    if (!val) return '';
+    const [y, m, d] = val.split('-');
+    return `${d}/${m}/${y}`;
+}
 import { updateUserSettingsAction } from "@/app/actions";
 import { useToast } from "./ToastProvider";
 import { motion } from "framer-motion";
@@ -12,9 +19,11 @@ interface SettingsFormProps {
     initialDailyGrammarGoal?: number;
     initialDailyMaxVocabReview?: number;
     initialDailyMaxGrammarReview?: number;
+    initialExamStartDate?: string;
+    initialExamDate?: string;
 }
 
-export default function SettingsForm({ initialDailyGoal, initialDailyGrammarGoal, initialDailyMaxVocabReview, initialDailyMaxGrammarReview }: SettingsFormProps) {
+export default function SettingsForm({ initialDailyGoal, initialDailyGrammarGoal, initialDailyMaxVocabReview, initialDailyMaxGrammarReview, initialExamStartDate, initialExamDate }: SettingsFormProps) {
     const { showToast } = useToast();
     const router = useRouter();
     const [dailyGoal, setDailyGoal] = useState(initialDailyGoal || 20);
@@ -27,12 +36,25 @@ export default function SettingsForm({ initialDailyGoal, initialDailyGrammarGoal
     const [dailyMaxGrammarReview, setDailyMaxGrammarReview] = useState<number>(
         typeof initialDailyMaxGrammarReview === 'number' ? initialDailyMaxGrammarReview : 50
     );
+    const [examStartDate, setExamStartDate] = useState<string>(initialExamStartDate || '');
+    const [examDate, setExamDate] = useState<string>(initialExamDate || '');
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSave = async () => {
+        if (examStartDate && examDate && examDate <= examStartDate) {
+            showToast("Ngày thi phải sau ngày bắt đầu chiến dịch!", "error");
+            return;
+        }
         setIsLoading(true);
         try {
-            const res = await updateUserSettingsAction({ dailyGoal, dailyGrammarGoal, dailyMaxVocabReview, dailyMaxGrammarReview });
+            const res = await updateUserSettingsAction({
+                dailyGoal,
+                dailyGrammarGoal,
+                dailyMaxVocabReview,
+                dailyMaxGrammarReview,
+                examStartDate: examStartDate || null,
+                examDate: examDate || null,
+            });
             if (res.success) {
                 showToast("Đã lưu cài đặt thành công! Đang về Dashboard... 🐝✨", "success");
                 // Refresh current page data, then auto-navigate to dashboard
@@ -296,6 +318,79 @@ export default function SettingsForm({ initialDailyGoal, initialDailyGrammarGoal
                         </div>
                     </div>
                 </section>
+
+            {/* Section: Exam Campaign */}
+            <section className="glass-panel rounded-[32px] p-8 border border-glass-border shadow-soft bg-surface/20">
+                <h3 className="text-foreground tracking-tight text-xl font-black leading-tight pb-2 flex items-center gap-3">
+                    <span className="material-symbols-outlined text-red-500 text-[28px]">local_fire_department</span>
+                    Chiến dịch ôn thi
+                </h3>
+                <p className="text-slate-500 text-sm mb-8">Đặt khoảng thời gian chiến dịch để hiển thị banner ôn thi khẩn cấp trên Dashboard. Để trống để tắt banner.</p>
+                <div className="flex flex-col gap-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <p className="font-bold text-foreground">Ngày bắt đầu thêm từ ôn thi</p>
+                            <p className="text-xs text-slate-500">Chỉ tính từ vựng &amp; ngữ pháp được <strong>thêm vào</strong> từ ngày này (không phải ngày bắt đầu học).</p>
+                        </div>
+                        <div className="flex flex-col gap-1 min-w-[200px]">
+                            <input
+                                type="date"
+                                value={examStartDate}
+                                onChange={(e) => setExamStartDate(e.target.value)}
+                                className="bg-surface border border-glass-border rounded-xl px-4 py-2.5 text-sm font-bold text-foreground outline-none focus:ring-2 focus:ring-red-500/40 w-full [color-scheme:dark]"
+                            />
+                            {examStartDate && (
+                                <span className="text-xs text-slate-400 pl-1">{fmtDate(examStartDate)}</span>
+                            )}
+                        </div>
+                    </div>
+
+                    <hr className="border-glass-border opacity-50" />
+
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <p className="font-bold text-foreground">Ngày thi (deadline)</p>
+                            <p className="text-xs text-slate-500">Banner sẽ hiển thị cho đến hết ngày này.</p>
+                        </div>
+                        <div className="flex flex-col gap-1 min-w-[200px]">
+                            <input
+                                type="date"
+                                value={examDate}
+                                onChange={(e) => setExamDate(e.target.value)}
+                                className="bg-surface border border-glass-border rounded-xl px-4 py-2.5 text-sm font-bold text-foreground outline-none focus:ring-2 focus:ring-red-500/40 w-full [color-scheme:dark]"
+                            />
+                            {examDate && (
+                                <span className="text-xs text-slate-400 pl-1">{fmtDate(examDate)}</span>
+                            )}
+                        </div>
+                    </div>
+
+                    {examStartDate && examDate && (
+                        <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-2xl px-5 py-3 mt-2">
+                            <span className="material-symbols-outlined text-red-400 text-[20px]">campaign</span>
+                            <p className="text-red-300 text-sm font-semibold">
+                                Chiến dịch: <span className="text-white">{fmtDate(examStartDate)}</span>
+                                {' → '}
+                                <span className="text-white">{fmtDate(examDate)}</span>
+                            </p>
+                        </div>
+                    )}
+
+                    {(examStartDate || examDate) && !(examStartDate && examDate) && (
+                        <p className="text-amber-400 text-xs font-semibold mt-1">⚠️ Cần điền cả 2 ngày để bật chiến dịch.</p>
+                    )}
+
+                    {(examStartDate || examDate) && (
+                        <button
+                            type="button"
+                            onClick={() => { setExamStartDate(''); setExamDate(''); }}
+                            className="self-start text-xs text-slate-500 hover:text-red-400 transition-colors underline underline-offset-2"
+                        >
+                            Xóa chiến dịch
+                        </button>
+                    )}
+                </div>
+            </section>
 
             {/* Customization (Display only) */}
             <section className="glass-panel rounded-[32px] p-8 border border-glass-border shadow-soft bg-surface/20 opacity-70">

@@ -539,6 +539,15 @@ export async function getDashboardStats() {
   const yesterdayStart = new Date(todayStart);
   yesterdayStart.setDate(yesterdayStart.getDate() - 1);
 
+  // Exam campaign dates — read via raw SQL to avoid Prisma client cache issues
+  const examRows = await prisma.$queryRawUnsafe<Array<{ examStartDate: Date | null; examDate: Date | null }>>(
+    `SELECT "examStartDate", "examDate" FROM "User" WHERE id = $1 LIMIT 1`,
+    userBase.id
+  );
+  const examStartDate = examRows[0]?.examStartDate ?? null;
+  const examDate = examRows[0]?.examDate ?? null;
+  const hasExamCampaign = !!(examStartDate && examDate);
+
   // ─── OPTIMIZATION: Option A + B combined ───────────────────────────────────
   // OLD CODE: 15 sequential DB round-trips × ~1.5s each ≈ 22s just for counts
   // NEW CODE: 4 parallel queries in Promise.all, 2 of which use PostgreSQL FILTER
@@ -556,13 +565,13 @@ export async function getDashboardStats() {
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false)                                            AS "availableNewVocabCount",
         COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition > 1)                                             AS "alreadyReviewedVocabToday",
         COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false)                     AS "rawVocabDueCount",
-        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
                                AND NOT (interval >= 14 AND "nextReview" > $1))                                    AS "examVocabCount",
-        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
                                AND repetition = 0 AND interval = 0)                                              AS "examVocabNew",
-        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
                                AND interval > 0 AND "nextReview" <= $1)                                          AS "examVocabOverdue",
-        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
                                AND repetition > 0 AND efactor < 2.1
                                AND NOT (interval > 0 AND "nextReview" <= $1))                                    AS "examVocabWeak"
       FROM "Vocabulary"
@@ -598,13 +607,13 @@ export async function getDashboardStats() {
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false AND type = 'TOEIC_P7')                      AS "newP7",
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false
                                AND type NOT IN ('TOEIC_P5','TOEIC_P6','TOEIC_P7'))                               AS "newOther",
-        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
                                AND NOT (interval >= 14 AND "nextReview" > $1))                                    AS "examGrammarCount",
-        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
                                AND repetition = 0 AND interval = 0)                                              AS "examGrammarNew",
-        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
                                AND interval > 0 AND "nextReview" <= $1)                                          AS "examGrammarOverdue",
-        COUNT(*) FILTER (WHERE "createdAt" >= '2026-04-24' AND "createdAt" < '2026-06-01'
+        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
                                AND repetition > 0 AND efactor < 2.1
                                AND NOT (interval > 0 AND "nextReview" <= $1))                                    AS "examGrammarWeak"
       FROM "GrammarCard"
@@ -770,11 +779,13 @@ export async function checkWordsExistenceAction(words: string[]) {
 
 
 
-export async function updateUserSettingsAction(data: { 
-  dailyGoal: number; 
-  dailyGrammarGoal?: number; 
-  dailyMaxVocabReview?: number; 
-  dailyMaxGrammarReview?: number; 
+export async function updateUserSettingsAction(data: {
+  dailyGoal: number;
+  dailyGrammarGoal?: number;
+  dailyMaxVocabReview?: number;
+  dailyMaxGrammarReview?: number;
+  examStartDate?: string | null;
+  examDate?: string | null;
 }) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: "Báº¡n cáº§n Ä‘Äƒng nháº­p." };
@@ -790,18 +801,29 @@ export async function updateUserSettingsAction(data: {
       ? data.dailyMaxGrammarReview
       : (user.dailyMaxGrammarReview ?? 50);
 
+    const nextExamStartDate = data.examStartDate !== undefined
+      ? (data.examStartDate ? new Date(data.examStartDate) : null)
+      : ((user as any).examStartDate ?? null);
+    const nextExamDate = data.examDate !== undefined
+      ? (data.examDate ? new Date(data.examDate) : null)
+      : ((user as any).examDate ?? null);
+
     // Use raw SQL to avoid Prisma client/schema mismatch for newer columns.
     await prisma.$executeRawUnsafe(
       `UPDATE "User"
        SET "dailyNewWordGoal" = $1,
            "dailyNewGrammarGoal" = $2,
            "dailyMaxVocabReview" = $3,
-           "dailyMaxGrammarReview" = $4
-       WHERE id = $5`,
+           "dailyMaxGrammarReview" = $4,
+           "examStartDate" = $5,
+           "examDate" = $6
+       WHERE id = $7`,
       data.dailyGoal,
       nextDailyGrammarGoal,
       nextDailyMaxVocabReview,
       nextDailyMaxGrammarReview,
+      nextExamStartDate,
+      nextExamDate,
       user.id
     );
 

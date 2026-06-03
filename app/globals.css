@@ -52,6 +52,17 @@
   --shadow-glow-primary: 0 0 25px rgba(245, 158, 11, 0.4);
 }
 
+/*
+  Fluid font scaling — toàn bộ Tailwind rem-units scale theo viewport:
+  - 1280px (laptop nhỏ): ~13px
+  - 1920px (23"): ~14.4px
+  - 2560px (27"): ~16px (cap)
+  Công thức: clamp(min, vw * factor, max)
+*/
+html {
+  font-size: clamp(13px, 0.75vw, 16px);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
