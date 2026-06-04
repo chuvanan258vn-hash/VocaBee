@@ -1,371 +1,487 @@
-# 🐝 VocaBee - Smart Spaced Repetition Vocabulary App
+# 🐝 VocaBee
 
-VocaBee là một ứng dụng học từ vựng thông minh dựa trên phương pháp **Spaced Repetition (Lặp lại ngắt quãng)**. Ứng dụng giúp người dùng ghi nhớ từ vựng lâu dài thông qua việc lên lịch ôn tập khoa học và đặt mục tiêu hàng ngày, với giao diện hiện đại và trải nghiệm người dùng cao cấp.
-
----
-
-## ✨ Điểm nổi bật (Highlights)
-
-- **Giao diện Premium & Accessibility:** Sử dụng phong cách **Glassmorphism** (kính mờ) hiện đại, chiều sâu và sang trọng, đồng thời tuân thủ các tiêu chuẩn **a11y** (accessibility) để mọi người dùng đều có thể tiếp cận dễ dàng.
-- **Typography tinh tế:** Sử dụng font chữ **Plus Jakarta Sans** – mang lại vẻ ngoài thanh thoát và chuyên nghiệp.
-- **Dark Mode & Light Mode:** Hỗ trợ giao diện sáng/tối mượt mà, bảo vệ mắt người dùng.
-- **Hiệu ứng sống động:** Các vi tương tác (micro-animations) giúp trải nghiệm học tập trở nên thú vị hơn.
+> **Ứng dụng học từ vựng & ngữ pháp tiếng Anh thông minh** dành cho người luyện thi TOEIC, được xây dựng với Next.js 15, Prisma và thuật toán lặp lại cách quãng SM-2.
 
 ---
 
-## 🃏 Tính năng Ôn tập qua Flashcard (Flashcard Mode)
+## 📋 Mục lục
 
-Flashcard là cốt lõi của trải nghiệm học tập trên VocaBee. Khi đến phiên ôn tập (Review Session), hệ thống sẽ đưa ra các thẻ từ vựng với các tính năng sau:
-
-- **Lật thẻ 3D (3D Flip Animation):** Mặt trước hiển thị từ, mặt sau hiển thị phiên âm, nghĩa tiếng Việt và ví dụ minh họa bằng hiệu ứng lật mượt mà.
-- **Phát âm tự động (Text-to-Speech):** Hỗ trợ đọc từ vựng ngay khi lật thẻ và đính kèm nút phát âm lại ở mặt sau để rèn luyện kỹ năng nghe.
-- **Đánh giá mức độ nhớ (4 Levels - Anki-style):** Sau khi lật thẻ, bạn chọn 1 trong 4 mức độ để hệ thống lên lịch:
-  - **Quên mất (Again):** Không nhớ từ, thẻ sẽ quay lại hàng đợi học lại ngay lập tức (< 1 phút).
-  - **Khó nhớ (Hard):** Nhớ một chút, khoảng cách tăng chậm (1.2x).
-  - **Nhớ được (Good):** Mức độ ổn định, khoảng cách tăng theo hệ số Ease Factor chuẩn.
-  - **Nhớ ngay (Easy):** Từ quá quen thuộc, nhận thêm Bonus khoảng cách (nhảy vọt ngay lập tức) để đẩy lùi lịch ôn tập ra xa.
-- **Thanh Tiến độ (Progress tracking):** Hệ thống review session sẽ hiển thị thanh biểu diễn (Progress bar) cho bạn biết mình đã hoàn thành bao nhiêu thẻ và còn lại bao nhiêu thẻ.
-- **Chế độ Nhập liệu (Typing / Active Recall Mode):** Hệ thống sẽ hiển thị ngẫu nhiên các thẻ yêu cầu người dùng tự gõ lại từ vựng dựa trên định nghĩa (thay vì lật thẻ).
-  - **Gợi ý Thông minh (Smart Hint):** Hỗ trợ hiển thị pattern chữ cái thông minh (ví dụ: `H _ _ _ _ d   o _ _` cho "Headed out"). Hệ thống tự động nhận diện cụm từ, hiển thị chữ cái đầu của mỗi từ và thêm các điểm gợi ý dựa trên độ dài từ, giúp kích thích gợi nhớ tối đa.
-  - **Phản hồi Sinh động:** Hiệu ứng **Confetti** vui nhộn khi gõ đúng và **Shake animation** (rung lắc) khi gõ sai, mang lại cảm giác chinh phục.
-  - **Tự động Phát âm (TTS):** Máy sẽ tự động đọc từ vựng ngay khi kết quả lộ diện (dù gõ đúng hay chọn xem đáp án) để rèn luyện kỹ năng nghe song song.
-  - **Loại từ Trực quan:** Hiển thị Badge loại từ (Noun, Verb, Adj...) ngay trên thẻ để bổ sung dữ kiện ghi nhớ quan trọng.
-  - **Hệ thống Điểm thưởng (Typing Bonus):** Khi người dùng gõ đúng hoàn toàn mà **không sử dụng Hint**, hệ thống sẽ tặng thêm **+1 điểm** tích lũy (Tổng +3) và cộng thêm chỉ số **Ease Factor** giúp từ vựng đó được giãn lịch ôn tập tối ưu hơn. Một Badge "Stars" sẽ xuất hiện để vinh danh nỗ lực này.
-  - **Logic Bỏ qua Thông minh:** Khi chọn "Xem đáp án", hệ thống tự động đánh dấu là "Quên mất" (Forgot) và chuyển sang giao diện ôn tập lại chuyên biệt với nút "Tiếp tục ôn tập" mượt mà.
+- [Tính năng chính](#-tính-năng-chính)
+- [Tech Stack](#-tech-stack)
+- [Kiến trúc hệ thống](#-kiến-trúc-hệ-thống)
+- [Cấu trúc Database](#-cấu-trúc-database)
+- [Cấu trúc thư mục](#-cấu-trúc-thư-mục)
+- [Các trang & Routes](#-các-trang--routes)
+- [Components](#-components)
+- [Server Actions](#-server-actions)
+- [Thuật toán SRS (SM-2)](#-thuật-toán-srs-sm-2)
+- [Hệ thống Gamification](#-hệ-thống-gamification)
+- [Cài đặt & Chạy](#-cài-đặt--chạy)
+- [Biến môi trường](#-biến-môi-trường)
 
 ---
 
-## 📓 Sổ tay lỗi sai (Mistake Notebook)
+## ✨ Tính năng chính
 
-Tính năng **Mistake Notebook** là công cụ mạnh mẽ dành cho người học TOEIC (đặc biệt Part 5, 6, 7) để biến những câu làm sai thành bài học sâu sắc:
+### 🧠 Học từ vựng thông minh
+- **Spaced Repetition (SM-2):** Hệ thống tự động lên lịch ôn tập dựa trên hiệu suất của người dùng. Từ dễ sẽ được ôn ít hơn, từ khó được ôn thường xuyên hơn.
+- **Review Session:** Giao diện flashcard với animation lật thẻ, hỗ trợ swipe trái/phải, nhập câu trả lời bằng bàn phím.
+- **Text-to-Speech:** Phát âm từ vựng với lựa chọn accent Anh-Mỹ, Anh-Anh, Anh-Úc.
+- **Smart Capture:** Bắt từ nhanh khi đọc tài liệu — lưu ngay vào hộp thư đến (inbox) nếu độ ưu tiên thấp.
 
-- **Lưu lỗi sai tức thì (Minimal Capture):** Giao diện nhập liệu tối giản chỉ yêu cầu 3 thông tin cốt lõi: Câu hỏi gốc, Đáp án đúng và Lý do tại sao bạn sai.
-- **Phân tích chuyên sâu (Advanced Analysis):** Hỗ trợ lưu trữ các thông tin "Cái bẫy" (Trap), "Quy tắc vàng" (Golden Rule) và giải nghĩa chi tiết để tránh lặp lại sai lầm.
-- **Tích hợp SM-2:** Các câu hỏi trong sổ tay lỗi sai sẽ được đưa vào lịch ôn tập giống như các thẻ ngữ pháp/từ vựng khác, giúp bạn ghi nhớ quy tắc và sửa lỗi triệt để.
-- **Giao diện Ôn tập Premium:** Khi ôn tập thẻ Mistake, hệ thống hiển thị phân tích lỗi sai với màu sắc và biểu tượng trực quan (Rose for Errors, Amber for Golden Rules), giúp kích thích tư duy phản biện.
+### 📚 Ngữ pháp TOEIC chuyên sâu
+- **Nhiều dạng bài:** CLOZE, PRODUCTION, ERROR_CORRECTION, MCQ, TRANSFORMATION, EXPLANATION.
+- **Phân loại theo Part:** TOEIC Part 5, 6, 7 với tracking riêng biệt.
+- **Phân tích điểm yếu:** Thuật toán tính điểm yếu dựa trên tỉ lệ sai, độ gần đây và efactor.
+- **Chiến dịch ôn thi:** Đặt ngày bắt đầu thêm từ và ngày thi để hiển thị banner đếm ngược khẩn cấp.
 
----
+### 🎮 Gamification
+- **Điểm (Bees):** Kiếm điểm sau mỗi lần ôn tập. +1 điểm cơ bản, +1 nếu chất lượng ≥ 4, +1 nếu nhập đúng bằng bàn phím, +5 khi đạt mục tiêu ngày.
+- **Streak hàng ngày:** Theo dõi chuỗi ngày học liên tục (ranh giới ngày lúc 4:00 AM).
+- **Streak Freeze:** Mua bảo vệ streak bằng 50 điểm.
+- **Leaderboard:** Top 50 người dùng theo điểm và streak.
 
-## ➕ Tính năng Thêm Từ vựng & Ngữ pháp (Add Content)
+### 📊 Thống kê chi tiết
+- Biểu đồ hoạt động 365 ngày (heatmap).
+- Phân bổ cấp độ thành thạo (New → Mastered).
+- Tỉ lệ giữ bài (Retention Rate).
+- Breakdown từ vựng theo từ loại.
 
-Ứng dụng cung cấp công cụ linh hoạt để bạn dễ dàng làm giàu vốn từ vựng của mình:
+### 📥 Import / Export
+- Import từ vựng hàng loạt qua CSV/Excel.
+- Import grammar cards hàng loạt.
+- Inbox (hộp thư đến) cho các từ bắt được nhanh — xem xét và chuyển vào bộ sưu tập chính sau.
 
-- **Thêm Từ Thủ công (Manual Entry):** Điền đầy đủ thông tin từ vựng bao gồm: Từ, Loại từ (Danh từ, Cụm danh từ, Cụm tính từ, Động từ, Cụm động từ, Tính từ...), Nghĩa, Phiên âm, Ví dụ và Từ đồng nghĩa.
-- **Dịch Nhanh thông minh (Smart Capture):** Cho phép bạn copy một đoạn văn bản (đặc biệt hữu dụng khi đọc tin tức tiếng Anh), công cụ Smart Capture sẽ tự động dịch, trích xuất các từ quan trọng (khó/mới) để bạn có thể thêm ngay vào bộ sưu tập.
-- **Cơ chế Inbox/Deferred:** Nếu bạn chưa có thời gian học ngay, các từ vựng mới thêm có thể được đẩy vào "Hộp thư đến" (Inbox/Deferred) để chờ bạn đưa ra quyết định bắt đầu học vào một thời điểm thích hợp, tránh làm loãng danh sách cần ôn tập hàng ngày.
-- **Nhập/Xuất Dữ liệu (Dự kiến):** Trong tương lai, ứng dụng hỗ trợ tải lên file danh sách từ vựng từ Excel/CSV.
-
----
-
-## 🏗 Kiến trúc Hệ thống & Trách nhiệm Files (System Architecture)
-
-Dự án VocaBee được xây dựng trên nền tảng **Next.js 15 (App Router)**, kết hợp cùng **Prisma ORM** và **Tailwind CSS**. Dưới đây là kiến trúc tổng quan và vai trò của từng thư mục, file quan trọng trong hệ thống:
-
-### 1. `app/` - Routing & Pages (App Router Next.js)
-
-Đây là trái tim của hệ thống định tuyến (Routing). Mỗi thư mục con bên trong tương ứng với một đường dẫn trên trình duyệt.
-
-- **`app/page.tsx`**: Trang Dashboard chính (Trang chủ). Hiển thị tổng quan tiến độ, số lượng từ cần ôn tập, biểu đồ hoạt động và Debug Panel.
-- **`app/layout.tsx`**: Root Layout bao bọc toàn bộ ứng dụng, cấu hình font chữ (Plus Jakarta Sans), Theme Provider, Toast Provider và metadata toàn cục.
-- **`app/globals.css`**: File CSS chứa các thiết lập toàn cục và các utility classes của Tailwind CSS.
-- **`app/api/`**: Nơi chứa các API Routes (Backend logic), xử lý các request từ client khi không sử dụng Server Actions.
-- **`app/(auth)/` (login, register, forgot-password, reset-password)**: Các trang liên quan đến phần luồng xác thực người dùng.
-- **`app/review/`**: Trang Khởi tạo Phiên Ôn Tập (Review Session).
-- **`app/vocabulary/`**: Trang quản lý Danh sách từ vựng (Word List).
-- **`app/inbox/`**: Trang chứa các từ vựng đang tạm hoãn (Deferred Words), chưa được đưa vào lịch ôn tập.
-- **`app/leaderboard/`**: Trang Bảng xếp hạng.
-- **`app/profile/`**: Trang thông tin Cập nhật Hồ sơ cá nhân.
-- **`app/settings/`**: Trang Cài đặt ứng dụng (Mục tiêu hàng ngày, Chủ đề, Giao diện).
-- **`app/stats/`**: Trang Thống kê chi tiết tiến trình học.
-
-### 2. `components/` - Giao diện & Các thành phần tái sử dụng (UI Components)
-
-Nơi chứa toàn bộ React Components được module hóa để sử dụng ở nhiều nơi.
-
-- **`ReviewSession.tsx`**: Component xử lý luồng ôn tập từ vựng, tính toán logic tiến trình học (Progress bar) và quản lý trạng thái của từng flashcard.
-- **`Flashcard.tsx` & `GrammarFlashcard.tsx`**: Giao diện thẻ ghi nhớ (mặt trước/mặt sau) hỗ trợ 3D Flip animations, nút phát âm Tiếng Anh và các nút đánh giá hiệu quả học (Dễ, Trung bình, Khó).
-- **`AddWordForm.tsx` & `AddGrammarForm.tsx`**: Form thêm từ vựng và ngữ pháp mới vào cơ sở dữ liệu.
-- **`WordList.tsx` & `WordItem.tsx`**: Danh sách quản lý từ vựng, hỗ trợ bộ lọc và chỉnh sửa nhanh.
-- **`Dashboard.tsx` & `DashboardWidgets.tsx`**: Component hiển thị thông tin thống kê tiến độ trên trang chủ.
-- **`Sidebar.tsx`**: Thanh điều hướng bên trái (Navigation Menu).
-- **`SmartCaptureDialog.tsx`**: Công cụ dịch nhanh/mở rộng, cho phép capture từ mới nhanh chóng từ mọi nơi trong ứng dụng.
-- **`SrsDebugPanel.tsx`**: Bảng điều khiển ẩn hỗ trợ dành riêng cho môi trường Development để thẽo dõi logic SM-2 ở trang chủ.
-
-### 3. `lib/` - Thư viện & Logic tiện ích (Utilities & Core Logic)
-
-Chứa các function và module xử lý logic lõi không phụ thuộc vào giao diện.
-
-- **`sm2.ts`**: **Quan trọng nhất!** Chứa thuật toán Spaced Repetition (SM-2 Algorithm). File này xử lý việc trả về `nextReview`, `interval`, `repetition` và `efactor` mới sau mỗi lần người dùng ôn tập từ.
-- **`db.ts` & `prisma.ts`**: Cấu hình và tạo ra Singleton instance cho Prisma Client để thao tác với DataBase.
-- **`user.ts`**: Các hàm truy vấn database liên quan đến thông tin người dùng (Lấy user by email, by ID...).
-- **`utils.ts`**: Các hàm hỗ trợ, ví dụ: ghép nối chuỗi CSS (`cn` - clsx/tailwind-merge), format số, format ngày tháng.
-- **`tokens.ts`**: Logic sinh chuỗi mã thông báo (tokens) bảo mật dùng cho việc Reset Password.
-- **`mail.ts`**: Hàm gửi email (gửi link reset password, thông báo, v.v.).
-
-### 4. `prisma/` - Database Layer (Cơ sở dữ liệu)
-
-- **`schema.prisma`**: Tệp định nghĩa toàn bộ mô hình dữ liệu (Data models) của ứng dụng. Tham chiếu trực tiếp tới cấu trúc database chuẩn được biên dịch qua Prisma Client.
-
-### 5. `scripts/` - Công cụ kịch bản (Automation & Dev Tools)
-
-Tập hợp các file script chạy độc lập phục vụ nhu cầu Debug hoặc cron-jobs.
-
-- **`debug-streak.ts` / `update-goal.ts` / `verify_gamification.ts`**: Script liên quan tới hệ thống Chuỗi Ngày Học (Streak) và Điểm thưởng (Gamification).
-
-### 6. Cấu hình & Root Files
-
-- **`auth.ts` & `auth.config.ts`**: Cấu hình NextAuth.js (Auth.js v5) dùng để bảo mật ứng dụng, mã hóa mật khẩu, session strategies và định nghĩa các providers đăng nhập (Credentials).
-- **`middleware.ts`**: File Middleware của Next.js, đứng ở cửa ngõ kiểm tra quyền truy cập của các Request. Nếu người dùng chưa đăng nhập, tự động đẩy về trang Login; hoặc ngăn người dùng đã đăng nhập vào các trang xác thực.
+### ⚙️ Cài đặt linh hoạt
+- Mục tiêu từ mới hàng ngày (vocab + grammar).
+- Giới hạn số thẻ ôn tập mỗi ngày.
+- Ngày chiến dịch ôn thi (examStartDate → examDate).
+- Câu hỏi bảo mật để khôi phục mật khẩu.
 
 ---
 
-## 🤖 Hướng dẫn cho AI Agent (AI Agent Guidelines)
+## 🛠 Tech Stack
 
-Để đảm bảo tính nhất quán trong quá trình phát triển tự động, các AI Agent khi tham gia chỉnh sửa mã nguồn cần tuân thủ:
-
-- **Skill thiết kế**: Đọc kỹ file [.agents/vocaBeeSkill.md](file:///.agents/vocaBeeSkill.md) trước khi thực hiện bất kỳ thay đổi nào liên quan đến giao diện (UI/UX).
-- **Skill SM-2**: Tuân thủ [.agents/sm2Skill.md](file:///.agents/sm2Skill.md) khi làm việc với logic ôn tập và thuật toán ghi nhớ.
-- **Skill Thêm Từ vựng**: Xem [.agents/addWordSkill.md](file:///.agents/addWordSkill.md) để đảm bảo quy trình nhập liệu và validate dữ liệu chuẩn xác.
-- **Skill Git Push**: Khi đẩy code, tuân thủ [.agents/gitPushSkill.md](file:///.agents/gitPushSkill.md) để viết Commit Message chuẩn quốc tế (Conventional Commits) và đảm bảo an toàn repository.
-- **Quy tắc Task**: Luôn cập nhật tiến độ vào `brain/task.md` và ghi nhận thay đổi vào `README.md` ngay lập tức.
-- **Tiêu chuẩn UI**: Tuyệt đối sử dụng các Design Tokens trong `globals.css` (Glass, Amber, Premium Input/Button) để duy trì phong cách **Ethereal Flow**.
-
----
-
-## 🗄️ Cấu trúc Cơ sở dữ liệu (Database Schema)
-
-Dự án sử dụng SQLite (phát triển) / PostgreSQL (Sản xuất) thông qua Prisma ORM. Dưới đây là chi tiết các bảng và ý nghĩa từng cột:
-
-### 1. Bảng `User` (Người dùng)
-
-Lưu trữ thông tin tài khoản và tiến độ tổng quát.
-
-- `id`: Mã định danh duy nhất (UUID).
-- `email`: Địa chỉ email dùng để đăng nhập (duy nhất).
-- `password`: Mật khẩu đã được mã hóa (Bcrypt).
-- `name`: Tên hiển thị của người dùng.
-- `dailyNewWordGoal`: Mục tiêu số từ mới cần học mỗi ngày.
-- `streakCount`: Số ngày học liên tiếp hiện tại (Chuỗi streak).
-- `lastGoalMetDate`: Ngày gần nhất người dùng đạt mục tiêu hàng ngày (dùng để kiểm tra và duy trì/reset streak).
-- `points`: Tổng số điểm "Mật ngọt" (🍯) tích lũy được từ việc học.
-- `streakFreeze`: Số lượng vật phẩm đóng băng streak đang sở hữu.
-
-### 2. Bảng `Vocabulary` (Từ vựng)
-
-Trái tim của hệ thống SRS, lưu trữ dữ liệu học tập của từng từ.
-
-- `word`: Từ vựng (không trùng lặp đối với cùng một người dùng).
-- `meaning`: Nghĩa tiếng Việt của từ.
-- `pronunciation`: Phiên âm quốc tế.
-- `example`: Ví dụ minh họa.
-- `synonyms`: Từ đồng nghĩa.
-- `context`: Ngữ cảnh, hoàn cảnh sử dụng hoặc chuyên ngành của từ (tuỳ chọn).
-- `importanceScore`: Điểm độ quan trọng (0-4), được tính toán tự động.
-- `source`: Nguồn gốc từ (`COLLECTION` - tự thêm, hoặc `TEST` - từ bài thi).
-- `isDeferred`: Nếu là `true`, từ này nằm trong "Inbox" và chưa được đưa vào lịch học.
-- **Các trường SRS (SM-2 Algorithm):**
-  - `nextReview`: Thời điểm (ngày/giờ) từ này sẽ hiện lên để ôn tập lại.
-  - `interval`: Khoảng cách ngày giữa lần ôn tập này và lần trước đó.
-  - `repetition`: Số lần bạn đã nhớ từ này liên tiếp (bị reset về 0 nếu chọn "Quên").
-  - `efactor`: Hệ số dễ (Ease Factor) - thể hiện độ khó của từ.
-
-### 3. Bảng `GrammarCard` (Ngữ pháp)
-
-Tương tự như từ vựng nhưng tối ưu cho việc luyện cấu trúc câu.
-
-- `type`: Loại bài tập (`CLOZE`, `MCQ`, `PRODUCTION`, v.v.).
-- `prompt`: Nội dung câu hỏi hoặc đề bài.
-- `answer`: Đáp án chính xác.
-- `meaning`: Nghĩa tiếng Việt hoặc giải thích ngắn gọn.
-- `options` / `hint` / `explanation`: Thông tin hỗ trợ học liệu.
-- `myError`: Phân tích lý do người dùng làm sai (Notebook mode).
-- `trap`: Mô tả cái bẫy của câu hỏi (Notebook mode).
-- `goldenRule`: Quy tắc ngữ pháp "sống còn" để giải câu (Notebook mode).
-- `source`: Nguồn gốc (`MANUAL`, `TEST`, `NOTEBOOK`).
-- `importanceScore`: Độ ưu tiên.
-
-> [!IMPORTANT]
-> **[Bug Fix - 2026-03-10] GrammarCard `nextReview` Date Format:** Phát hiện lỗi nghiêm trọng: `reviewGrammarCardAction` lưu `nextReview` dưới dạng **locale string** (`"Mon Jul 06 2026 04:00:00 GMT+0700"`) thay vì **ISO 8601** (`"2026-07-05T21:00:00.000Z"`). SQLite so sánh date bằng string lexicographic, dẫn đến mọi thẻ đã ôn tập (interval>0) đều xuất hiện như "đến hạn" ngay lập tức. **Fix:** Chuyển sang dùng `$executeRawUnsafe` + `.toISOString()` trong `reviewGrammarCardAction`. Đã migrate 22 records hiện có bằng script `migrate_grammar_dates.ts`. **Quy tắc:** Khi update GrammarCard bằng Prisma ORM `(as any)`, LUÔN dùng raw SQL để lưu date dưới dạng ISO string.
+| Layer | Công nghệ |
+|---|---|
+| **Framework** | Next.js 15 (App Router, Server Components, Server Actions) |
+| **UI** | React 19, Tailwind CSS v4, Framer Motion |
+| **Icons** | Lucide React, Google Material Symbols |
+| **Auth** | NextAuth v5 (JWT + Credentials + Google OAuth) |
+| **ORM** | Prisma v6 với PostgreSQL (Supabase) |
+| **Local Cache** | better-sqlite3 (offline sync layer) |
+| **Email** | Nodemailer (password reset) |
+| **Animations** | canvas-confetti (khi đạt mục tiêu) |
+| **Password** | bcryptjs |
+| **Deployment** | Vercel / bất kỳ Node.js host |
 
 ---
 
-## ⏳ Giới hạn học tập hàng ngày (Daily Study Limits)
+## 🏗 Kiến trúc hệ thống
 
-Để đảm bảo hiệu quả ghi nhớ và tránh tình trạng quá tải (burnout), VocaBee áp dụng giới hạn thông minh cho mỗi ngày học:
+```
+Browser
+  │
+  ├── Next.js App Router (SSR + Client Components)
+  │     ├── Server Components → trực tiếp gọi Prisma
+  │     ├── Server Actions → mutations, SRS updates
+  │     └── Client Components → UI tương tác (flashcard, forms)
+  │
+  ├── NextAuth v5 → JWT sessions (Google OAuth + Credentials)
+  │
+  ├── Prisma ORM (với Proxy để sync LocalDB)
+  │     ├── PostgreSQL (Supabase) — production data
+  │     └── SQLite (local) — offline sync cho mutations
+  │
+  └── Email (Nodemailer) → password reset links
+```
 
-- **Tối đa 30 từ mới:** Bao gồm mục tiêu hàng ngày của bạn cộng với các từ chưa học từ ngày hôm trước, nhưng tổng cộng không quá 30 từ.
-- **Tối đa 30 lượt ôn tập:** Hệ thống sẽ ưu tiên các từ đến hạn nhất và giới hạn ở con số 30 lượt để mỗi phiên học luôn tinh gọn và hiệu quả.
-- **Tổng cộng 60 lượt/ngày:** Banner nhiệm vụ hàng ngày sẽ hiển thị tối đa 60 lượt (30 ôn tập + 30 học mới) để giúp bạn duy trì thói quen học tập bền bỉ.
-
----
-
-## 📊 Logic hiển thị Thống kê (Dashboard Logic)
-
-### 1. Lộ trình ngày (Daily Progress)
-
-- Lấy từ thiết lập `dailyNewWordGoal` của người dùng (mặc định là 20).
-- Đếm số lượng từ vựng có sự thay đổi (`updatedAt`) kể từ **4:00 sáng** hôm nay. Bao gồm cả các từ đánh dấu là "Quên".
-
-### 2. Cần ôn tập (Due Reviews)
-
-Một từ được tính là "Cần ôn tập" khi:
-
-1. **Đã từng học:** `interval > 0`. (Bao gồm cả những từ quên với `repetition = 0`).
-2. **Đến hạn:** Thời điểm `nextReview` nhỏ hơn hoặc bằng thời điểm hiện tại.
-
-> [!TIP]
-> **Từ mới (New Words):** Có `interval = 0`.
-> **Từ đã học nhưng quên:** Có `interval > 0` nhưng `repetition = 0`. Vẫn được tính vào "Cần ôn tập".
+### Tối ưu performance
+`getDashboardStats()` từng thực hiện 15+ sequential DB round-trips (~22s). Hiện tại dùng **4 parallel queries** với PostgreSQL `FILTER` aggregation để tính tất cả counts trong 1 SQL statement → giảm xuống còn 2–4s.
 
 ---
 
-Chúng ta sử dụng thuật toán **SM-2** đã được cải tiến (giống Anki) để tối ưu hóa việc ghi nhớ:
+## 🗄 Cấu trúc Database
 
-- **Lần đầu tiên ($n=1$):**
-  - **Hard / Good:** 1 ngày.
-  - **Easy:** 4 ngày.
-- **Lần thứ hai ($n=2$):**
-  - **Hard:** 3 ngày.
-  - **Good:** 6 ngày.
-  - **Easy:** 8 ngày.
-- **Các lần sau ($n>2$):** $I(n) = I(n-1) \times Multiplier$.
-  - **Hard:** Multiplier = 1.2.
-  - **Good:** Multiplier = EF.
-  - **Easy:** Multiplier = EF × 1.3 (Easy Bonus).
+### `User`
+| Field | Type | Mô tả |
+|---|---|---|
+| `id` | String (UUID) | Primary key |
+| `email` | String (unique) | Email đăng nhập |
+| `password` | String? | Bcrypt hash (null với Google OAuth) |
+| `name`, `image` | String? | Tên và avatar |
+| `dailyNewWordGoal` | Int (default 20) | Mục tiêu từ mới/ngày |
+| `dailyNewGrammarGoal` | Int (default 10) | Mục tiêu ngữ pháp/ngày |
+| `dailyMaxVocabReview` | Int (default 100) | Giới hạn ôn vocab/ngày |
+| `dailyMaxGrammarReview` | Int (default 50) | Giới hạn ôn grammar/ngày |
+| `streakCount` | Int | Chuỗi ngày học liên tục |
+| `streakFreeze` | Int | Số lần bảo vệ streak còn lại |
+| `points` | Int | Tổng điểm tích lũy |
+| `examStartDate` | DateTime? | Ngày bắt đầu thêm từ ôn thi |
+| `examDate` | DateTime? | Ngày thi (deadline) |
+| `securityQuestion` | String? | Câu hỏi bảo mật |
+| `securityAnswer` | String? | Câu trả lời bảo mật |
 
-**Các cải tiến bổ sung:**
+### `Vocabulary`
+| Field | Type | Mô tả |
+|---|---|---|
+| `word` | String | Từ vựng (unique per user) |
+| `wordType` | String? | Noun, Verb, Adjective... |
+| `meaning` | String | Nghĩa tiếng Việt |
+| `pronunciation` | String? | Phiên âm IPA |
+| `example` | String? | Câu ví dụ |
+| `synonyms`, `context` | String? | Từ đồng nghĩa, ngữ cảnh |
+| `importanceScore` | Int (0–4) | Độ quan trọng (smart capture) |
+| `source` | String | `COLLECTION` hoặc `TEST` |
+| `isDeferred` | Boolean | Đang trong inbox chờ xử lý |
+| `nextReview` | DateTime | Thời điểm ôn tập tiếp theo |
+| `interval` | Int | Khoảng cách ôn (ngày) |
+| `repetition` | Int | Số lần đã ôn thành công |
+| `efactor` | Float (2.5) | Hệ số dễ/khó (SM-2) |
 
-- **Diferentiated Intervals:** Các mức độ đánh giá khác nhau sẽ tạo ra khoảng thời gian ôn tập khác nhau ngay lập tức, giúp việc phân loại thẻ chính xác hơn.
-- **Fuzz Logic:** Tự động cộng/trừ ngẫu nhiên một lượng nhỏ thời gian (±5%) cho các thẻ có interval > 4 ngày để tránh việc quá nhiều thẻ dồn vào cùng một ngày học (Card Clumping).
-- **Interval Stabilization:** Trên giao diện nút bấm, yếu tố "Fuzz" sẽ được ẩn đi để đảm bảo số ngày hiển thị luôn nhất quán và dễ hiểu.
-- **EF (Ease Factor)**: Độ dễ của từ sẽ được điều chỉnh linh hoạt. Công thức:  
-  `EF' = EF + 0.1 − (5−q)×(0.08 + (5−q)×0.02)`  
-  Trong đó `q` là chất lượng trả lời (0-5). VocaBee hiện ánh xạ: **Nhớ ngay** → q=5, **Nhớ được** → q=4, **Khó nhớ** → q=3, **Quên mất** → q=0. Ngưỡng tối thiểu của EF là 1.3.
+### `GrammarCard`
+| Field | Type | Mô tả |
+|---|---|---|
+| `type` | String | CLOZE, MCQ, PRODUCTION, ERROR_CORRECTION, TRANSFORMATION, EXPLANATION |
+| `prompt` | String | Câu hỏi / bài tập |
+| `answer` | String | Đáp án đúng |
+| `options` | String? | Các lựa chọn (MCQ, dạng JSON) |
+| `hint`, `explanation` | String? | Gợi ý, giải thích |
+| `myError`, `trap` | String? | Lỗi hay mắc, bẫy đề |
+| `goldenRule`, `formula` | String? | Quy tắc vàng, công thức |
+| `toeicPart` | String? | `TOEIC_P5`, `TOEIC_P6`, `TOEIC_P7` |
+| `grammarCategory` | String? | Loại ngữ pháp |
+| `signalKeywords` | String? | Từ tín hiệu nhận dạng dạng bài |
+| `tags` | String? | Nhãn phân loại |
+| `importanceScore` | Int | Độ ưu tiên (0–4) |
+| `source` | String | `COLLECTION` hoặc `TEST` |
+| `isDeferred` | Boolean | Đang trong inbox |
+| `nextReview`, `interval`, `repetition`, `efactor` | SRS fields | SM-2 parameters |
 
 ---
 
-## 🚀 Hướng dẫn bắt đầu
+## 📁 Cấu trúc thư mục
 
-1. **Cài đặt dependencies:**
-   ```bash
-   npm install
-   ```
-2. **Cấu hình môi trường:** Tạo file `.env` với các biến sau và `AUTH_SECRET`.
-   > Dự án hiện sử dụng **Supabase (PostgreSQL)** thay cho SQLite.
-   ```env
-   # Connection pooling (dùng cho ứng dụng)
-   DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
-   # Direct connection (dùng cho Migration)
-   DIRECT_URL="postgresql://postgres.[ref]:[password]@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"
-   ```
-3. **Đồng bộ Schema lên Database:**
-   ```bash
-   npx prisma db push
-   ```
-4. **Xem và quản lý Database:**
-   ```bash
-   npx prisma studio
-   ```
-5. **Chạy server phát triển:**
-   ```bash
-   npm run dev
-   ```
+```
+VocaBee/
+├── app/                          # Next.js App Router
+│   ├── page.tsx                  # Dashboard (Home)
+│   ├── layout.tsx                # Root layout (theme, fonts)
+│   ├── actions.ts                # Tất cả Server Actions (~1600 dòng)
+│   ├── globals.css               # CSS variables, fluid font scaling
+│   ├── login/page.tsx            # Đăng nhập
+│   ├── register/page.tsx         # Đăng ký
+│   ├── forgot-password/page.tsx  # Quên mật khẩu
+│   ├── reset-password/page.tsx   # Đặt lại mật khẩu
+│   ├── vocabulary/page.tsx       # Danh sách từ vựng
+│   ├── grammar/page.tsx          # Danh sách ngữ pháp
+│   ├── review/page.tsx           # Phiên ôn tập SRS
+│   ├── stats/page.tsx            # Thống kê chi tiết
+│   ├── leaderboard/page.tsx      # Bảng xếp hạng
+│   ├── inbox/page.tsx            # Hộp thư đến (deferred items)
+│   ├── profile/page.tsx          # Hồ sơ người dùng
+│   ├── settings/page.tsx         # Cài đặt hệ thống
+│   └── api/auth/[...nextauth]/   # NextAuth API routes
+│
+├── components/                   # React components
+│   ├── Sidebar.tsx               # Navigation sidebar
+│   ├── Dashboard.tsx             # Dashboard card chính
+│   ├── DashboardWidgets.tsx      # Leaderboard + Activity heatmap
+│   ├── ReviewSession.tsx         # Giao diện ôn tập flashcard
+│   ├── Flashcard.tsx             # Thẻ từ vựng (flip animation)
+│   ├── GrammarFlashcard.tsx      # Thẻ ngữ pháp
+│   ├── FlashcardInput.tsx        # Input nhập câu trả lời
+│   ├── AddWordForm.tsx           # Form thêm từ mới
+│   ├── AddGrammarForm.tsx        # Form thêm grammar card
+│   ├── ToeicForm.tsx             # Form nhập câu hỏi TOEIC
+│   ├── WordList.tsx              # Danh sách từ vựng có phân trang
+│   ├── WordItem.tsx              # Row từ vựng đơn
+│   ├── GrammarList.tsx           # Danh sách grammar có phân trang
+│   ├── GrammarItem.tsx           # Row grammar card đơn
+│   ├── GrammarMenu.tsx           # Menu điều hướng ngữ pháp
+│   ├── SmartCaptureTrigger.tsx   # Nút bắt từ nhanh
+│   ├── SmartCaptureDialog.tsx    # Modal bắt từ nhanh
+│   ├── BatchImportModal.tsx      # Modal import hàng loạt
+│   ├── ImportGrammarButton.tsx   # Nút import grammar CSV
+│   ├── SettingsForm.tsx          # Form cài đặt hệ thống
+│   ├── ThemeToggle.tsx           # Nút đổi dark/light mode
+│   ├── ThemeProvider.tsx         # next-themes wrapper
+│   ├── ToastProvider.tsx         # Notification system
+│   ├── SrsDebugPanel.tsx         # Debug panel (chỉ dev mode)
+│   ├── AccentSelector.tsx        # Chọn accent phát âm
+│   └── ScrollToTopButton.tsx     # Nút cuộn lên đầu
+│
+├── lib/
+│   ├── prisma.ts                 # PrismaClient singleton + LocalDB proxy
+│   ├── user.ts                   # getAuthenticatedUser() (React.cache)
+│   ├── sm2.ts                    # Thuật toán SM-2 spaced repetition
+│   ├── definitions.ts            # TypeScript interfaces & types
+│   ├── utils.ts                  # Helpers: wordType normalize, TTS, CSV
+│   ├── mail.ts                   # Nodemailer email service
+│   ├── tokens.ts                 # Password reset token helpers
+│   ├── localdb.ts                # SQLite instance (offline sync)
+│   └── db.ts                     # DB utilities
+│
+├── prisma/
+│   ├── schema.prisma             # PostgreSQL schema (production)
+│   └── schema.sqlite.prisma     # SQLite schema (local sync)
+│
+├── auth.ts                       # NextAuth configuration
+├── auth.config.ts                # Route protection rules
+├── middleware.ts                 # NextAuth middleware
+└── next.config.ts                # Next.js config (4MB action limit)
+```
 
-> [!TIP]
-> **Migrate dữ liệu từ SQLite cũ lên Supabase (chỉ thực hiện 1 lần):**
-> ```bash
-> npx tsx scripts/migrate_to_supabase.ts
-> ```
 ---
 
-_Phát triển bởi team VocaBee 🐝 – Học tập không giới hạn._
+## 🗺 Các trang & Routes
 
-> [!NOTE]
-> - **Review Session Snappiness**: Implemented Optimistic UI, background data syncing, and stabilized session state to eliminate "hangs" when clicking evaluation buttons. Reduced server-side revalidation overhead by 90% during active study.
-> - **[UI/UX - 2026-03-14] Accessibility Improvement:** Fixed accessibility issues in `GrammarList.tsx` and `AddGrammarForm.tsx`. Fixed missing `aria-label` and `title` for close buttons and inputs to ensure discernible text for screen readers.
-> - **[UI/UX - 2026-03-15] Study Flow Enhancement:** Added **Pronunciation** and **Context** display during the typing phase in `FlashcardInput.tsx`. This provides users with essential clues and reinforcement BEFORE they reveal the answer, making the active recall process more effective.
-> - **[Performance - 2026-03-23] Dashboard Load Time:** Optimized `getDashboardStats` in `actions.ts` by parallelizing 13 sequential Prisma SQL queries using `Promise.all`. This significantly reduced delay/lag (from 12s down to ~1s) on the dashboard and Server Actions (like Add/Review Word) that trigger `revalidatePath('/')`.
-> - **[Feature - 2026-03-28] Phân loại luyện tập TOEIC Part 5, 6, 7:** Nâng cấp bảng thống kê Thử thách Ngữ pháp tại Dashboard để chia tách số lượng cần học mới / ôn luyện theo từng Part cụ thể (Part 5, Part 6, Part 7, và Khác). Bổ sung khả năng click vào từng huy hiệu Part trên Dashboard để chỉ ôn luyện riêng những thẻ ngữ pháp thuộc phần TOEIC đó, giúp cá nhân hóa lộ trình học chính xác hơn. Fix lỗi giao diện "TOEIC PART NULL" trên Flashcard.
-> - **[Performance - 2026-04-02] Background Review Session Update:** Tối ưu hóa lại luồng xử lý ở phiên học. Thay vì bắt người dùng phải đợi API xử lý hàng loạt thẻ ở cuối buổi, hệ thống đã chuyển sang cập nhật nhanh từng từ vựng/ngữ pháp ở chế độ nền (background) ngay sau mỗi cú lật thẻ hay gõ bài. Màn hình tổng hợp cuối cùng (Review Summary) vẫn được giữ lại để người học chiêm ngưỡng thành quả, nhưng trải nghiệm lúc nhấn nút hoàn thành bây giờ là độ mượt tức thì.
-T h � m   g i �i   h �n 
- 
- - Đã thêm logic giới hạn từ/ngữ pháp ôn tập mỗi ngày (100 từ vựng, 50 ngữ pháp) để tránh bị quá tải số lượng ôn tập.
-- Đã thêm tùy biến vào Cài đặt để thay đổi giới hạn từ vựng/ngữ pháp hiển thị trong phần ôn tập mỗi ngày.
+| Route | Mô tả |
+|---|---|
+| `/` | **Dashboard** — Tổng quan: banner chiến dịch ôn thi, nhiệm vụ hàng ngày, thử thách ngữ pháp, thống kê nhanh, leaderboard mini |
+| `/login` | Đăng nhập bằng email/mật khẩu hoặc Google OAuth |
+| `/register` | Đăng ký tài khoản mới |
+| `/forgot-password` | Khôi phục mật khẩu qua câu hỏi bảo mật |
+| `/reset-password` | Đặt mật khẩu mới bằng token |
+| `/vocabulary` | Danh sách toàn bộ từ vựng — tìm kiếm, lọc theo từ loại, thêm/sửa/xóa |
+| `/grammar` | Danh sách grammar cards — tìm kiếm, lọc theo TOEIC part, thêm/sửa/xóa |
+| `/review` | Phiên ôn tập SRS — hỗ trợ query params: `?type=vocab`, `grammar`, `vocab_exam`, `grammar_exam`, `toeic_p5`, `toeic_p6` |
+| `/stats` | Thống kê chi tiết — heatmap 365 ngày, mastery distribution, retention rate, top 10 từ yếu |
+| `/leaderboard` | Bảng xếp hạng top 50 theo điểm |
+| `/inbox` | Hộp thư đến — các từ/grammar bắt nhanh đang chờ xử lý |
+| `/profile` | Hồ sơ người dùng |
+| `/settings` | Cài đặt: mục tiêu hàng ngày, giới hạn ôn tập, chiến dịch ôn thi, bảo mật |
 
-## 🎓 Chế độ Nhồi nhét Ôn thi (Exam Cramming)
-Nhằm phục vụ kỳ thi quan trọng vào ngày 1/6, VocaBee đã ra mắt **Chiến dịch ôn thi 1/6**. Chế độ học tập đặc biệt này có những đặc điểm sau:
-1. **Bỏ qua giới hạn SRS thông thường**: Thay vì học theo thuật toán giãn cách thông thường (Spaced Repetition), chế độ này cho phép bạn nhồi nhét tối đa (cramming) toàn bộ dữ liệu bạn đã upload trong giai đoạn nước rút.
-2. **Khoanh vùng thời gian tập trung**: Hệ thống tự động gom nhóm **toàn bộ Từ vựng và Ngữ pháp** được tải lên trong giai đoạn từ `24/04/2026` đến `31/05/2026`. Các thẻ ngoài khung thời gian này sẽ không xuất hiện để tránh làm loãng trọng tâm.
-3. **Truy cập nhanh chóng**: Ngay trên cùng của Dashboard, bạn sẽ thấy 2 banner đỏ và hồng nổi bật với dòng chữ "Chiến dịch ôn thi 1/6" (xuất hiện nếu có dữ liệu thỏa mãn điều kiện thời gian). Chỉ cần click vào "CHIẾN NGAY" là có thể bắt đầu phiên học liên tục.
+---
 
-### 🧠 [Nâng cấp 2026-05-13] SRS-Smart Ordering — Thứ tự ôn thi thông minh
+## 🧩 Components
 
-**Vấn đề cũ:** Mỗi ngày mở session thì luôn hiện cùng một danh sách theo thứ tự ngày tạo (`createdAt ASC`) — từ đã thuộc nằm đầu, từ yếu nhất bị đẩy cuối.
+### Layout
+- **`Sidebar`** — Menu điều hướng chính, hiển thị điểm + streak, link đến tất cả trang.
+- **`ThemeToggle`** — Chuyển đổi dark/light mode với smooth transition.
+- **`ThemeProvider`** — Wrapper `next-themes` bao toàn bộ app.
+- **`ToastProvider`** — Hệ thống notification (success/error/info) với auto-dismiss.
+- **`GrammarMenu`** — Dropdown menu học ngữ pháp, điều hướng TOEIC parts.
 
-**Giải pháp:** Session Cramming giờ sắp xếp theo **5 tầng ưu tiên SRS** — từ cần học nhất lên đầu:
+### Dashboard
+- **`Dashboard`** — Card tổng quan: circular progress ring, daily goal tracking, quick stats.
+- **`DashboardWidgets`** — Widget leaderboard mini + activity heatmap.
+- **`SrsDebugPanel`** — Panel debug (chỉ hiện ở `NODE_ENV=development`): đếm queue forgotten, new, deferred.
 
-| Tầng | Điều kiện | Ưu tiên |
-|------|-----------|---------|
-| 🔴 Chưa học lần nào | `repetition=0, interval=0` | 1 — cao nhất |
-| 🟠 Đã quên / quá hạn | `interval>0, nextReview≤now` | 2 |
-| 🟡 Đang học, yếu | `efactor < 2.1` (chưa quá hạn) | 3 |
-| 🟢 Đang học, ổn | `efactor ≥ 2.1, interval < 14` | 4 |
-| ⚪ Đã vững | `interval ≥ 14` và chưa đến hạn | 5 — thấp nhất |
+### Review & Flashcard
+- **`ReviewSession`** — Giao diện ôn tập chính: batch processing, swipe gesture, keyboard shortcuts, confetti khi đạt goal.
+- **`Flashcard`** — Thẻ từ vựng với flip animation 3D, nút phát âm, nút xóa.
+- **`GrammarFlashcard`** — Thẻ ngữ pháp với reveal hint/explanation từng bước.
+- **`FlashcardInput`** — Input nhập câu trả lời dạng production/fill-in.
 
-Trong mỗi tầng, sắp xếp theo `efactor ASC` (từ khó nhất lên trước). Kết quả: mỗi lần mở session sẽ ưu tiên đúng những từ bạn cần tập trung nhất.
+### Vocabulary Management
+- **`AddWordForm`** — Form thêm từ: word, type, meaning, pronunciation, example, synonyms, context. Có auto-detect wordType.
+- **`WordList`** — Danh sách phân trang, search full-text, filter by type.
+- **`WordItem`** — Row đơn: preview, inline edit, delete, quick review button.
+- **`BatchImportModal`** — Import CSV/Excel hàng loạt với preview và skip duplicates.
 
-**Số đếm banner:** Chỉ hiển thị các item **thực sự cần ôn** (tầng 1–4). Items đã vững (`interval≥14` và chưa đến hạn) được loại khỏi số đếm.
+### Grammar Management
+- **`AddGrammarForm`** — Form thêm grammar card với tất cả fields TOEIC-specific.
+- **`ToeicForm`** — Form chuyên biệt cho câu hỏi TOEIC Part 5/6/7 với fields đặc thù.
+- **`GrammarList`** / **`GrammarItem`** — List + row tương tự vocabulary.
+- **`ImportGrammarButton`** — Nút import grammar từ CSV.
 
-**Badge breakdown trên banner:** Hiển thị chi tiết `🔴 X chưa học | 🟠 Y quá hạn | 🟡 Z còn yếu` để bạn biết ngay tình trạng chiến dịch.
+### Smart Capture
+- **`SmartCaptureTrigger`** — Nút nổi để kích hoạt bắt từ nhanh khi đang đọc.
+- **`SmartCaptureDialog`** — Modal: paste text → tự detect từ/grammar → lưu với importanceScore.
 
+### Settings
+- **`SettingsForm`** — Toàn bộ form cài đặt: daily goals (vocab + grammar), review limits, exam campaign dates (date picker với format DD/MM/YYYY), security Q&A.
+- **`AccentSelector`** — Chọn giọng đọc: 🇺🇸 Mỹ, 🇬🇧 Anh, 🇦🇺 Úc.
 
+---
 
-## Logic Ôn Tập Hằng Ngày (Daily Review System)
-Hệ thống tải danh sách ôn tập hàng ngày theo thứ tự ưu tiên và đảm bảo không gây quá tải cho người học. Logic hoạt động cho cả Từ Vựng và Ngữ Pháp:
-1. **Reset theo khung giờ thực tế**: Mọi tiến trình Ngày Mới được reset không phải vào 0h mà là **4h00 Sáng**.
-2. **Cap giới hạn tồn đọng**: Người dùng có thể chỉnh số lượng Ôn bài Cũ tối đa mỗi ngày ở mốc 100 Từ vựng / 50 Ngữ pháp (tùy chỉnh trong Settings). Hệ thống đếm lượng bài học đạt chuẩn và tự động Stop nếu bạn chạm mốc Daily Limit. 
-3. **Mục tiêu học Mới**: Bên cạnh Ôn thẻ Cũ, mỗi ngày có hạn ngạch nạp thẻ MỚI (ưu tiên các từ nguồn \TEST\ điểm cao, sau đó đến \COLLECTION\). Bài bị tồn nợ không học hôm qua sẽ được nhồi dồn thành Quota ngày hôm sau.
-4. **Thuật toán xen kẽ phiền chán (Interleaving)**: Tại mỗi phiên 25 thẻ (session), hệ thống không dồn 1 đống từ mới/cũ vào nhau mả rải theo thuật toán tỉ lệ **3 thẻ Cũ xuất hiện -> 1 thẻ Mới xen vào**.
-*(Tham khảo chi tiết quy trình lấy API Data tại \.agents/dailyReviewLogicSkill.md\ hoặc \pp/review/page.tsx\)*
+## ⚡ Server Actions
 
-- Đã thêm tính năng gợi ý 2 mức (ký tự và phiên âm) trong component FlashcardInput
+Tất cả mutations và data fetching chính đặt trong `app/actions.ts`:
 
-- Tự động đánh giá SM-2 (Ease Factor) dựa trên số lượng Hint sử dụng trong quá trình học. Không còn bước tự đánh giá thủ công.
-Mapping Hint sang EF (Quality):
+### Vocabulary
+| Action | Mô tả |
+|---|---|
+| `addWordAction()` | Thêm từ mới (kiểm tra duplicate) |
+| `updateWordAction()` | Cập nhật thông tin từ |
+| `deleteWordAction()` | Xóa từ |
+| `importWordsAction()` | Import hàng loạt (bỏ qua duplicate) |
+| `getWordsPaginatedAction()` | Lấy danh sách có phân trang + full-text search |
+| `checkDuplicateWordAction()` | Kiểm tra từ đã tồn tại chưa |
+| `reviewWordAction()` | Ôn tập 1 từ: SM-2 + cộng điểm + cập nhật streak |
 
-Không gởi ý (nhập đúng liền) -> Level 0: q = 5 (Nhớ ngay)
-Mở gợi ý chữ cái -> Level 1: q = 4 (Nhớ được)
-Mở gợi ý phiên âm -> Level 2: q = 3 (Khó nhớ)
-Nghe audio để đoán -> Level 3: q = 2 (Nhớ kém)
-Bỏ qua / trả lời sai -> q = 0 (Quên mất)
+### Grammar
+| Action | Mô tả |
+|---|---|
+| `addGrammarCardAction()` | Thêm grammar card |
+| `updateGrammarCardAction()` | Cập nhật grammar card |
+| `deleteGrammarCardAction()` | Xóa grammar card |
+| `importGrammarCardsAction()` | Import hàng loạt (parallel upsert) |
+| `getGrammarPaginatedAction()` | Danh sách + search by prompt/answer/tags |
+| `reviewGrammarCardAction()` | Ôn tập 1 grammar card (grade 0–3 → quality 0–5) |
+| `generateGrammarHintsAction()` | Tự động generate hints từ explanation |
 
-- Bổ sung hiệu ứng hiển thị trạng thái đúng (chuyển chữ màu xanh) và delay 800ms để người dùng kịp nhận biết trước khi tự động chuyển sang thẻ kết quả/ôn từ tiếp theo.
+### Stats & Dashboard
+| Action | Mô tả |
+|---|---|
+| `getDashboardStats()` | Stats tổng hợp cho Dashboard (4 parallel SQL queries) |
+| `getVocabPageHeaderStats()` | Stats nhẹ cho trang Vocabulary |
+| `getDetailedStatsAction()` | Heatmap 365 ngày, mastery distribution, retention rate |
+| `getLeaderboardAction()` | Top 50 users theo điểm |
+| `getWeakCategoriesAction()` | Phân tích điểm yếu TOEIC theo category |
 
-### Cơ chế tính toán số ngày ôn tập (Spaced Repetition SM-2)
+### Batch Review
+| Action | Mô tả |
+|---|---|
+| `batchReviewAction()` | Xử lý nhiều thẻ cùng lúc, cập nhật điểm + streak atomic |
 
-Dựa vào cấp độ gợi ý (Hint Level) bạn sử dụng, hệ thống sẽ xác định khoảng chất lượng nhớ (Quality - `q` từ 0 đến 5) và tính toán số ngày ôn tiếp theo (`interval`) cùng Hệ số dễ nhớ (`Ease Factor - EF`, mặc định bắt đầu là 2.5).
+### Smart Capture & Inbox
+| Action | Mô tả |
+|---|---|
+| `smartCaptureAction()` | Lưu từ/grammar nhanh (deferred nếu priority < 3) |
+| `getDeferredItemsAction()` | Lấy tất cả items trong inbox |
+| `manageInboxItemAction()` | Chuyển vào collection hoặc xóa item |
 
-**Quy tắc cộng ngày chung:**
-- **Lần học đầu tiên (Lần gặp mới)**:
-  - Nhập đúng ngay (q=5): Ôn lại sau **4 ngày**.
-  - Dùng gợi ý chữ cái/phiên âm (q=4, q=3): Ôn lại sau **1 ngày**.
-  - Sai/Nghe Audio (q<3): Nhắc lại vào **ngày mai (1 ngày)**.
-- **Lần ôn thành công thứ hai (Repetition = 1)**:
-  - Không cần gợi ý (q=5): Ôn lại sau **8 ngày**.
-  - Cần gợi ý nhẹ (q=4): Ôn lại sau **6 ngày**.
-  - Cần gợi ý nhiều (q=3): Ôn lại sau **3 ngày**.
-- **Từ lần ôn thứ ba trở đi (Repetition > 1)**:
-  - Số ngày dời lại = `Khoảng ngày lần trước` × `Hệ số`.
-  - Hệ số linh hoạt theo loại gợi ý: Nếu phải dùng gợi ý `q=4`, số ngày sẽ nhân với mức `EF`. Còn tự nhớ hoàn toàn `q=5` số ngày sẽ tăng tốc nhanh hơn (nhân `EF × 1.3`).
-  *(Lưu ý: EF của từ cũng sẽ tăng giảm nhẹ sau mỗi lần ôn tùy vào bạn nhớ dễ hay khó)*
-- **Fuzz Logic**: Với các từ có khoảng cách ôn lớn hơn 4 ngày, hệ thống sẽ tự cộng trừ xê dịch ngẫu nhiên ±5% số ngày để các từ không bị tụ hội cùng một lúc.
+### Settings & Auth
+| Action | Mô tả |
+|---|---|
+| `updateUserSettingsAction()` | Lưu daily goals, review limits, exam dates |
+| `buyStreakFreezeAction()` | Mua streak freeze (50 điểm) |
+| `signOutAction()` | Đăng xuất |
+| `getSecurityQuestionAction()` | Lấy câu hỏi bảo mật (quên mật khẩu) |
+| `verifySecurityAnswerAction()` | Xác minh câu trả lời → tạo reset link |
+| `resetPasswordAction()` | Đặt mật khẩu mới |
 
-**Ví dụ thực tế với từ "national highway" (EF ban đầu = 2.5):**
-1. **Ngày 1 (Lần đầu gặp - rep=0)**: Bạn thấy từ mới "quốc lộ" và nhập đúng chữ "national highway" mà **không dùng gợi ý** (`q=5`). 
-   👉 Từ này được dời sang **4 ngày sau**. (EF tăng nhẹ lên 2.6).
-2. **Ngày 5 (Lần ôn 2 - rep=1)**: Bạn dùng **1 gợi ý chữ cái** (`q=4`) để nhớ ra từ. 
-   👉 Theo mốc cố định, từ này được dời sang **6 ngày sau**. (EF giữ nguyên 2.6).
-3. **Ngày 11 (Lần ôn 3 - rep=2)**: Bạn trả lời ngay lập tức mà **không cần gợi ý** (`q=5`). 
-   👉 Lúc này khoảng ngày mới = 6 ngày (lần trước) × (2.6 × 1.3) ≈ **20 ngày sau**.
-4. **Ngày 31**: Nếu tới đây bạn **quên mất** (q=0): 
-   👉 Từ "national highway" sẽ bị lùi về mốc đầu `rep=0`, bắt buộc ôn lại vào ngay **ngày mai (1 ngày sau)**, và mức độ EF bị trừ điểm đi.
+---
+
+## 🔁 Thuật toán SRS (SM-2)
+
+Implemented tại `lib/sm2.ts`, áp dụng thuật toán **SuperMemo 2** với một số điều chỉnh:
+
+```
+quality = 0..5   (0-1: fail, 2: hard, 3: ok, 4: good, 5: perfect)
+
+if quality < 3:
+  interval = 1, repetition = 0     ← reset về đầu
+else:
+  if repetition == 0: interval = 1
+  if repetition == 1: interval = 6
+  else: interval = round(prev_interval × efactor)
+
+  efactor = efactor + (0.1 - (5-quality) × (0.08 + (5-quality) × 0.02))
+  efactor = max(1.3, efactor)       ← không giảm quá thấp
+
+nextReview = now + interval days (với ±10% fuzz để tránh review storm)
+```
+
+**Grammar cards** dùng thang điểm 0–3 (grade) → convert sang quality 0–5 trước khi áp dụng SM-2.
+
+---
+
+## 🎮 Hệ thống Gamification
+
+### Điểm (Bees 🍯)
+| Điều kiện | Điểm |
+|---|---|
+| Ôn 1 thẻ bất kỳ | +1 |
+| Chất lượng ≥ 4 (Good/Perfect) | +1 bonus |
+| Nhập đúng bằng bàn phím | +1 typing bonus |
+| Hoàn thành mục tiêu ngày | +5 goal bonus |
+
+### Streak
+- Streak tăng khi đạt daily goal trong ngày (ranh giới 4:00 AM mỗi ngày).
+- **Streak Freeze:** Tốn 50 điểm, bảo vệ streak 1 ngày nếu không học.
+- Streak reset về 0 nếu bỏ học >1 ngày mà không có freeze.
+
+### Chiến dịch ôn thi
+- Đặt `examStartDate` (ngày bắt đầu thêm từ ôn thi) và `examDate` (ngày thi thực sự).
+- Dashboard hiển thị 2 banner khẩn cấp: vocab cần ôn + grammar cần ôn trong khoảng ngày đó.
+- Banner tự tắt khi không set hoặc khi hết thời gian chiến dịch.
+
+> **Lưu ý:** `examStartDate` là ngày bạn **bắt đầu thêm từ vào app** cho kỳ thi này (không phải ngày bắt đầu học). Ví dụ: bắt đầu thêm từ từ 24/04 → ngày thi 28/09 → đặt `24/04` và `28/09`.
+
+---
+
+## 🚀 Cài đặt & Chạy
+
+### Yêu cầu
+- Node.js >= 18
+- PostgreSQL (hoặc Supabase account)
+
+### 1. Clone & Install
+```bash
+git clone <repo-url>
+cd VocaBee
+npm install --legacy-peer-deps
+```
+
+### 2. Cấu hình môi trường
+```bash
+cp .env.example .env
+# Chỉnh sửa .env với thông tin của bạn
+```
+
+### 3. Setup Database
+```bash
+# Push schema lên PostgreSQL
+npx prisma db push
+
+# Generate Prisma Client
+npx prisma generate
+```
+
+### 4. Chạy development
+```bash
+npm run dev
+# App chạy tại http://localhost:3000
+```
+
+### 5. Build production
+```bash
+npm run build
+npm run start
+```
+
+---
+
+## 🔐 Biến môi trường
+
+```env
+# Database (PostgreSQL / Supabase)
+DATABASE_URL="postgresql://user:password@host:port/db?pgbouncer=true"
+DIRECT_URL="postgresql://user:password@host:5432/db"
+
+# NextAuth
+AUTH_SECRET="your-secret-key-min-32-chars"
+NEXTAUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Google OAuth (tuỳ chọn)
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# Email (tuỳ chọn — dùng cho password reset)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+```
+
+---
+
+## 📝 Ghi chú phát triển
+
+- **Raw SQL fallback:** Một số features dùng `prisma.$queryRawUnsafe()` cho các cột mới thêm chưa kịp regenerate client, hoặc cho các aggregation query phức tạp.
+- **4:00 AM boundary:** Ngày học được tính bắt đầu từ 4:00 AM (không phải 0:00), phù hợp với người học khuya.
+- **Fluid scaling:** `html { font-size: clamp(13px, 0.75vw, 16px) }` — UI tự scale theo viewport width, hoạt động tốt từ laptop 13" đến màn hình 27".
+- **React.cache:** `getAuthenticatedUser()` được wrap bằng `React.cache` để dedup concurrent calls trong cùng 1 request.
+- **`force-dynamic`:** Tất cả pages dùng `export const dynamic = 'force-dynamic'` để luôn lấy data mới nhất từ DB.
+- **`--legacy-peer-deps`:** Cần dùng flag này khi install do conflict giữa `nodemailer@8` và `next-auth@5-beta`.
+
+---
+
+<div align="center">
+  <p>Built with ❤️ for TOEIC learners</p>
+  <p>🐝 <strong>VocaBee</strong> — Golden Amber Edition</p>
+</div>
