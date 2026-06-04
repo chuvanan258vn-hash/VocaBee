@@ -9,7 +9,8 @@
       "Bash(DIRECT_URL=\"postgresql://postgres.sndbhzomdhyibddkrifz:VocaBeedbProject123%40@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?sslmode=require\" npx prisma db push)",
       "Bash(node -e ' *)",
       "Bash(taskkill /F /IM node.exe)",
-      "PowerShell(Stop-Process -Name node -Force -ErrorAction SilentlyContinue)"
+      "PowerShell(Stop-Process -Name node -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }; Write-Output \"Port 3000 killed\")"
     ]
   }
 }
