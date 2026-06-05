@@ -1,0 +1,13 @@
+const Database = require('better-sqlite3');
+const db = new Database('G:\\myProject\\NextJs\\VocaBeeProject\\vocabee-srs\\.codegraph\\codegraph.db');
+const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+console.log('Tables:', JSON.stringify(tables.map(t=>t.name)));
+const nodeCols = db.prepare("PRAGMA table_info(nodes)").all();
+console.log('Node cols:', JSON.stringify(nodeCols.map(c=>c.name)));
+const edgeCols = db.prepare("PRAGMA table_info(edges)").all();
+console.log('Edge cols:', JSON.stringify(edgeCols.map(c=>c.name)));
+const sample = db.prepare("SELECT * FROM nodes LIMIT 3").all();
+console.log('Sample nodes:', JSON.stringify(sample));
+const sampleEdge = db.prepare("SELECT * FROM edges LIMIT 3").all();
+console.log('Sample edges:', JSON.stringify(sampleEdge));
+db.close();
