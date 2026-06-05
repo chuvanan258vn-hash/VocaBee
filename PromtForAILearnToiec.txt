@@ -20,7 +20,7 @@ Part 3: xem hình tôi gửi đây đừng quan tâm những trước đó và l
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Part 4: xem hình tôi gửi đây đừng quan tâm những trước đó và làm theo các yêu sau cho câu trên hình
 
-- dịch: song ngữ đoạn văn, câu hỏi và 4 đáp án a,b,c,d
+- dịch: song ngữ đoạn văn,  hãy dịch song ngữ từng đoạn, câu hỏi và 4 đáp án a,b,c,d
 
 - liệt kê ý chính trọng điểm giúp tìm ra đáp án khi nghe
 
@@ -100,7 +100,7 @@ example:
   ........
 ]
 
-cho những từ sau:control every aspect, detection, fills up, exceptional, expenses, symptoms, first-aid class
+cho những từ sau:superintendent, control every aspect, detection, fills up, exceptional, expenses, symptoms, first-aid class
 
 + Khi mà câu ở part 6 mà trong câu đã có động từ chính vd are made thì nếu đằng sau ko có liên từ kết nối and, so,.. thì có thể dạng rút gọn
 + prefer (v): ưa chuộng / thích hơn (Đáp án đúng vì sau đại từ quan hệ "who" cần một động từ chính).
