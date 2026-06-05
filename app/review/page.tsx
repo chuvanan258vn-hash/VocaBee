@@ -141,46 +141,65 @@ export default async function ReviewPage({
         examEndDate.setDate(examEndDate.getDate() + 1);
         examEndDate.setHours(0, 0, 0, 0);
 
+        // Áp dụng Anti-Overload: tôn trọng daily cap của user, không dump all 200 từ
+        // Ôn từ cũ đến hạn trước (dùng remainingVocabReviewQuota đã tính ở trên)
+        // Học từ mới sau (dùng canLearnMoreCount đã tính ở trên)
         let cramItems: (Vocabulary | GrammarCard)[] = [];
         if (type === 'vocab_exam') {
-            const words: Vocabulary[] = await prisma.$queryRawUnsafe(`
-                SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
-                FROM "Vocabulary"
-                WHERE "userId" = $1
-                  AND "createdAt" >= $3
-                  AND "createdAt" <  $4
-                ORDER BY
-                  CASE
-                    WHEN repetition = 0 AND interval = 0 THEN 1
-                    WHEN interval > 0 AND "nextReview" <= $2   THEN 2
-                    WHEN repetition > 0 AND efactor < 2.1     THEN 3
-                    WHEN repetition > 0 AND interval < 14     THEN 4
-                    ELSE 5
-                  END ASC,
-                  efactor ASC,
-                  "nextReview" ASC
-                LIMIT 200
-            `, user.id, now, examStartDate, examEndDate);
-            cramItems = words;
+            const [cramReview, cramNew] = await Promise.all([
+                // ① Từ ôn lại trong chiến dịch: đến hạn, ưu tiên khó/gần hết hạn
+                prisma.$queryRawUnsafe<Vocabulary[]>(`
+                    SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
+                    FROM "Vocabulary"
+                    WHERE "userId" = $1
+                      AND "createdAt" >= $3
+                      AND "createdAt" <  $4
+                      AND interval > 0
+                      AND "nextReview" <= $2
+                    ORDER BY interval ASC, efactor ASC, "nextReview" ASC
+                    LIMIT $5
+                `, user.id, now, examStartDate, examEndDate, remainingVocabReviewQuota),
+
+                // ② Từ mới trong chiến dịch: chưa học, ưu tiên quan trọng nhất
+                prisma.$queryRawUnsafe<Vocabulary[]>(`
+                    SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
+                    FROM "Vocabulary"
+                    WHERE "userId" = $1
+                      AND "createdAt" >= $3
+                      AND "createdAt" <  $4
+                      AND interval = 0
+                    ORDER BY "importanceScore" DESC NULLS LAST, "createdAt" ASC
+                    LIMIT $5
+                `, user.id, now, examStartDate, examEndDate, canLearnMoreCount),
+            ]);
+            // Ôn trước, học sau — đúng Anti-Overload Fix 4
+            cramItems = [...cramReview, ...cramNew];
         } else {
-            const grammar: GrammarCard[] = await prisma.$queryRawUnsafe(`
-                SELECT * FROM "GrammarCard"
-                WHERE "userId" = $1
-                  AND "createdAt" >= $3
-                  AND "createdAt" <  $4
-                ORDER BY
-                  CASE
-                    WHEN repetition = 0 AND interval = 0 THEN 1
-                    WHEN interval > 0 AND "nextReview" <= $2   THEN 2
-                    WHEN repetition > 0 AND efactor < 2.1     THEN 3
-                    WHEN repetition > 0 AND interval < 14     THEN 4
-                    ELSE 5
-                  END ASC,
-                  efactor ASC,
-                  "nextReview" ASC
-                LIMIT 200
-            `, user.id, now, examStartDate, examEndDate);
-            cramItems = grammar;
+            const [cramReview, cramNew] = await Promise.all([
+                // ① Ngữ pháp ôn lại trong chiến dịch
+                prisma.$queryRawUnsafe<GrammarCard[]>(`
+                    SELECT * FROM "GrammarCard"
+                    WHERE "userId" = $1
+                      AND "createdAt" >= $3
+                      AND "createdAt" <  $4
+                      AND interval > 0
+                      AND "nextReview" <= $2
+                    ORDER BY interval ASC, efactor ASC, "nextReview" ASC
+                    LIMIT $5
+                `, user.id, now, examStartDate, examEndDate, remainingGrammarReviewQuota),
+
+                // ② Ngữ pháp mới trong chiến dịch
+                prisma.$queryRawUnsafe<GrammarCard[]>(`
+                    SELECT * FROM "GrammarCard"
+                    WHERE "userId" = $1
+                      AND "createdAt" >= $3
+                      AND "createdAt" <  $4
+                      AND interval = 0
+                    ORDER BY "createdAt" ASC
+                    LIMIT $5
+                `, user.id, now, examStartDate, examEndDate, canLearnMoreGrammarCount),
+            ]);
+            cramItems = [...cramReview, ...cramNew];
         }
 
         return (
