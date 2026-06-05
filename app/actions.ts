@@ -746,10 +746,14 @@ export async function getDashboardStats() {
     examVocabNew,
     examVocabOverdue,
     examVocabWeak,
+    // Actionable hôm nay = từ đến hạn ôn + từ mới trong quota còn lại
+    // Đây là số thực sự sẽ xuất hiện khi nhấn CHIẾN NGAY
+    examVocabActionable: examVocabOverdue + Math.min(examVocabNew, canLearnMoreCount),
     examGrammarCount,
     examGrammarNew,
     examGrammarOverdue,
     examGrammarWeak,
+    examGrammarActionable: examGrammarOverdue + Math.min(examGrammarNew, canLearnMoreGrammarCount),
   };
 }
 

@@ -138,7 +138,7 @@ export default async function Home() {
 
         <div className="p-4 sm:p-6 max-w-7xl mx-auto flex flex-col gap-6 sm:gap-8 pb-24">
           {/* Exam Cramming Banners */}
-          {stats && stats.examVocabCount > 0 && (
+          {stats && stats.examVocabActionable > 0 && (
             <div className="bg-gradient-to-r from-red-600 to-orange-500 rounded-3xl p-1 md:p-1.5 shadow-[0_0_30px_rgba(239,68,68,0.3)] relative overflow-hidden group">
               <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
               <div className="bg-surface/40 backdrop-blur-md rounded-2xl p-6 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
@@ -153,8 +153,8 @@ export default async function Home() {
                     </div>
                     <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
                       Còn <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">
-                        {stats.examVocabCount} từ vựng
-                      </span> cần ôn gấp
+                        {stats.examVocabActionable} từ vựng
+                      </span> cần ôn hôm nay
                     </h3>
                     {/* SRS Breakdown Badges */}
                     <div className="flex flex-wrap gap-2 mt-2">
@@ -187,7 +187,7 @@ export default async function Home() {
             </div>
           )}
 
-          {stats && stats.examGrammarCount > 0 && (
+          {stats && stats.examGrammarActionable > 0 && (
             <div className="bg-gradient-to-r from-pink-600 to-rose-500 rounded-3xl p-1 md:p-1.5 shadow-[0_0_30px_rgba(236,72,153,0.3)] relative overflow-hidden group">
               <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
               <div className="bg-surface/40 backdrop-blur-md rounded-2xl p-6 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
@@ -202,8 +202,8 @@ export default async function Home() {
                     </div>
                     <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
                       Còn <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">
-                        {stats.examGrammarCount} ngữ pháp
-                      </span> cần ôn gấp
+                        {stats.examGrammarActionable} ngữ pháp
+                      </span> cần ôn hôm nay
                     </h3>
                     {/* SRS Breakdown Badges */}
                     <div className="flex flex-wrap gap-2 mt-2">
