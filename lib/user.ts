@@ -30,8 +30,10 @@ async function hydrateReviewLimits(user: VocaBeeUser): Promise<VocaBeeUser> {
         const rows = await prisma.$queryRawUnsafe<Array<{
             dailyMaxVocabReview: unknown;
             dailyMaxGrammarReview: unknown;
+            examStartDate: Date | null;
+            examDate: Date | null;
         }>>(
-            `SELECT "dailyMaxVocabReview", "dailyMaxGrammarReview" FROM "User" WHERE id = $1 LIMIT 1`,
+            `SELECT "dailyMaxVocabReview", "dailyMaxGrammarReview", "examStartDate", "examDate" FROM "User" WHERE id = $1 LIMIT 1`,
             user.id
         );
 
@@ -40,11 +42,13 @@ async function hydrateReviewLimits(user: VocaBeeUser): Promise<VocaBeeUser> {
 
         return {
             ...user,
-            dailyMaxVocabReview: toSafeNumber(row.dailyMaxVocabReview, user.dailyMaxVocabReview ?? 100),
+            dailyMaxVocabReview:  toSafeNumber(row.dailyMaxVocabReview,  user.dailyMaxVocabReview  ?? 100),
             dailyMaxGrammarReview: toSafeNumber(row.dailyMaxGrammarReview, user.dailyMaxGrammarReview ?? 50),
+            examStartDate: row.examStartDate ?? null,
+            examDate:      row.examDate      ?? null,
         };
     } catch (e) {
-        console.warn('Could not hydrate daily max review limits from raw SQL:', e);
+        console.warn('Could not hydrate user settings from raw SQL:', e);
         return user;
     }
 }

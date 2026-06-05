@@ -680,10 +680,12 @@ export async function getDashboardStats() {
   // ─── Calculate Goals ────────────────────────────────────────────────────────
   const vUser = { ...userWithCount, ...userBase } as VocaBeeUser;
   const baseVocabGoal = vUser.dailyNewWordGoal || 30;
-  const totalVocabGoal = baseVocabGoal + unlearnedYesterdayVocab;
+  // Fix 1: Bỏ cộng dồn — dashboard nhất quán với review session
+  const totalVocabGoal = baseVocabGoal;
 
   const baseGrammarGoal = vUser.dailyNewGrammarGoal || 30;
-  const totalGrammarGoal = baseGrammarGoal + unlearnedYesterdayGrammar;
+  // Fix 1: Tương tự cho ngữ pháp
+  const totalGrammarGoal = baseGrammarGoal;
 
   // Calculate "Can Learn More" (Dynamic Goal Progress limited by available DB items)
   const canLearnMoreCount = Math.min(

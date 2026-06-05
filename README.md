@@ -15,6 +15,7 @@
 - [Components](#-components)
 - [Server Actions](#-server-actions)
 - [Thuật toán SRS (SM-2)](#-thuật-toán-srs-sm-2)
+- [Anti-Overload Logic](#-anti-overload-logic-v2)
 - [Hệ thống Gamification](#-hệ-thống-gamification)
 - [Cài đặt & Chạy](#-cài-đặt--chạy)
 - [Biến môi trường](#-biến-môi-trường)
@@ -25,7 +26,7 @@
 
 ### 🧠 Học từ vựng thông minh
 - **Spaced Repetition (SM-2):** Hệ thống tự động lên lịch ôn tập dựa trên hiệu suất của người dùng. Từ dễ sẽ được ôn ít hơn, từ khó được ôn thường xuyên hơn.
-- **Review Session:** Giao diện flashcard với animation lật thẻ, hỗ trợ swipe trái/phải, nhập câu trả lời bằng bàn phím.
+- **Review Session:** Giao diện flashcard với animation lật thẻ, hỗ trợ swipe trái/phải, nhập câu trả lời bằng bàn phím. Ôn từ cũ trước, học từ mới sau — từ mới chỉ 1 nút "Đã học", từ ôn lại dùng 4 nút đánh giá.
 - **Text-to-Speech:** Phát âm từ vựng với lựa chọn accent Anh-Mỹ, Anh-Anh, Anh-Úc.
 - **Smart Capture:** Bắt từ nhanh khi đọc tài liệu — lưu ngay vào hộp thư đến (inbox) nếu độ ưu tiên thấp.
 
@@ -376,6 +377,78 @@ nextReview = now + interval days (với ±10% fuzz để tránh review storm)
 ```
 
 **Grammar cards** dùng thang điểm 0–3 (grade) → convert sang quality 0–5 trước khi áp dụng SM-2.
+
+---
+
+## 🛡 Anti-Overload Logic (v2)
+
+> Hệ thống kiểm soát tải trọng hàng ngày để tránh debt tích lũy và session không kết thúc.
+
+### Nguyên tắc cốt lõi
+
+```
+Tổng slot/ngày = dailyReviewLimit (setting của user)
+Ưu tiên 1 → Từ đến hạn ôn  (interval > 0, nextReview ≤ hôm nay)
+Ưu tiên 2 → Từ mới          (interval = 0, chỉ lấy slot còn lại)
+
+Ví dụ với cap = 20:
+  Ngày bình thường:  10 ôn + 10 mới = 20 ✅
+  Ngày có debt:      18 ôn + 2 mới  = 20 ✅
+  Ngày debt nhiều:   20 ôn + 0 mới  = 20 ✅ (tạm dừng từ mới)
+```
+
+### Fix 1 — Bỏ cộng dồn từ ngày hôm trước
+
+Từ chưa học ngày hôm qua **không** bị cộng thêm vào hôm nay. Chỉ lấy đúng `dailyNewWordGoal` từ mới — tránh debt tăng vô hạn.
+
+> File: `app/review/page.tsx`, `app/actions.ts`
+
+### Fix 2 — Từ mới: 1 nút "Đã học" thay vì 4 nút đánh giá
+
+Khi lật thẻ từ mới (`interval === 0`):
+- Chỉ hiện **1 nút "✓ Đã học, tiếp theo"** → tự động map thành `Good` (quality=4, interval=1 ngày)
+- Không requeue, không đánh giá — não chưa có gì để "nhớ" hay "quên"
+
+Từ ôn lại (`interval > 0`) vẫn dùng **4 nút** như cũ: Quên mất / Khó nhớ / Nhớ được / Nhớ ngay.
+
+> File: `components/Flashcard.tsx`
+
+### Fix 3 — Giới hạn requeue "Quên mất" tối đa 2 lần/session
+
+Khi chọn "Quên mất" (quality 0-1):
+- Lần 1 & 2: thẻ được đẩy xuống cuối queue, chưa lưu DB
+- Lần 3+: kết thúc trong session, SM-2 tự lên lịch lại vào ngày mai
+
+Từ mới (`interval === 0`) **không bao giờ requeue** — Fix 2 đã xử lý.
+
+> File: `components/ReviewSession.tsx` — `MAX_REQUEUE_PER_SESSION = 2`
+
+### Fix 4 — Ôn trước, học sau + phân mode đúng giai đoạn
+
+**Thứ tự queue mỗi session:**
+```
+① Từ ôn lại (interval > 0) — Typing mode (50% xác suất) — kiểm tra thật sự
+② Từ mới    (interval = 0) — Flashcard mode (luôn) — tiếp nhận, làm quen
+```
+
+Từ mới luôn dùng Flashcard, không bao giờ dùng Typing trước khi học lần đầu.
+
+> File: `app/review/page.tsx` (sort queue), `components/ReviewSession.tsx` (mode logic)
+
+### Khuyến nghị setting
+
+| Setting | Giá trị | Lý do |
+|---------|---------|-------|
+| `dailyNewWordGoal` | **10** | An toàn, không sinh debt |
+| `dailyMaxVocabReview` | **20–30** | Đủ chỗ cho từ quên quay lại |
+
+**Công thức kiểm tra:** `dailyMaxVocabReview ≥ dailyNewWordGoal × 2`
+
+```
+✅ new=10, review=20   (20 ≥ 10×2)
+✅ new=15, review=30   (30 ≥ 15×2)
+❌ new=15, review=20   (20 < 15×2) ← rủi ro debt
+```
 
 ---
 

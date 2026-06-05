@@ -35,15 +35,19 @@ export default function ReviewSession({ dueWords: initialDueWords, flipOnly = fa
     const { showToast } = useToast();
     // Track if current card should be presented as Input or Flip
     const [useInputMode, setUseInputMode] = useState(false);
+    // Fix 3: Giới hạn requeue "Again" tối đa MAX_REQUEUE_PER_SESSION lần/session
+    const MAX_REQUEUE_PER_SESSION = 2;
+    const [requeueCounts, setRequeueCounts] = useState<Record<string, number>>({});
 
     // Randomize mode whenever currentIndex changes
     useEffect(() => {
         if (!isDone && dueWords[currentIndex]) {
-            // Grammar cards always use standard mode.
-            // flipOnly=true (e.g. chiến dịch ôn thi): vocab luôn dùng lật thẻ.
-            // Bình thường: từ vựng có 50% xác suất dùng FlashcardInput.
-            const isGrammar = isGrammarCard(dueWords[currentIndex]);
-            setUseInputMode(!isGrammar && !flipOnly && Math.random() > 0.5);
+            const card = dueWords[currentIndex];
+            const isGrammar = isGrammarCard(card);
+            // Fix 4: Từ mới (interval=0) luôn dùng Flashcard — không typing trước khi học lần đầu
+            // Từ ôn lại (interval>0) mới dùng 50% typing để kiểm tra thật sự
+            const isNewVocab = !isGrammar && (card as any).interval === 0;
+            setUseInputMode(!isGrammar && !flipOnly && !isNewVocab && Math.random() > 0.5);
         }
     }, [currentIndex, isDone, dueWords, flipOnly]);
 
@@ -69,12 +73,34 @@ export default function ReviewSession({ dueWords: initialDueWords, flipOnly = fa
     }
 
     const handleNext = (result?: { id: string; quality: number; type: 'vocab' | 'grammar'; isTypingBonus?: boolean }) => {
+        setPendingResult(null);
+
         if (result) {
+            const currentCard = dueWords[currentIndex];
+            const isGrammar = isGrammarCard(currentCard);
+            // Fix 3: "Again" — vocab: quality 0-1, grammar: quality 0
+            // Fix 2+3: Từ mới (interval=0) KHÔNG requeue — đã xử lý bằng 1 nút "Đã học"
+            const isNewVocab = !isGrammar && (currentCard as any).interval === 0;
+            const isAgain = !isNewVocab && (isGrammar ? result.quality === 0 : result.quality <= 1);
+            const currentCount = requeueCounts[result.id] ?? 0;
+
+            if (isAgain && currentCount < MAX_REQUEUE_PER_SESSION) {
+                // Requeue: đẩy thẻ xuống cuối hàng đợi, chưa lưu DB
+                setRequeueCounts(prev => ({ ...prev, [result.id]: currentCount + 1 }));
+                setDueWords(prev => {
+                    const card = prev[currentIndex];
+                    const rest = prev.filter((_, i) => i !== currentIndex);
+                    return [...rest, card];
+                });
+                // Không advance currentIndex — thẻ tiếp theo trượt vào vị trí hiện tại
+                return;
+            }
+
+            // Đã hết lượt requeue hoặc không phải "Again" → lưu kết quả
             setResults(prev => [...prev, result]);
             batchReviewAction([result]).catch(err => console.error("Background update failed", err));
         }
-        setPendingResult(null); // Clear pending when moving to next card
-        
+
         if (currentIndex < dueWords.length - 1) {
             setCurrentIndex(currentIndex + 1);
         } else {

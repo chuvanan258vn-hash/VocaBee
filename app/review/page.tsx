@@ -91,11 +91,13 @@ export default async function ReviewPage({
     const vUser = user as unknown as VocaBeeUser;
 
     const baseVocabGoal = vUser.dailyNewWordGoal || 30;
-    const totalVocabGoal = baseVocabGoal + unlearnedYesterdayVocab;
+    // Fix 1: Bỏ cộng dồn từ ngày hôm trước — chỉ lấy đúng dailyGoal
+    const totalVocabGoal = baseVocabGoal;
     const canLearnMoreCount = Math.max(0, totalVocabGoal - learnedTodayCount);
 
     const baseGrammarGoal = vUser.dailyNewGrammarGoal || 30;
-    const totalGrammarGoal = baseGrammarGoal + unlearnedYesterdayGrammar;
+    // Fix 1: Tương tự — ngữ pháp cũng không cộng dồn
+    const totalGrammarGoal = baseGrammarGoal;
     const canLearnMoreGrammarCount = Math.max(0, totalGrammarGoal - learnedGrammarToday);
 
     const MAX_DAILY_VOCAB_REVIEWS = vUser.dailyMaxVocabReview ?? 100;
@@ -120,16 +122,33 @@ export default async function ReviewPage({
         ? 100 
         : (totalPotentialGrammar <= GRAMMAR_THRESHOLD ? GRAMMAR_THRESHOLD : 10);
 
-    // --- CRAMMING MODE (CHIẾN DỊCH ÔN THI 1/6) ---
+    // --- CRAMMING MODE (CHIẾN DỊCH ÔN THI) ---
     if (type === 'vocab_exam' || type === 'grammar_exam') {
+        const examRows = await prisma.$queryRawUnsafe<Array<{
+            examStartDate: Date | null;
+            examDate: Date | null;
+        }>>(
+            `SELECT "examStartDate", "examDate" FROM "User" WHERE id = $1 LIMIT 1`,
+            user.id
+        );
+        const examStartDate = examRows[0]?.examStartDate ?? null;
+        const examDate      = examRows[0]?.examDate      ?? null;
+
+        if (!examStartDate || !examDate) redirect('/');
+
+        // +1 ngày để dùng < thay vì <=, bao gồm cả ngày thi
+        const examEndDate = new Date(examDate);
+        examEndDate.setDate(examEndDate.getDate() + 1);
+        examEndDate.setHours(0, 0, 0, 0);
+
         let cramItems: (Vocabulary | GrammarCard)[] = [];
         if (type === 'vocab_exam') {
             const words: Vocabulary[] = await prisma.$queryRawUnsafe(`
                 SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
                 FROM "Vocabulary"
                 WHERE "userId" = $1
-                  AND "createdAt" >= '2026-04-24' 
-                  AND "createdAt" < '2026-06-01'
+                  AND "createdAt" >= $3
+                  AND "createdAt" <  $4
                 ORDER BY
                   CASE
                     WHEN repetition = 0 AND interval = 0 THEN 1
@@ -141,14 +160,14 @@ export default async function ReviewPage({
                   efactor ASC,
                   "nextReview" ASC
                 LIMIT 200
-            `, user.id, now);
+            `, user.id, now, examStartDate, examEndDate);
             cramItems = words;
         } else {
             const grammar: GrammarCard[] = await prisma.$queryRawUnsafe(`
                 SELECT * FROM "GrammarCard"
                 WHERE "userId" = $1
-                  AND "createdAt" >= '2026-04-24' 
-                  AND "createdAt" < '2026-06-01'
+                  AND "createdAt" >= $3
+                  AND "createdAt" <  $4
                 ORDER BY
                   CASE
                     WHEN repetition = 0 AND interval = 0 THEN 1
@@ -160,13 +179,12 @@ export default async function ReviewPage({
                   efactor ASC,
                   "nextReview" ASC
                 LIMIT 200
-            `, user.id, now);
+            `, user.id, now, examStartDate, examEndDate);
             cramItems = grammar;
         }
 
         return (
             <main className="min-h-screen bg-background font-sans">
-                {/* vocab_exam: chỉ lật thẻ (flipOnly), không nhập từ */}
                 <ReviewSession dueWords={cramItems} flipOnly={type === 'vocab_exam'} />
             </main>
         );
@@ -181,7 +199,7 @@ export default async function ReviewPage({
           AND interval > 0
           AND "nextReview" <= $2
           AND "isDeferred" = false
-        ORDER BY "nextReview" ASC
+        ORDER BY interval ASC, efactor ASC, "nextReview" ASC
         LIMIT $3
     `, user.id, now, dueVocabLimit);
 
@@ -203,7 +221,7 @@ export default async function ReviewPage({
                     AND "isDeferred" = false
                     AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
                     ${filterString}
-                ORDER BY "nextReview" ASC 
+                ORDER BY interval ASC, efactor ASC, "nextReview" ASC
                 LIMIT $5
             `, user.id, now, yesterdayStart, todayStart, dueGrammarLimit);
         }
@@ -223,7 +241,7 @@ export default async function ReviewPage({
               AND interval = 0
               AND source = 'TEST'
               AND "importanceScore" >= 3
-            ORDER BY "createdAt" ASC
+            ORDER BY "importanceScore" DESC NULLS LAST, "createdAt" ASC
             LIMIT $2
         `, user.id, fetchNewCount);
 
@@ -237,7 +255,7 @@ export default async function ReviewPage({
                   AND interval = 0
                   AND source = 'COLLECTION'
                   AND "isDeferred" = false
-                ORDER BY "createdAt" ASC
+                ORDER BY "importanceScore" DESC NULLS LAST, "createdAt" ASC
                 LIMIT $2
             `, user.id, remainingNewCount);
         }
@@ -267,33 +285,16 @@ export default async function ReviewPage({
         `, user.id, fetchGrammarCount);
     }
 
-    // Interleave Logic: Mix Due and New items for better flow
+    // Fix 4: Ôn trước, từ mới sau — review words first, new words in remaining slots
+    // Từ ôn (interval>0): typing mode, kiểm tra thật sự
+    // Từ mới (interval=0): flashcard mode, chỉ 1 nút "Đã học"
     const combinedDue = [...dueWords, ...dueGrammar];
     const combinedNew = [...newWords, ...newGrammar];
-
-    const interleaved: (Vocabulary | GrammarCard)[] = [];
-    let reviewIdx = 0;
-    let newIdx = 0;
-
-    // Pattern: 3-4 Reviews followed by 1 New item
-    while (reviewIdx < combinedDue.length || newIdx < combinedNew.length) {
-        // Add up to 3 reviews
-        for (let i = 0; i < 3 && reviewIdx < combinedDue.length; i++) {
-            interleaved.push(combinedDue[reviewIdx++]);
-        }
-        // Add 1 new item
-        if (newIdx < combinedNew.length) {
-            interleaved.push(combinedNew[newIdx++]);
-        }
-        // If no more reviews, just drain new items
-        if (reviewIdx >= combinedDue.length && newIdx < combinedNew.length) {
-            interleaved.push(combinedNew[newIdx++]);
-        }
-    }
+    const sessionQueue: (Vocabulary | GrammarCard)[] = [...combinedDue, ...combinedNew];
 
     return (
         <main className="min-h-screen bg-background font-sans">
-            <ReviewSession dueWords={interleaved} />
+            <ReviewSession dueWords={sessionQueue} />
         </main>
     );
 }

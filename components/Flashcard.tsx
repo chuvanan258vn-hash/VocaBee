@@ -273,25 +273,48 @@ export default function Flashcard({ word, onNext }: FlashcardProps) {
             {/* === RATING BUTTONS === */}
             <AnimatePresence mode="wait">
                 {isFlipped ? (
-                    <motion.div
-                        key="rating"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 16 }}
-                        transition={{ duration: 0.3, ease: 'easeOut' }}
-                        className="grid grid-cols-2 md:grid-cols-4 gap-3"
-                    >
-                        {ratingButtons.map(({ quality, label, sublabel, color, border }) => (
+                    // Fix 2: Từ mới (interval=0) → 1 nút "Đã học", từ ôn lại → 4 nút đánh giá
+                    word.interval === 0 ? (
+                        <motion.div
+                            key="new-word-done"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 16 }}
+                            transition={{ duration: 0.3, ease: 'easeOut' }}
+                            className="flex flex-col items-center gap-3"
+                        >
                             <button
-                                key={quality}
-                                onClick={() => handleReview(quality)}
-                                className={`group flex flex-col items-center justify-center gap-1.5 py-5 rounded-2xl border-2 border-slate-200/70 dark:border-slate-800/70 bg-surface/80 ${border} shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95`}
+                                onClick={() => handleReview(4)}
+                                className="group relative px-12 py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl font-black text-base shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] flex items-center gap-3"
                             >
-                                <span className={`text-sm font-black ${color} uppercase tracking-[0.1em]`}>{label}</span>
-                                <span className="text-[10px] text-slate-400 font-semibold">{sublabel}</span>
+                                <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                                Đã học, tiếp theo
                             </button>
-                        ))}
-                    </motion.div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] opacity-60">
+                                Sẽ ôn lại sau 1 ngày
+                            </p>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="rating"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 16 }}
+                            transition={{ duration: 0.3, ease: 'easeOut' }}
+                            className="grid grid-cols-2 md:grid-cols-4 gap-3"
+                        >
+                            {ratingButtons.map(({ quality, label, sublabel, color, border }) => (
+                                <button
+                                    key={quality}
+                                    onClick={() => handleReview(quality)}
+                                    className={`group flex flex-col items-center justify-center gap-1.5 py-5 rounded-2xl border-2 border-slate-200/70 dark:border-slate-800/70 bg-surface/80 ${border} shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95`}
+                                >
+                                    <span className={`text-sm font-black ${color} uppercase tracking-[0.1em]`}>{label}</span>
+                                    <span className="text-[10px] text-slate-400 font-semibold">{sublabel}</span>
+                                </button>
+                            ))}
+                        </motion.div>
+                    )
                 ) : (
                     <motion.div
                         key="hint"
