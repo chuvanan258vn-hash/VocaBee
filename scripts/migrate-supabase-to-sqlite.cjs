@@ -64,6 +64,21 @@ async function main() {
     await copyModel(model);
   }
 
+  // The generated @prisma/client (Postgres) predates the examStartDate/examDate
+  // columns, so user.findMany() silently drops them. Backfill those two fields
+  // via raw SQL so the exam-campaign data survives the migration.
+  console.log('--- Backfilling User.examStartDate / examDate via raw SQL ---');
+  const examRows = await pg.$queryRawUnsafe('SELECT id, "examStartDate", "examDate" FROM "User"');
+  let patched = 0;
+  for (const r of examRows) {
+    const s = r.examStartDate ? new Date(r.examStartDate) : null;
+    const e = r.examDate ? new Date(r.examDate) : null;
+    if (s === null && e === null) continue;
+    await lite.user.update({ where: { id: r.id }, data: { examStartDate: s, examDate: e } });
+    patched++;
+  }
+  console.log(`  exam dates backfilled for ${patched} user(s)`);
+
   console.log('--- Verifying counts (pg vs sqlite) ---');
   let ok = true;
   for (const model of MODELS) {
