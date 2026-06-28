@@ -21,7 +21,9 @@ async function getUser(email: string): Promise<any> {
 }
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
-    adapter: PrismaAdapter(prisma),
+    // prisma is the SQLite-generated client; its nominal type differs from the
+    // adapter's expected @prisma/client type, but the model API is identical.
+    adapter: PrismaAdapter(prisma as never),
     session: { strategy: 'jwt' },
     ...authConfig,
     providers: [

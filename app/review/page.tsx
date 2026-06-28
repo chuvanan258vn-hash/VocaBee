@@ -41,33 +41,33 @@ export default async function ReviewPage({
         // ① Tất cả Vocabulary counts trong 1 SQL
         prisma.$queryRawUnsafe<any[]>(`
             SELECT
-                COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition = 1)                         AS "learnedToday",
+                COUNT(*) FILTER (WHERE "updatedAt" >= ?2 AND repetition = 1)                         AS "learnedToday",
                 COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false
-                                       AND "createdAt" >= $3 AND "createdAt" < $2)                   AS "unlearnedYesterday",
-                COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition > 1)                         AS "alreadyReviewed",
-                COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false) AS "rawDueCount"
+                                       AND "createdAt" >= ?3 AND "createdAt" < ?2)                   AS "unlearnedYesterday",
+                COUNT(*) FILTER (WHERE "updatedAt" >= ?2 AND repetition > 1)                         AS "alreadyReviewed",
+                COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= ?1 AND "isDeferred" = false) AS "rawDueCount"
             FROM "Vocabulary"
-            WHERE "userId" = $4
+            WHERE "userId" = ?4
         `, now, todayStart, yesterdayStart, user.id),
 
         // ② Tất cả GrammarCard counts trong 1 SQL
         prisma.$queryRawUnsafe<any[]>(`
             SELECT
-                COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition = 1)                         AS "learnedToday",
+                COUNT(*) FILTER (WHERE "updatedAt" >= ?2 AND repetition = 1)                         AS "learnedToday",
                 COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false
-                                       AND "createdAt" >= $3 AND "createdAt" < $2)                   AS "unlearnedYesterday",
-                COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition > 1)                         AS "alreadyReviewed",
-                COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false
-                                       AND NOT (repetition = 1 AND "updatedAt" >= $3
-                                                AND "updatedAt" < $2))                               AS "rawDueCount"
+                                       AND "createdAt" >= ?3 AND "createdAt" < ?2)                   AS "unlearnedYesterday",
+                COUNT(*) FILTER (WHERE "updatedAt" >= ?2 AND repetition > 1)                         AS "alreadyReviewed",
+                COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= ?1 AND "isDeferred" = false
+                                       AND NOT (repetition = 1 AND "updatedAt" >= ?3
+                                                AND "updatedAt" < ?2))                               AS "rawDueCount"
             FROM "GrammarCard"
-            WHERE "userId" = $4
+            WHERE "userId" = ?4
         `, now, todayStart, yesterdayStart, user.id),
 
         // ③ TEST vocab high-prio count (kept separate with .catch())
         prisma.$queryRawUnsafe<any[]>(
             `SELECT COUNT(*) AS count FROM "Vocabulary"
-             WHERE "userId" = $1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= $2`,
+             WHERE "userId" = ?1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= ?2`,
             user.id, todayStart
         ).catch(() => [{ count: 0 }]),
     ]);
@@ -128,7 +128,7 @@ export default async function ReviewPage({
             examStartDate: Date | null;
             examDate: Date | null;
         }>>(
-            `SELECT "examStartDate", "examDate" FROM "User" WHERE id = $1 LIMIT 1`,
+            `SELECT "examStartDate", "examDate" FROM "User" WHERE id = ?1 LIMIT 1`,
             user.id
         );
         const examStartDate = examRows[0]?.examStartDate ?? null;
@@ -150,25 +150,25 @@ export default async function ReviewPage({
                 prisma.$queryRawUnsafe<Vocabulary[]>(`
                     SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
                     FROM "Vocabulary"
-                    WHERE "userId" = $1
-                      AND "createdAt" >= $3
-                      AND "createdAt" <  $4
+                    WHERE "userId" = ?1
+                      AND "createdAt" >= ?3
+                      AND "createdAt" <  ?4
                       AND interval > 0
-                      AND "nextReview" <= $2
+                      AND "nextReview" <= ?2
                     ORDER BY interval ASC, efactor ASC, "nextReview" ASC
-                    LIMIT $5
+                    LIMIT ?5
                 `, user.id, now, examStartDate, examEndDate, remainingVocabReviewQuota),
 
                 // ② Từ mới trong chiến dịch: chưa học, ưu tiên quan trọng nhất
                 prisma.$queryRawUnsafe<Vocabulary[]>(`
                     SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
                     FROM "Vocabulary"
-                    WHERE "userId" = $1
-                      AND "createdAt" >= $3
-                      AND "createdAt" <  $4
+                    WHERE "userId" = ?1
+                      AND "createdAt" >= ?3
+                      AND "createdAt" <  ?4
                       AND interval = 0
                     ORDER BY "importanceScore" DESC NULLS LAST, "createdAt" ASC
-                    LIMIT $5
+                    LIMIT ?5
                 `, user.id, now, examStartDate, examEndDate, canLearnMoreCount),
             ]);
             // Ôn trước, học sau — đúng Anti-Overload Fix 4
@@ -178,24 +178,24 @@ export default async function ReviewPage({
                 // ① Ngữ pháp ôn lại trong chiến dịch
                 prisma.$queryRawUnsafe<GrammarCard[]>(`
                     SELECT * FROM "GrammarCard"
-                    WHERE "userId" = $1
-                      AND "createdAt" >= $3
-                      AND "createdAt" <  $4
+                    WHERE "userId" = ?1
+                      AND "createdAt" >= ?3
+                      AND "createdAt" <  ?4
                       AND interval > 0
-                      AND "nextReview" <= $2
+                      AND "nextReview" <= ?2
                     ORDER BY interval ASC, efactor ASC, "nextReview" ASC
-                    LIMIT $5
+                    LIMIT ?5
                 `, user.id, now, examStartDate, examEndDate, remainingGrammarReviewQuota),
 
                 // ② Ngữ pháp mới trong chiến dịch
                 prisma.$queryRawUnsafe<GrammarCard[]>(`
                     SELECT * FROM "GrammarCard"
-                    WHERE "userId" = $1
-                      AND "createdAt" >= $3
-                      AND "createdAt" <  $4
+                    WHERE "userId" = ?1
+                      AND "createdAt" >= ?3
+                      AND "createdAt" <  ?4
                       AND interval = 0
                     ORDER BY "createdAt" ASC
-                    LIMIT $5
+                    LIMIT ?5
                 `, user.id, now, examStartDate, examEndDate, canLearnMoreGrammarCount),
             ]);
             cramItems = [...cramReview, ...cramNew];
@@ -213,12 +213,12 @@ export default async function ReviewPage({
     const dueWords: Vocabulary[] = (type === 'grammar') ? [] : await prisma.$queryRawUnsafe(`
         SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
         FROM "Vocabulary"
-        WHERE "userId" = $1
+        WHERE "userId" = ?1
           AND interval > 0
-          AND "nextReview" <= $2
+          AND "nextReview" <= ?2
           AND "isDeferred" = false
         ORDER BY interval ASC, efactor ASC, "nextReview" ASC
-        LIMIT $3
+        LIMIT ?3
     `, user.id, now, dueVocabLimit);
 
         // 1.5. Lấy các câu NGỮ PHÁP đến hạn (Priority 1), loại grammar mới học hôm qua
@@ -233,14 +233,14 @@ export default async function ReviewPage({
 
             dueGrammar = await prisma.$queryRawUnsafe(`
                 SELECT * FROM "GrammarCard" 
-                WHERE "userId" = $1 
+                WHERE "userId" = ?1 
                     AND interval > 0 
-                    AND "nextReview" <= $2 
+                    AND "nextReview" <= ?2 
                     AND "isDeferred" = false
-                    AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $4)
+                    AND NOT (repetition = 1 AND "updatedAt" >= ?3 AND "updatedAt" < ?4)
                     ${filterString}
                 ORDER BY interval ASC, efactor ASC, "nextReview" ASC
-                LIMIT $5
+                LIMIT ?5
             `, user.id, now, yesterdayStart, todayStart, dueGrammarLimit);
         }
 
@@ -255,12 +255,12 @@ export default async function ReviewPage({
         const testNewWords: Vocabulary[] = await prisma.$queryRawUnsafe(`
             SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
             FROM "Vocabulary"
-            WHERE "userId" = $1
+            WHERE "userId" = ?1
               AND interval = 0
               AND source = 'TEST'
               AND "importanceScore" >= 3
             ORDER BY "importanceScore" DESC NULLS LAST, "createdAt" ASC
-            LIMIT $2
+            LIMIT ?2
         `, user.id, fetchNewCount);
 
         const remainingNewCount = fetchNewCount - testNewWords.length;
@@ -269,12 +269,12 @@ export default async function ReviewPage({
             scheduledNewWords = await prisma.$queryRawUnsafe(`
                 SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
                 FROM "Vocabulary"
-                WHERE "userId" = $1
+                WHERE "userId" = ?1
                   AND interval = 0
                   AND source = 'COLLECTION'
                   AND "isDeferred" = false
                 ORDER BY "importanceScore" DESC NULLS LAST, "createdAt" ASC
-                LIMIT $2
+                LIMIT ?2
             `, user.id, remainingNewCount);
         }
 
@@ -294,12 +294,12 @@ export default async function ReviewPage({
 
         newGrammar = await prisma.$queryRawUnsafe(`
             SELECT * FROM "GrammarCard" 
-            WHERE "userId" = $1 
+            WHERE "userId" = ?1 
               AND interval = 0 
               AND "isDeferred" = false
               ${newFilterString}
             ORDER BY "createdAt" ASC 
-            LIMIT $2
+            LIMIT ?2
         `, user.id, fetchGrammarCount);
     }
 

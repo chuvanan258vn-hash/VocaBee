@@ -27,6 +27,8 @@ model User {
   lastGoalMetDate      DateTime?
   points               Int          @default(0)
   streakFreeze         Int          @default(0)
+  examStartDate        DateTime?
+  examDate             DateTime?
   createdAt         DateTime     @default(now())
   securityQuestion  String?
   securityAnswer    String?

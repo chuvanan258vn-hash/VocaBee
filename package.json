@@ -7,6 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "db:sync": "node scripts/db-sync.cjs",
+    "db:pull": "git pull --no-rebase --no-edit",
+    "db:push": "git add prisma/dev.db && git commit -m \"data: manual sync\" -- prisma/dev.db && git push",
+    "migrate:supabase": "node scripts/migrate-supabase-to-sqlite.cjs",
     "postinstall": "prisma generate && prisma generate --schema=prisma/schema.sqlite.prisma"
   },
   "dependencies": {

@@ -343,7 +343,7 @@ export async function batchReviewAction(results: { id: string; quality: number; 
         });
 
         await prisma.$executeRawUnsafe(
-          `UPDATE "GrammarCard" SET interval = $1, repetition = $2, efactor = $3, "nextReview" = $4, "updatedAt" = $5 WHERE id = $6`,
+          `UPDATE "GrammarCard" SET interval = ?1, repetition = ?2, efactor = ?3, "nextReview" = ?4, "updatedAt" = ?5 WHERE id = ?6`,
           nextInterval,
           nextRepetition,
           nextEfactor,
@@ -433,9 +433,10 @@ export async function importWordsAction(words: any[]) {
     if (validItems.length === 0) return { success: true, successCount: 0, failCount };
 
     const wordKeys = validItems.map(i => i.word);
-    const existingRows: { id: string; word: string }[] = await prisma.$queryRawUnsafe(
-      `SELECT id, word FROM "Vocabulary" WHERE "userId" = $1 AND word = ANY($2::text[])`,
-      user.id, wordKeys
+    const wordPlaceholders = wordKeys.map((_, i) => `?${i + 2}`).join(',');
+    const existingRows: { id: string; word: string }[] = wordKeys.length === 0 ? [] : await prisma.$queryRawUnsafe(
+      `SELECT id, word FROM "Vocabulary" WHERE "userId" = ?1 AND word IN (${wordPlaceholders})`,
+      user.id, ...wordKeys
     );
     const existingMap = new Map(existingRows.map(r => [r.word, r.id]));
 
@@ -454,7 +455,8 @@ export async function importWordsAction(words: any[]) {
           context: i.context || undefined,
           userId: user.id,
         })),
-        skipDuplicates: true,
+        // NOTE: SQLite's createMany does not support skipDuplicates; duplicates
+        // are already excluded above via the existing-word lookup.
       });
       successCount += toInsert.length;
     }
@@ -541,7 +543,7 @@ export async function getDashboardStats() {
 
   // Exam campaign dates — read via raw SQL to avoid Prisma client cache issues
   const examRows = await prisma.$queryRawUnsafe<Array<{ examStartDate: Date | null; examDate: Date | null }>>(
-    `SELECT "examStartDate", "examDate" FROM "User" WHERE id = $1 LIMIT 1`,
+    `SELECT "examStartDate", "examDate" FROM "User" WHERE id = ?1 LIMIT 1`,
     userBase.id
   );
   const examStartDate = examRows[0]?.examStartDate ?? null;
@@ -553,8 +555,11 @@ export async function getDashboardStats() {
   const examEndExclusive = hasExamCampaign
     ? new Date(new Date(examDate!).getTime() + 24 * 60 * 60 * 1000)
     : null;
+  // SQLite stores DateTime as integer epoch-ms, so compare against numeric ms
+  // (server-derived values — safe to inline). Comparing to an ISO string would
+  // be wrong here because SQLite orders integers before text.
   const examRangeClause = hasExamCampaign
-    ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" < '${examEndExclusive!.toISOString()}'`
+    ? `"createdAt" >= ${examStartDate!.getTime()} AND "createdAt" < ${examEndExclusive!.getTime()}`
     : 'FALSE';
 
   // ─── OPTIMIZATION: Option A + B combined ───────────────────────────────────
@@ -568,43 +573,43 @@ export async function getDashboardStats() {
     // ① Single SQL → ALL Vocabulary counts (replaces 5 sequential queries)
     prisma.$queryRawUnsafe<any[]>(`
       SELECT
-        COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition = 1)                                             AS "learnedToday",
+        COUNT(*) FILTER (WHERE "updatedAt" >= ?2 AND repetition = 1)                                             AS "learnedToday",
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false
-                               AND "createdAt" >= $3 AND "createdAt" < $2)                                       AS "unlearnedYesterdayVocab",
+                               AND "createdAt" >= ?3 AND "createdAt" < ?2)                                       AS "unlearnedYesterdayVocab",
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false)                                            AS "availableNewVocabCount",
-        COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition > 1)                                             AS "alreadyReviewedVocabToday",
-        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false)                     AS "rawVocabDueCount",
+        COUNT(*) FILTER (WHERE "updatedAt" >= ?2 AND repetition > 1)                                             AS "alreadyReviewedVocabToday",
+        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= ?1 AND "isDeferred" = false)                     AS "rawVocabDueCount",
         -- Raw counts trong chiến dịch (chưa cap). Cap theo daily-goal/quota tính ở JS bên dưới.
         COUNT(*) FILTER (WHERE ${examRangeClause}
                                AND interval = 0)                                                                 AS "examVocabNew",
         COUNT(*) FILTER (WHERE ${examRangeClause}
-                               AND interval > 0 AND "nextReview" <= $1)                                          AS "examVocabOverdue"
+                               AND interval > 0 AND "nextReview" <= ?1)                                          AS "examVocabOverdue"
       FROM "Vocabulary"
-      WHERE "userId" = $4
+      WHERE "userId" = ?4
     `, now, todayStart, yesterdayStart, userBase.id),
 
     // ② Single SQL → ALL GrammarCard counts + type breakdowns (replaces 7 sequential queries)
     prisma.$queryRawUnsafe<any[]>(`
       SELECT
-        COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition = 1)                                             AS "learnedGrammarToday",
+        COUNT(*) FILTER (WHERE "updatedAt" >= ?2 AND repetition = 1)                                             AS "learnedGrammarToday",
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false
-                               AND "createdAt" >= $3 AND "createdAt" < $2)                                       AS "unlearnedYesterdayGrammar",
+                               AND "createdAt" >= ?3 AND "createdAt" < ?2)                                       AS "unlearnedYesterdayGrammar",
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false)                                            AS "availableNewGrammarCount",
-        COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition > 1)                                             AS "alreadyReviewedGrammarToday",
-        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false
-                               AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $2))              AS "rawGrammarDueCount",
+        COUNT(*) FILTER (WHERE "updatedAt" >= ?2 AND repetition > 1)                                             AS "alreadyReviewedGrammarToday",
+        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= ?1 AND "isDeferred" = false
+                               AND NOT (repetition = 1 AND "updatedAt" >= ?3 AND "updatedAt" < ?2))              AS "rawGrammarDueCount",
         -- Due counts by TOEIC part
-        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false
-                               AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $2)
+        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= ?1 AND "isDeferred" = false
+                               AND NOT (repetition = 1 AND "updatedAt" >= ?3 AND "updatedAt" < ?2)
                                AND type = 'TOEIC_P5')                                                            AS "dueP5",
-        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false
-                               AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $2)
+        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= ?1 AND "isDeferred" = false
+                               AND NOT (repetition = 1 AND "updatedAt" >= ?3 AND "updatedAt" < ?2)
                                AND type = 'TOEIC_P6')                                                            AS "dueP6",
-        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false
-                               AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $2)
+        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= ?1 AND "isDeferred" = false
+                               AND NOT (repetition = 1 AND "updatedAt" >= ?3 AND "updatedAt" < ?2)
                                AND type = 'TOEIC_P7')                                                            AS "dueP7",
-        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false
-                               AND NOT (repetition = 1 AND "updatedAt" >= $3 AND "updatedAt" < $2)
+        COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= ?1 AND "isDeferred" = false
+                               AND NOT (repetition = 1 AND "updatedAt" >= ?3 AND "updatedAt" < ?2)
                                AND type NOT IN ('TOEIC_P5','TOEIC_P6','TOEIC_P7'))                               AS "dueOther",
         -- New counts by TOEIC part
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false AND type = 'TOEIC_P5')                      AS "newP5",
@@ -616,9 +621,9 @@ export async function getDashboardStats() {
         COUNT(*) FILTER (WHERE ${examRangeClause}
                                AND interval = 0)                                                                 AS "examGrammarNew",
         COUNT(*) FILTER (WHERE ${examRangeClause}
-                               AND interval > 0 AND "nextReview" <= $1)                                          AS "examGrammarOverdue"
+                               AND interval > 0 AND "nextReview" <= ?1)                                          AS "examGrammarOverdue"
       FROM "GrammarCard"
-      WHERE "userId" = $4
+      WHERE "userId" = ?4
     `, now, todayStart, yesterdayStart, userBase.id),
 
     // ③ Word types for filter UI (distinct query, lightweight)
@@ -637,7 +642,7 @@ export async function getDashboardStats() {
 
   // ⑤ testVocabToday — kept separate with .catch() since columns may not be migrated yet
   const vTest = await prisma.$queryRawUnsafe(
-    `SELECT COUNT(*) as count FROM "Vocabulary" WHERE "userId" = $1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= $2`,
+    `SELECT COUNT(*) as count FROM "Vocabulary" WHERE "userId" = ?1 AND source = 'TEST' AND "importanceScore" >= 3 AND "createdAt" >= ?2`,
     userBase.id, todayStart
   ).catch(() => {
     console.log("Smart Capture columns not yet migrated, skipping test item count");
@@ -777,9 +782,9 @@ export async function checkWordsExistenceAction(words: string[]) {
   console.log(`[ExistenceCheck] Checking ${trimmedWords.length} words for user ${user.id}:`, trimmedWords);
 
   try {
-    // Use raw query for case-insensitive matching - PostgreSQL style
-    const placeholders = trimmedWords.map((_, i) => `$${i + 2}`).join(',');
-    const query = `SELECT * FROM "Vocabulary" WHERE "userId" = $1 AND LOWER(word) IN (${placeholders})`;
+    // Use raw query for case-insensitive matching (SQLite numbered placeholders)
+    const placeholders = trimmedWords.map((_, i) => `?${i + 2}`).join(',');
+    const query = `SELECT * FROM "Vocabulary" WHERE "userId" = ?1 AND LOWER(word) IN (${placeholders})`;
     
     const existingWords: any[] = await prisma.$queryRawUnsafe(
       query,
@@ -829,13 +834,13 @@ export async function updateUserSettingsAction(data: {
     // Use raw SQL to avoid Prisma client/schema mismatch for newer columns.
     await prisma.$executeRawUnsafe(
       `UPDATE "User"
-       SET "dailyNewWordGoal" = $1,
-           "dailyNewGrammarGoal" = $2,
-           "dailyMaxVocabReview" = $3,
-           "dailyMaxGrammarReview" = $4,
-           "examStartDate" = $5,
-           "examDate" = $6
-       WHERE id = $7`,
+       SET "dailyNewWordGoal" = ?1,
+           "dailyNewGrammarGoal" = ?2,
+           "dailyMaxVocabReview" = ?3,
+           "dailyMaxGrammarReview" = ?4,
+           "examStartDate" = ?5,
+           "examDate" = ?6
+       WHERE id = ?7`,
       data.dailyGoal,
       nextDailyGrammarGoal,
       nextDailyMaxVocabReview,
@@ -853,7 +858,7 @@ export async function updateUserSettingsAction(data: {
     }>>(
       `SELECT "dailyNewWordGoal", "dailyNewGrammarGoal", "dailyMaxVocabReview", "dailyMaxGrammarReview"
        FROM "User"
-       WHERE id = $1
+       WHERE id = ?1
        LIMIT 1`,
       user.id
     );
@@ -899,7 +904,7 @@ export async function addGrammarCardAction(data: {
     // Use raw SQL to avoid Prisma client sync issues
     await prisma.$executeRawUnsafe(
       `INSERT INTO "GrammarCard" (id, "userId", type, prompt, answer, meaning, options, hint, explanation, "myError", trap, "goldenRule", tags, interval, repetition, efactor, "nextReview", "createdAt", "updatedAt", "isDeferred", source, "importanceScore") 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 0, 0, 2.0, $14, $15, $16, false, 'MANUAL', 0)`,
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, 0, 0, 2.0, ?14, ?15, ?16, false, 'MANUAL', 0)`,
       crypto.randomUUID(),
       user.id,
       data.type,
@@ -967,7 +972,7 @@ export async function reviewGrammarCardAction(id: string, grade: number) {
     // locale strings (e.g. "Mon Jul 06 2026 04:00:00 GMT+0700") which breaks
     // SQLite date comparisons (they become lexicographic string comparisons).
     await prisma.$executeRawUnsafe(
-      `UPDATE "GrammarCard" SET interval = $1, repetition = $2, efactor = $3, "nextReview" = $4, "updatedAt" = $5 WHERE id = $6`,
+      `UPDATE "GrammarCard" SET interval = ?1, repetition = ?2, efactor = ?3, "nextReview" = ?4, "updatedAt" = ?5 WHERE id = ?6`,
       nextInterval,
       nextRepetition,
       nextEfactor,
@@ -1234,19 +1239,19 @@ export async function seedGrammarCardsAction() {
       } else {
         // Raw SQL fallback logic (update or insert)
         const existing: any = await prisma.$queryRawUnsafe(
-          `SELECT id FROM "GrammarCard" WHERE prompt = $1 AND "userId" = $2 LIMIT 1`,
+          `SELECT id FROM "GrammarCard" WHERE prompt = ?1 AND "userId" = ?2 LIMIT 1`,
           card.prompt, user.id
         );
 
         if (existing && existing.length > 0) {
           await prisma.$executeRawUnsafe(
-            `UPDATE "GrammarCard" SET hint = $1 WHERE id = $2`,
+            `UPDATE "GrammarCard" SET hint = ?1 WHERE id = ?2`,
             card.hint, existing[0].id
           );
         } else {
           await prisma.$executeRawUnsafe(
             `INSERT INTO "GrammarCard" (id, type, prompt, answer, options, hint, explanation, tags, "userId", "nextReview", interval, repetition, efactor) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, 0, 2.0)`,
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 0, 0, 2.0)`,
             crypto.randomUUID(), card.type, card.prompt, card.answer, card.options || null, card.hint || "", card.explanation, card.tags, user.id,
             new Date()
           );
@@ -1290,10 +1295,11 @@ export async function importGrammarCardsAction(cards: any[]) {
 
     // 2. Bulk-check which prompts already EXIST (1 query instead of N)
     const promptKeys = validItems.map(i => i.prompt);
-    const existingRows: { id: string; prompt: string }[] = await prisma.$queryRawUnsafe(
-      `SELECT id, prompt FROM "GrammarCard" WHERE "userId" = $1 AND prompt = ANY($2::text[])`,
+    const promptPlaceholders = promptKeys.map((_, i) => `?${i + 2}`).join(',');
+    const existingRows: { id: string; prompt: string }[] = promptKeys.length === 0 ? [] : await prisma.$queryRawUnsafe(
+      `SELECT id, prompt FROM "GrammarCard" WHERE "userId" = ?1 AND prompt IN (${promptPlaceholders})`,
       user.id,
-      promptKeys
+      ...promptKeys
     );
     const existingMap = new Map(existingRows.map(r => [r.prompt, r.id]));
 
@@ -1307,7 +1313,7 @@ export async function importGrammarCardsAction(cards: any[]) {
         toInsert.map(i =>
           prisma.$executeRawUnsafe(
             `INSERT INTO "GrammarCard" (id, "userId", type, prompt, answer, meaning, options, hint, explanation, "myError", trap, "goldenRule", tags, interval, repetition, efactor, "nextReview", "createdAt", "updatedAt", "isDeferred", source, "importanceScore")
-             VALUES ($1, $2, $3, $4, $5, NULL, $6, $7, $8, NULL, NULL, NULL, $9, 0, 0, 2.0, $10, $11, $12, false, 'MANUAL', 0)`,
+             VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6, ?7, ?8, NULL, NULL, NULL, ?9, 0, 0, 2.0, ?10, ?11, ?12, false, 'MANUAL', 0)`,
             crypto.randomUUID(), user.id, i.type, i.prompt, i.answer,
             i.options, i.hint, i.explanation, i.tags,
             new Date(), new Date(), new Date()
@@ -1369,7 +1375,7 @@ export async function generateGrammarHintsAction() {
       });
     } else {
       cards = await prisma.$queryRawUnsafe(
-        `SELECT * FROM "GrammarCard" WHERE "userId" = $1 AND (hint = '' OR hint IS NULL)`,
+        `SELECT * FROM "GrammarCard" WHERE "userId" = ?1 AND (hint = '' OR hint IS NULL)`,
         user.id
       );
     }
@@ -1403,7 +1409,7 @@ export async function generateGrammarHintsAction() {
         });
       } else {
         await prisma.$executeRawUnsafe(
-          `UPDATE "GrammarCard" SET hint = $1 WHERE id = $2`,
+          `UPDATE "GrammarCard" SET hint = ?1 WHERE id = ?2`,
           smartHint, card.id
         );
       }
@@ -1476,7 +1482,7 @@ export async function smartCaptureAction(data: {
       // Vocabulary capture - Using raw SQL fallback for new fields
       await prisma.$executeRawUnsafe(
         `INSERT INTO "Vocabulary" (id, word, "wordType", meaning, example, "importanceScore", source, "isDeferred", "userId", "nextReview", interval, repetition, efactor, "createdAt", "updatedAt") 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 0, 0, 2.5, $11, $12)`,
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 0, 0, 2.5, ?11, ?12)`,
         crypto.randomUUID(), data.word.trim(), data.wordType || null, data.meaning || "", data.example || null,
         data.importanceScore, data.source, isDeferred, user.id,
         new Date(), new Date(), new Date()
@@ -1485,7 +1491,7 @@ export async function smartCaptureAction(data: {
       // Grammar capture
       await prisma.$executeRawUnsafe(
         `INSERT INTO "GrammarCard" (id, type, prompt, answer, "importanceScore", source, "isDeferred", "userId", tags, explanation, hint, "nextReview", interval, repetition, efactor, "createdAt", "updatedAt") 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 0, 0, 2.0, $13, $14)`,
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 0, 0, 2.0, ?13, ?14)`,
         crypto.randomUUID(), data.type || "PRODUCTION", data.prompt.trim(), data.answer || "",
         data.importanceScore, data.source, isDeferred, user.id, tagPrefix, data.explanation || "", data.hint || "",
         new Date(), new Date(), new Date()
@@ -1509,12 +1515,12 @@ export async function getDeferredItemsAction() {
 
   try {
     const vocab: any[] = await prisma.$queryRawUnsafe(
-      `SELECT * FROM "Vocabulary" WHERE "userId" = $1 AND "isDeferred" = true ORDER BY "createdAt" DESC`,
+      `SELECT * FROM "Vocabulary" WHERE "userId" = ?1 AND "isDeferred" = true ORDER BY "createdAt" DESC`,
       user.id
     );
 
     const grammar: any[] = await prisma.$queryRawUnsafe(
-      `SELECT * FROM "GrammarCard" WHERE "userId" = $1 AND "isDeferred" = true ORDER BY "createdAt" DESC`,
+      `SELECT * FROM "GrammarCard" WHERE "userId" = ?1 AND "isDeferred" = true ORDER BY "createdAt" DESC`,
       user.id
     );
 
@@ -1532,10 +1538,10 @@ export async function manageInboxItemAction(id: string, type: "VOCAB" | "GRAMMAR
   try {
     if (action === "DELETE") {
       const table = type === "VOCAB" ? '"Vocabulary"' : '"GrammarCard"';
-      await prisma.$executeRawUnsafe(`DELETE FROM ${table} WHERE id = $1`, id);
+      await prisma.$executeRawUnsafe(`DELETE FROM ${table} WHERE id = ?1`, id);
     } else {
       const table = type === "VOCAB" ? '"Vocabulary"' : '"GrammarCard"';
-      await prisma.$executeRawUnsafe(`UPDATE ${table} SET "isDeferred" = false WHERE id = $1`, id);
+      await prisma.$executeRawUnsafe(`UPDATE ${table} SET "isDeferred" = false WHERE id = ?1`, id);
     }
 
     revalidatePath('/inbox');
@@ -1670,14 +1676,14 @@ export async function getWordsPaginatedAction(skip: number, take: number, search
       const like = `%${trimmedSearch}%`;
       words = await prisma.$queryRawUnsafe(
         `${baseSelect}
-         WHERE "userId" = $1
+         WHERE "userId" = ?1
            AND (
-             LOWER(word) LIKE LOWER($2)
-             OR LOWER(meaning) LIKE LOWER($2)
-             OR LOWER(COALESCE(context, '')) LIKE LOWER($2)
+             LOWER(word) LIKE LOWER(?2)
+             OR LOWER(meaning) LIKE LOWER(?2)
+             OR LOWER(COALESCE(context, '')) LIKE LOWER(?2)
            )
          ORDER BY "createdAt" DESC
-         LIMIT $3 OFFSET $4`,
+         LIMIT ?3 OFFSET ?4`,
         user.id,
         like,
         take,
@@ -1686,9 +1692,9 @@ export async function getWordsPaginatedAction(skip: number, take: number, search
     } else {
       words = await prisma.$queryRawUnsafe(
         `${baseSelect}
-         WHERE "userId" = $1
+         WHERE "userId" = ?1
          ORDER BY "createdAt" DESC
-         LIMIT $2 OFFSET $3`,
+         LIMIT ?2 OFFSET ?3`,
         user.id,
         take,
         skip
@@ -1767,12 +1773,14 @@ export async function getDetailedStatsAction() {
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     oneYearAgo.setHours(0, 0, 0, 0);
 
-    // PostgreSQL raw query to group by day
+    // SQLite raw query to group by day. DateTime is stored as integer epoch-ms,
+    // so divide by 1000 and format with strftime (local time, to match the
+    // user's day boundaries).
     const heatmapData: any[] = await prisma.$queryRawUnsafe(`
       SELECT date, COUNT(*) as count FROM (
-        SELECT TO_CHAR("updatedAt", 'YYYY-MM-DD') as date FROM "Vocabulary" WHERE "userId" = $1 AND "updatedAt" >= $2
+        SELECT strftime('%Y-%m-%d', "updatedAt" / 1000, 'unixepoch', 'localtime') as date FROM "Vocabulary" WHERE "userId" = ?1 AND "updatedAt" >= ?2
         UNION ALL
-        SELECT TO_CHAR("updatedAt", 'YYYY-MM-DD') as date FROM "GrammarCard" WHERE "userId" = $3 AND "updatedAt" >= $4
+        SELECT strftime('%Y-%m-%d', "updatedAt" / 1000, 'unixepoch', 'localtime') as date FROM "GrammarCard" WHERE "userId" = ?3 AND "updatedAt" >= ?4
       ) sub GROUP BY date ORDER BY date ASC
     `, userBase.id, oneYearAgo, userBase.id, oneYearAgo);
 
@@ -1860,7 +1868,7 @@ export async function saveToeicQuestionAction(data: {
   try {
     await prisma.$executeRawUnsafe(
       `INSERT INTO "GrammarCard" (id, "userId", type, prompt, answer, options, hint, explanation, tags, "toeicPart", "grammarCategory", "signalKeywords", formula, "goldenRule", interval, repetition, efactor, "nextReview", "createdAt", "updatedAt", "isDeferred", source, "importanceScore")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 0, 0, 2.0, $15, $16, $17, false, 'TOEIC', 0)`,
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, 0, 0, 2.0, ?15, ?16, ?17, false, 'TOEIC', 0)`,
       crypto.randomUUID(),
       user.id,
       cardType,
@@ -1903,7 +1911,7 @@ export async function getWeakCategoriesAction() {
           AVG(efactor) AS "avgEF",
           MAX("updatedAt") AS "lastActive"
         FROM "GrammarCard"
-        WHERE "userId" = $1 
+        WHERE "userId" = ?1 
           AND "toeicPart" IS NOT NULL 
           AND "grammarCategory" IS NOT NULL
           AND "grammarCategory" != ''
@@ -1920,7 +1928,7 @@ export async function getWeakCategoriesAction() {
         ROUND(
           CAST(
             (CAST("failureCount" AS FLOAT) / ("failureCount" + ("totalCards" - "failureCount") + 1))
-            * (1.0 / (1.0 + EXTRACT(EPOCH FROM (NOW() - "lastActive")) / 86400 * 0.1))
+            * (1.0 / (1.0 + (strftime('%s','now') - "lastActive" / 1000.0) / 86400 * 0.1))
             * (1.0 / NULLIF("avgEF", 0))
           AS NUMERIC), 4
         ) AS "weaknessScore"

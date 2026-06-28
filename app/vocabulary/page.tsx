@@ -35,7 +35,7 @@ export default async function VocabularyPage({
     const allWords = await prisma.$queryRawUnsafe<Vocabulary[]>(
         `SELECT id, word, "wordType", meaning, pronunciation, example, synonyms, context, "importanceScore", source, "isDeferred", "nextReview", interval, repetition, efactor, "userId", "createdAt", "updatedAt"
          FROM "Vocabulary"
-         WHERE "userId" = $1
+         WHERE "userId" = ?1
          ORDER BY "createdAt" DESC
          LIMIT 20`,
         user.id

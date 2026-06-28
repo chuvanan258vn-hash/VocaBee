@@ -33,7 +33,7 @@ async function hydrateReviewLimits(user: VocaBeeUser): Promise<VocaBeeUser> {
             examStartDate: Date | null;
             examDate: Date | null;
         }>>(
-            `SELECT "dailyMaxVocabReview", "dailyMaxGrammarReview", "examStartDate", "examDate" FROM "User" WHERE id = $1 LIMIT 1`,
+            `SELECT "dailyMaxVocabReview", "dailyMaxGrammarReview", "examStartDate", "examDate" FROM "User" WHERE id = ?1 LIMIT 1`,
             user.id
         );
 
@@ -69,7 +69,7 @@ export const getAuthenticatedUser = cache(async (): Promise<VocaBeeUser | null> 
         console.warn(`User not found by exact email: ${email}. Trying case-insensitive lookup.`);
         try {
             const users = await prisma.$queryRawUnsafe<any[]>(
-                `SELECT id FROM "User" WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+                `SELECT id FROM "User" WHERE LOWER(email) = LOWER(?1) LIMIT 1`,
                 email
             );
             if (users && users.length > 0) {
