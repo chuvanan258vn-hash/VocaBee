@@ -548,6 +548,15 @@ export async function getDashboardStats() {
   const examDate = examRows[0]?.examDate ?? null;
   const hasExamCampaign = !!(examStartDate && examDate);
 
+  // Khoảng ngày chiến dịch — PHẢI khớp 100% với review/page.tsx (cram session):
+  // [examStartDate, examDate + 1 ngày) → bao gồm trọn cả ngày thi.
+  const examEndExclusive = hasExamCampaign
+    ? new Date(new Date(examDate!).getTime() + 24 * 60 * 60 * 1000)
+    : null;
+  const examRangeClause = hasExamCampaign
+    ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" < '${examEndExclusive!.toISOString()}'`
+    : 'FALSE';
+
   // ─── OPTIMIZATION: Option A + B combined ───────────────────────────────────
   // OLD CODE: 15 sequential DB round-trips × ~1.5s each ≈ 22s just for counts
   // NEW CODE: 4 parallel queries in Promise.all, 2 of which use PostgreSQL FILTER
@@ -565,15 +574,11 @@ export async function getDashboardStats() {
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false)                                            AS "availableNewVocabCount",
         COUNT(*) FILTER (WHERE "updatedAt" >= $2 AND repetition > 1)                                             AS "alreadyReviewedVocabToday",
         COUNT(*) FILTER (WHERE interval > 0 AND "nextReview" <= $1 AND "isDeferred" = false)                     AS "rawVocabDueCount",
-        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
-                               AND NOT (interval >= 14 AND "nextReview" > $1))                                    AS "examVocabCount",
-        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
-                               AND repetition = 0 AND interval = 0)                                              AS "examVocabNew",
-        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
-                               AND interval > 0 AND "nextReview" <= $1)                                          AS "examVocabOverdue",
-        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
-                               AND repetition > 0 AND efactor < 2.1
-                               AND NOT (interval > 0 AND "nextReview" <= $1))                                    AS "examVocabWeak"
+        -- Raw counts trong chiến dịch (chưa cap). Cap theo daily-goal/quota tính ở JS bên dưới.
+        COUNT(*) FILTER (WHERE ${examRangeClause}
+                               AND interval = 0)                                                                 AS "examVocabNew",
+        COUNT(*) FILTER (WHERE ${examRangeClause}
+                               AND interval > 0 AND "nextReview" <= $1)                                          AS "examVocabOverdue"
       FROM "Vocabulary"
       WHERE "userId" = $4
     `, now, todayStart, yesterdayStart, userBase.id),
@@ -607,15 +612,11 @@ export async function getDashboardStats() {
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false AND type = 'TOEIC_P7')                      AS "newP7",
         COUNT(*) FILTER (WHERE interval = 0 AND "isDeferred" = false
                                AND type NOT IN ('TOEIC_P5','TOEIC_P6','TOEIC_P7'))                               AS "newOther",
-        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
-                               AND NOT (interval >= 14 AND "nextReview" > $1))                                    AS "examGrammarCount",
-        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
-                               AND repetition = 0 AND interval = 0)                                              AS "examGrammarNew",
-        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
-                               AND interval > 0 AND "nextReview" <= $1)                                          AS "examGrammarOverdue",
-        COUNT(*) FILTER (WHERE ${hasExamCampaign ? `"createdAt" >= '${examStartDate!.toISOString()}' AND "createdAt" <= '${examDate!.toISOString()}'` : 'FALSE'}
-                               AND repetition > 0 AND efactor < 2.1
-                               AND NOT (interval > 0 AND "nextReview" <= $1))                                    AS "examGrammarWeak"
+        -- Raw counts trong chiến dịch (chưa cap). Cap theo daily-goal/quota tính ở JS bên dưới.
+        COUNT(*) FILTER (WHERE ${examRangeClause}
+                               AND interval = 0)                                                                 AS "examGrammarNew",
+        COUNT(*) FILTER (WHERE ${examRangeClause}
+                               AND interval > 0 AND "nextReview" <= $1)                                          AS "examGrammarOverdue"
       FROM "GrammarCard"
       WHERE "userId" = $4
     `, now, todayStart, yesterdayStart, userBase.id),
@@ -655,20 +656,16 @@ export async function getDashboardStats() {
   const alreadyReviewedVocabToday  = Number(v.alreadyReviewedVocabToday  || 0);
   const rawVocabDueCount           = Number(v.rawVocabDueCount           || 0);
   const testVocabTodayCount        = Number(vTest[0]?.count              || 0);
-  const examVocabCount             = Number(v.examVocabCount             || 0);
   const examVocabNew               = Number(v.examVocabNew               || 0);
   const examVocabOverdue           = Number(v.examVocabOverdue           || 0);
-  const examVocabWeak              = Number(v.examVocabWeak              || 0);
 
   const learnedGrammarToday            = Number(g.learnedGrammarToday            || 0);
   const unlearnedYesterdayGrammar      = Number(g.unlearnedYesterdayGrammar      || 0);
   const availableNewGrammarCount       = Number(g.availableNewGrammarCount       || 0);
   const alreadyReviewedGrammarToday    = Number(g.alreadyReviewedGrammarToday    || 0);
   const rawGrammarDueCountResolved     = Number(g.rawGrammarDueCount             || 0);
-  const examGrammarCount               = Number(g.examGrammarCount               || 0);
   const examGrammarNew                 = Number(g.examGrammarNew                 || 0);
   const examGrammarOverdue             = Number(g.examGrammarOverdue             || 0);
-  const examGrammarWeak                = Number(g.examGrammarWeak                || 0);
 
   const grammarBreakdown = {
     part5: { due: Number(g.dueP5    || 0), new: Number(g.newP5    || 0) },
@@ -708,6 +705,20 @@ export async function getDashboardStats() {
   const grammarDueCount = Math.min(rawGrammarDueCountResolved, remainingGrammarReviewQuota);
   const totalDueGrammar = Math.min(remainingGrammarReviewQuota, grammarDueCount + canLearnMoreGrammarCount);
 
+  // ─── Chiến dịch ôn thi: áp daily-cap GIỐNG ngày thường ───────────────────────
+  //   *Today  = số thẻ THỰC SỰ load khi nhấn CHIẾN NGAY (đã trừ tiến độ hôm nay)
+  //             → banner luôn khớp với review/page.tsx (cùng cap canLearnMore/remainingQuota).
+  //   *Backlog = tổng từ actionable còn lại trong chiến dịch (chưa cap) → hiển thị tham khảo.
+  const examVocabDueToday   = Math.min(examVocabOverdue, remainingVocabReviewQuota);
+  const examVocabNewToday   = Math.min(examVocabNew, canLearnMoreCount);
+  const examVocabToday      = examVocabDueToday + examVocabNewToday;
+  const examVocabBacklog    = examVocabNew + examVocabOverdue;
+
+  const examGrammarDueToday = Math.min(examGrammarOverdue, remainingGrammarReviewQuota);
+  const examGrammarNewToday = Math.min(examGrammarNew, canLearnMoreGrammarCount);
+  const examGrammarToday    = examGrammarDueToday + examGrammarNewToday;
+  const examGrammarBacklog  = examGrammarNew + examGrammarOverdue;
+
   // ─── Streak logic ──────────────────────────────────────────────────────────
   let currentStreak = vUser.streakCount || 0;
   const lastGoalMetDate = vUser.lastGoalMetDate ? new Date(vUser.lastGoalMetDate) : null;
@@ -742,18 +753,19 @@ export async function getDashboardStats() {
     points: vUser.points || 0,
     streakFrozen,
     grammarBreakdown,
-    examVocabCount,
-    examVocabNew,
-    examVocabOverdue,
-    examVocabWeak,
-    // Actionable hôm nay = từ đến hạn ôn + từ mới trong quota còn lại
-    // Đây là số thực sự sẽ xuất hiện khi nhấn CHIẾN NGAY
-    examVocabActionable: examVocabOverdue + Math.min(examVocabNew, canLearnMoreCount),
-    examGrammarCount,
-    examGrammarNew,
-    examGrammarOverdue,
-    examGrammarWeak,
-    examGrammarActionable: examGrammarOverdue + Math.min(examGrammarNew, canLearnMoreGrammarCount),
+    // Banner = số THỰC SỰ load hôm nay (đã áp daily-cap). Khớp 100% với phiên cram.
+    // *Count/New/Overdue đã cap; *Backlog là tổng còn lại trong chiến dịch (tham khảo).
+    examVocabCount: examVocabToday,
+    examVocabNew: examVocabNewToday,
+    examVocabOverdue: examVocabDueToday,
+    examVocabBacklog,
+    examGrammarCount: examGrammarToday,
+    examGrammarNew: examGrammarNewToday,
+    examGrammarOverdue: examGrammarDueToday,
+    examGrammarBacklog,
+    // Ngày thi + đếm ngược (cho label banner, thay vì hardcode "1/6")
+    examDateISO: examDate ? examDate.toISOString() : null,
+    examDaysLeft: examDate ? Math.max(0, Math.ceil((examDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))) : null,
   };
 }
 

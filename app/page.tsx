@@ -97,6 +97,16 @@ export default async function Home() {
 
   const showButton = stats && stats.dueReviews > 0;
 
+  // Label động cho banner chiến dịch (thay vì hardcode "1/6")
+  let examCampaignLabel = 'Chiến dịch ôn thi';
+  if (stats?.examDateISO) {
+    const d = new Date(stats.examDateISO);
+    const dmy = `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+    examCampaignLabel = stats.examDaysLeft && stats.examDaysLeft > 0
+      ? `Ôn thi ${dmy} · còn ${stats.examDaysLeft} ngày`
+      : `Ôn thi ${dmy}`;
+  }
+
   return (
     <div className="flex min-h-screen bg-background text-foreground font-sans">
       <Sidebar />
@@ -138,7 +148,7 @@ export default async function Home() {
 
         <div className="p-4 sm:p-6 max-w-7xl mx-auto flex flex-col gap-6 sm:gap-8 pb-24">
           {/* Exam Cramming Banners */}
-          {stats && stats.examVocabActionable > 0 && (
+          {stats && stats.examVocabCount > 0 && (
             <div className="bg-gradient-to-r from-red-600 to-orange-500 rounded-3xl p-1 md:p-1.5 shadow-[0_0_30px_rgba(239,68,68,0.3)] relative overflow-hidden group">
               <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
               <div className="bg-surface/40 backdrop-blur-md rounded-2xl p-6 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
@@ -149,11 +159,11 @@ export default async function Home() {
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
-                      <p className="text-red-500 dark:text-red-300 text-xs font-bold uppercase tracking-widest">Chiến dịch ôn thi 1/6</p>
+                      <p className="text-red-500 dark:text-red-300 text-xs font-bold uppercase tracking-widest">{examCampaignLabel}</p>
                     </div>
                     <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
                       Còn <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">
-                        {stats.examVocabActionable} từ vựng
+                        {stats.examVocabCount} từ vựng
                       </span> cần ôn hôm nay
                     </h3>
                     {/* SRS Breakdown Badges */}
@@ -165,15 +175,15 @@ export default async function Home() {
                       )}
                       {stats.examVocabOverdue > 0 && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-300 text-xs font-semibold">
-                          🟠 {stats.examVocabOverdue} quá hạn
-                        </span>
-                      )}
-                      {stats.examVocabWeak > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-xs font-semibold">
-                          🟡 {stats.examVocabWeak} còn yếu
+                          🟠 {stats.examVocabOverdue} cần ôn lại
                         </span>
                       )}
                     </div>
+                    {stats.examVocabBacklog > stats.examVocabCount && (
+                      <p className="text-slate-400 text-xs mt-2">
+                        Còn <span className="font-bold text-slate-300">{stats.examVocabBacklog - stats.examVocabCount}</span> từ nữa trong chiến dịch (giới hạn theo mục tiêu mỗi ngày)
+                      </p>
+                    )}
                   </div>
                 </div>
                 <Link
@@ -187,7 +197,7 @@ export default async function Home() {
             </div>
           )}
 
-          {stats && stats.examGrammarActionable > 0 && (
+          {stats && stats.examGrammarCount > 0 && (
             <div className="bg-gradient-to-r from-pink-600 to-rose-500 rounded-3xl p-1 md:p-1.5 shadow-[0_0_30px_rgba(236,72,153,0.3)] relative overflow-hidden group">
               <div className="absolute inset-0 bg-white/5 pointer-events-none"></div>
               <div className="bg-surface/40 backdrop-blur-md rounded-2xl p-6 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
@@ -198,11 +208,11 @@ export default async function Home() {
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse"></span>
-                      <p className="text-pink-500 dark:text-pink-300 text-xs font-bold uppercase tracking-widest">Chiến dịch ôn thi 1/6</p>
+                      <p className="text-pink-500 dark:text-pink-300 text-xs font-bold uppercase tracking-widest">{examCampaignLabel}</p>
                     </div>
                     <h3 className="text-foreground text-xl md:text-2xl font-bold tracking-tight">
                       Còn <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">
-                        {stats.examGrammarActionable} ngữ pháp
+                        {stats.examGrammarCount} ngữ pháp
                       </span> cần ôn hôm nay
                     </h3>
                     {/* SRS Breakdown Badges */}
@@ -214,15 +224,15 @@ export default async function Home() {
                       )}
                       {stats.examGrammarOverdue > 0 && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-300 text-xs font-semibold">
-                          🟠 {stats.examGrammarOverdue} quá hạn
-                        </span>
-                      )}
-                      {stats.examGrammarWeak > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 text-xs font-semibold">
-                          🟡 {stats.examGrammarWeak} còn yếu
+                          🟠 {stats.examGrammarOverdue} cần ôn lại
                         </span>
                       )}
                     </div>
+                    {stats.examGrammarBacklog > stats.examGrammarCount && (
+                      <p className="text-slate-400 text-xs mt-2">
+                        Còn <span className="font-bold text-slate-300">{stats.examGrammarBacklog - stats.examGrammarCount}</span> mục nữa trong chiến dịch (giới hạn theo mục tiêu mỗi ngày)
+                      </p>
+                    )}
                   </div>
                 </div>
                 <Link

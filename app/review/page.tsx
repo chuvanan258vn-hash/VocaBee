@@ -136,10 +136,9 @@ export default async function ReviewPage({
 
         if (!examStartDate || !examDate) redirect('/');
 
-        // +1 ngày để dùng < thay vì <=, bao gồm cả ngày thi
-        const examEndDate = new Date(examDate);
-        examEndDate.setDate(examEndDate.getDate() + 1);
-        examEndDate.setHours(0, 0, 0, 0);
+        // +1 ngày (đúng 24h) để dùng < thay vì <=, bao gồm trọn cả ngày thi.
+        // PHẢI khớp 100% với examEndExclusive trong getDashboardStats (actions.ts).
+        const examEndDate = new Date(examDate.getTime() + 24 * 60 * 60 * 1000);
 
         // Áp dụng Anti-Overload: tôn trọng daily cap của user, không dump all 200 từ
         // Ôn từ cũ đến hạn trước (dùng remainingVocabReviewQuota đã tính ở trên)
